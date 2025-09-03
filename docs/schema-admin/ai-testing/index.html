@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Testing Guide - Report.AI Documentation</title>
+    <link rel="stylesheet" href="../../../context/creative-docs/design-tokens.css">
+    <style>
+        /* Documentation Styles - Following Design System */
+        :root {
+            --doc-max-width: 1200px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .docs-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid var(--border-default);
+            padding: var(--space-8);
+        }
+
+        .header-content {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .docs-title {
+            font-size: var(--text-title-2xl-size);
+            font-weight: var(--text-title-2xl-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .docs-subtitle {
+            font-size: var(--text-body-lg-size);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .breadcrumb {
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb a {
+            color: #CF0E0F;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* Container */
+        .docs-container {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            padding: var(--space-8);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--space-8);
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            height: fit-content;
+            position: sticky;
+            top: var(--space-4);
+        }
+
+        .toc h3 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            padding-bottom: var(--space-2);
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc li {
+            margin-bottom: var(--space-2);
+        }
+
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            padding: var(--space-2);
+            display: block;
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .toc a:hover,
+        .toc a.active {
+            color: #CF0E0F;
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        .toc ul ul {
+            margin-left: var(--space-4);
+            margin-top: var(--space-2);
+        }
+
+        .toc ul ul a {
+            font-size: var(--text-body-xs-size);
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            min-width: 0;
+        }
+
+        .content-section {
+            margin-bottom: var(--space-12);
+        }
+
+        .content-section h2 {
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-6) 0;
+            padding-bottom: var(--space-3);
+            border-bottom: 2px solid #CF0E0F;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .content-section h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: var(--space-8) 0 var(--space-4) 0;
+        }
+
+        .content-section h4 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: var(--space-6) 0 var(--space-3) 0;
+        }
+
+        .content-section p {
+            margin-bottom: var(--space-4);
+            line-height: 1.7;
+        }
+
+        /* Access Panel */
+        .access-panel {
+            background: linear-gradient(135deg, #CF0E0F 0%, #A00B0C 100%);
+            color: white;
+            padding: var(--space-8);
+            border-radius: var(--radii-lg);
+            margin: var(--space-8) 0;
+            text-align: center;
+        }
+
+        .access-panel h3 {
+            margin: 0 0 var(--space-4) 0;
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+        }
+
+        .access-panel p {
+            margin: 0 0 var(--space-6) 0;
+            font-size: var(--text-body-lg-size);
+            opacity: 0.9;
+        }
+
+        .access-btn {
+            background: white;
+            color: #CF0E0F;
+            padding: var(--space-4) var(--space-8);
+            border: none;
+            border-radius: var(--radii-md);
+            font-size: var(--text-body-md-size);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all var(--duration-normal);
+            box-shadow: var(--shadow-md);
+        }
+
+        .access-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .feature-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+        }
+
+        .feature-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .feature-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        /* Testing Workflow */
+        .workflow-steps {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+            padding-bottom: var(--space-6);
+            border-bottom: 1px solid var(--border-muted);
+        }
+
+        .workflow-step:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .step-number {
+            background: #CF0E0F;
+            color: white;
+            border-radius: var(--radii-full);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-body-sm-size);
+            font-weight: var(--text-body-xs-weight);
+            flex-shrink: 0;
+            margin-top: var(--space-1);
+        }
+
+        .step-content h4 {
+            margin: 0 0 var(--space-2) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Tone Examples */
+        .tone-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-4);
+            margin: var(--space-6) 0;
+        }
+
+        .tone-card {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-4);
+            text-align: center;
+        }
+
+        .tone-card .emoji {
+            font-size: 2rem;
+            margin-bottom: var(--space-2);
+            display: block;
+        }
+
+        .tone-card h4 {
+            margin: 0 0 var(--space-2) 0;
+            font-size: var(--text-title-sm-size);
+        }
+
+        .tone-card p {
+            margin: 0;
+            font-size: var(--text-body-xs-size);
+            color: var(--text-secondary);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .info-box.tip {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .info-box.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .info-box.danger {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.05);
+        }
+
+        .info-box h4 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .info-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #f8fafc;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-sm);
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: var(--text-body-sm-size);
+            color: var(--text-primary);
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+
+        /* Navigation */
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-8) 0;
+            border-top: 1px solid var(--border-default);
+            margin-top: var(--space-12);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: #CF0E0F;
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            font-weight: 500;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .nav-link:hover {
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .docs-container {
+                grid-template-columns: 1fr;
+                gap: var(--space-6);
+            }
+
+            .toc {
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: var(--space-4);
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tone-examples {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hide scrollbars */
+        .toc,
+        .main-content,
+        .code-block {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .toc::-webkit-scrollbar,
+        .main-content::-webkit-scrollbar,
+        .code-block::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <div class="header-content">
+            <div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../../">Documentation</a> > <a href="../">Schema Admin</a> > <span>AI Testing</span>
+                </nav>
+                <h1 class="docs-title">AI Testing Guide</h1>
+                <p class="docs-subtitle">Test AI models, validate output quality, and ensure consistency</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="docs-container">
+        <!-- Table of Contents -->
+        <nav class="toc" aria-label="Table of Contents">
+            <h3>📋 Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#testing-workflow">Testing Workflow</a></li>
+                <li><a href="#model-configuration">Model Configuration</a>
+                    <ul>
+                        <li><a href="#tone-settings">Tone Settings</a></li>
+                        <li><a href="#temperature-control">Temperature Control</a></li>
+                        <li><a href="#custom-prompts">Custom Prompts</a></li>
+                    </ul>
+                </li>
+                <li><a href="#validation-methods">Validation Methods</a></li>
+                <li><a href="#quality-metrics">Quality Metrics</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Quick Access Panel -->
+            <div class="access-panel">
+                <h3>🧪 Access AI Testing</h3>
+                <p>Ready to test AI model performance? Jump directly to the testing interface.</p>
+                <a href="../../../schema-admin/ai-testing/" class="access-btn" target="_blank">Open AI Testing →</a>
+            </div>
+
+            <section id="overview" class="content-section">
+                <h2>🧪 Overview</h2>
+                <p>The AI Testing interface allows you to validate AI model performance, test different configurations, and ensure consistent output quality for your campaign analysis reports.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Model Testing</h4>
+                        <p>Test different AI models and configurations to find optimal settings for your analysis needs</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Quality Validation</h4>
+                        <p>Validate output quality with consistent formatting, accuracy, and relevance metrics</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Consistency Testing</h4>
+                        <p>Ensure consistent output across multiple runs with the same input parameters</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Section-Specific Testing</h4>
+                        <p>Test individual report sections to optimize performance for specific analysis components</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="getting-started" class="content-section">
+                <h2>🚀 Getting Started</h2>
+                <p>The AI Testing interface provides a controlled environment for testing model configurations before deploying them in production analysis.</p>
+
+                <div class="info-box tip">
+                    <h4>💡 Testing Environment</h4>
+                    <p>The testing interface uses the same AI models and schema context as the main application, ensuring your tests accurately reflect production performance.</p>
+                </div>
+
+                <h3>Key Features</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🎚️</span>Model Controls</h4>
+                        <p>Adjust temperature, tone, and other parameters to fine-tune AI behavior</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span>Test Templates</h4>
+                        <p>Pre-configured test scenarios for common analysis types and use cases</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📈</span>Performance Metrics</h4>
+                        <p>Track response time, consistency scores, and quality indicators</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔍</span>Output Analysis</h4>
+                        <p>Detailed examination of AI responses with highlighting and annotation</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="testing-workflow" class="content-section">
+                <h2>⚙️ Testing Workflow</h2>
+                <p>Follow this systematic approach to test and validate AI model performance:</p>
+
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Configure Test Parameters</h4>
+                            <p>Set up model configuration including temperature, tone, and any custom instructions for your test scenario.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Prepare Test Data</h4>
+                            <p>Use sample campaign data or upload test CSV files to simulate real analysis conditions.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Run Test Analysis</h4>
+                            <p>Execute the AI analysis with your configured parameters and observe the generated output.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Evaluate Results</h4>
+                            <p>Review output quality, consistency, relevance, and adherence to expected format and tone.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Iterate and Optimize</h4>
+                            <p>Adjust parameters based on results and repeat testing until optimal performance is achieved.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h4>Document Findings</h4>
+                            <p>Record successful configurations and best practices for future reference and team training.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="model-configuration" class="content-section">
+                <h2>🎛️ Model Configuration</h2>
+                <p>Fine-tune AI model behavior through various configuration options:</p>
+
+                <h3 id="tone-settings">Tone Settings</h3>
+                <p>Choose from pre-configured tone options to match your reporting style and audience:</p>
+
+                <div class="tone-examples">
+                    <div class="tone-card">
+                        <span class="emoji">🎯</span>
+                        <h4>Concise</h4>
+                        <p>Direct, focused analysis with minimal elaboration</p>
+                    </div>
+                    <div class="tone-card">
+                        <span class="emoji">💼</span>
+                        <h4>Professional</h4>
+                        <p>Formal business language with detailed explanations</p>
+                    </div>
+                    <div class="tone-card">
+                        <span class="emoji">💬</span>
+                        <h4>Conversational</h4>
+                        <p>Approachable tone with natural language flow</p>
+                    </div>
+                    <div class="tone-card">
+                        <span class="emoji">🌟</span>
+                        <h4>Encouraging</h4>
+                        <p>Positive framing with motivational insights</p>
+                    </div>
+                    <div class="tone-card">
+                        <span class="emoji">😊</span>
+                        <h4>Casual</h4>
+                        <p>Relaxed, informal communication style</p>
+                    </div>
+                </div>
+
+                <h3 id="temperature-control">Temperature Control</h3>
+                <p>Adjust the creativity vs. precision balance of AI responses:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">❄️</span>Low Temperature (0.0-0.3)</h4>
+                        <p>High precision, consistent outputs, minimal creativity. Best for factual analysis.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🌡️</span>Medium Temperature (0.4-0.7)</h4>
+                        <p>Balanced approach with some variation. Good for strategic recommendations.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔥</span>High Temperature (0.8-1.0)</h4>
+                        <p>High creativity, varied outputs. Useful for brainstorming and ideation.</p>
+                    </div>
+                </div>
+
+                <h3 id="custom-prompts">Custom Prompts</h3>
+                <p>Add specific instructions or focus areas to tailor the analysis:</p>
+
+                <div class="code-block">
+Example Custom Instructions:
+• Focus on mobile performance metrics
+• Emphasize ROI and cost efficiency
+• Include competitive analysis insights  
+• Highlight seasonal trends and patterns
+• Provide actionable next steps for each tactic
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Prompt Engineering Best Practices</h4>
+                    <p>Be specific about desired outputs, use clear formatting instructions, and include examples when possible. Test different prompt variations to find the most effective approach.</p>
+                </div>
+            </section>
+
+            <section id="validation-methods" class="content-section">
+                <h2>✅ Validation Methods</h2>
+                <p>Use these systematic approaches to validate AI output quality:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span>Format Validation</h4>
+                        <p>Check output structure, section organization, and adherence to expected format</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Accuracy Testing</h4>
+                        <p>Verify factual correctness and alignment with provided data and context</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Consistency Analysis</h4>
+                        <p>Run multiple tests with identical inputs to measure output consistency</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Relevance Scoring</h4>
+                        <p>Assess how well the output addresses the specific analysis requirements</p>
+                    </div>
+                </div>
+
+                <h3>Testing Scenarios</h3>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">A</div>
+                        <div class="step-content">
+                            <h4>Baseline Performance Test</h4>
+                            <p>Test with standard settings and typical campaign data to establish baseline performance metrics.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">B</div>
+                        <div class="step-content">
+                            <h4>Edge Case Testing</h4>
+                            <p>Test with unusual data patterns, missing information, or extreme values to validate robustness.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">C</div>
+                        <div class="step-content">
+                            <h4>Industry-Specific Testing</h4>
+                            <p>Test with different industry contexts to ensure appropriate insights and recommendations.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">D</div>
+                        <div class="step-content">
+                            <h4>Scale Testing</h4>
+                            <p>Test with varying data volumes to ensure consistent performance across different campaign sizes.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quality-metrics" class="content-section">
+                <h2>📊 Quality Metrics</h2>
+                <p>Monitor these key indicators to assess AI performance:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">⏱️</span>Response Time</h4>
+                        <p>Measure generation speed and identify performance bottlenecks</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Accuracy Score</h4>
+                        <p>Percentage of factually correct statements and calculations</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Consistency Rating</h4>
+                        <p>Similarity between outputs for identical inputs across multiple runs</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Completeness Index</h4>
+                        <p>Coverage of all required analysis sections and components</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">💡</span>Insight Quality</h4>
+                        <p>Relevance and actionability of generated recommendations</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span>Format Compliance</h4>
+                        <p>Adherence to expected structure and formatting requirements</p>
+                    </div>
+                </div>
+
+                <h3>Performance Benchmarks</h3>
+                <div class="info-box tip">
+                    <h4>💡 Target Metrics</h4>
+                    <p>Aim for: Response time &lt; 30 seconds, Accuracy &gt; 95%, Consistency &gt; 85%, Completeness &gt; 90%. Adjust expectations based on complexity and requirements.</p>
+                </div>
+            </section>
+
+            <section id="best-practices" class="content-section">
+                <h2>💡 Best Practices</h2>
+                <p>Follow these guidelines for effective AI testing and validation:</p>
+
+                <h3>Testing Strategy</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Start Simple</h4>
+                        <p>Begin with basic configurations and gradually increase complexity</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Use Real Data</h4>
+                        <p>Test with actual campaign data whenever possible for realistic results</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Test Repeatedly</h4>
+                        <p>Run multiple tests with identical inputs to assess consistency</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Document Everything</h4>
+                        <p>Keep detailed records of configurations, results, and observations</p>
+                    </div>
+                </div>
+
+                <h3>Configuration Guidelines</h3>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Establish Baseline</h4>
+                            <p>Start with default settings (Temperature: 0.5, Professional tone) to establish baseline performance.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Test Variables Individually</h4>
+                            <p>Change one parameter at a time to isolate the impact of each configuration option.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Validate Against Requirements</h4>
+                            <p>Ensure outputs meet specific business requirements and user expectations.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Test Edge Cases</h4>
+                            <p>Include scenarios with missing data, unusual patterns, or extreme values.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Common Pitfalls</h4>
+                    <p>Avoid testing only with perfect data, ignoring consistency metrics, or making too many configuration changes at once. Always test with representative real-world scenarios.</p>
+                </div>
+            </section>
+
+            <section id="troubleshooting" class="content-section">
+                <h2>🔧 Troubleshooting</h2>
+                <p>Common issues and their solutions:</p>
+
+                <div class="info-box danger">
+                    <h4>🚫 Poor Output Quality</h4>
+                    <p>Check temperature settings (too high may cause inconsistency), review custom instructions for clarity, and ensure test data is representative of production scenarios.</p>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Inconsistent Results</h4>
+                    <p>Lower temperature settings, simplify custom prompts, and check for ambiguous instructions. Consider using a more structured prompt format.</p>
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Slow Response Times</h4>
+                    <p>Reduce input complexity, optimize custom instructions length, and check network connectivity. Consider breaking complex analyses into smaller sections.</p>
+                </div>
+
+                <h3>Diagnostic Steps</h3>
+                <ol style="padding-left: var(--space-6);">
+                    <li>Verify model configuration parameters are within expected ranges</li>
+                    <li>Check input data quality and format compliance</li>
+                    <li>Review custom instructions for clarity and specificity</li>
+                    <li>Test with simpler scenarios to isolate issues</li>
+                    <li>Monitor system performance and resource usage</li>
+                    <li>Compare results with known good configurations</li>
+                </ol>
+            </section>
+
+            <nav class="page-nav">
+                <a href="../" class="nav-link">← Schema Admin Guide</a>
+                <a href="../sections-manager/" class="nav-link">Report Sections Guide →</a>
+            </nav>
+        </main>
+    </div>
+
+    <script>
+        // Table of Contents functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tocLinks = document.querySelectorAll('.toc a');
+            const sections = document.querySelectorAll('.content-section');
+
+            function updateActiveTocLink() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.getBoundingClientRect().top;
+                    if (sectionTop <= 100) {
+                        current = section.id;
+                    }
+                });
+
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // Smooth scrolling for TOC links
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            window.addEventListener('scroll', updateActiveTocLink);
+            updateActiveTocLink();
+        });
+    </script>
+</body>
+</html>

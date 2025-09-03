@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tactic Schema Administrator</title>
+  <style>
+    /* Import design system from main app */
+    :root {
+      --bg: 255 255 255;
+      --fg: 15 23 42;
+      --muted-fg: 71 85 105;
+      --border: 226 232 240;
+      --header: 248 250 252;
+      --card: 255 255 255;
+      --card-foreground: 15 23 42;
+      --input: 241 245 249;
+      --ring: 203 213 225;
+      --primary: 207 14 15;
+      --primary-foreground: 255 255 255;
+      --accent: 248 250 252;
+      --accent-foreground: 15 23 42;
+      --destructive: 239 68 68;
+      --success: 16 185 129;
+      --warning: 234 179 8;
+      --info: 59 130 246;
+      --radius: 14px;
+      --shadow: 0 10px 20px rgba(2, 6, 23, .06), 0 2px 6px rgba(2, 6, 23, .06);
+    }
+    [data-theme="dark"]{
+      --bg: 2 6 23;
+      --fg: 241 245 249;
+      --muted-fg: 148 163 184;
+      --border: 30 41 59;
+      --header: 15 23 42;
+      --card: 3 7 18;
+      --card-foreground: 241 245 249;
+      --input: 15 23 42;
+      --ring: 51 65 85;
+      --primary: 207 14 15;
+      --primary-foreground: 255 255 255;
+      --accent: 10 15 28;
+      --accent-foreground: 226 232 240;
+      --destructive: 248 113 113;
+      --success: 52 211 153;
+      --warning: 234 179 8;
+      --info: 59 130 246;
+      --shadow: 0 14px 28px rgba(0,0,0,.45), 0 10px 10px rgba(0,0,0,.35);
+    }
+    
+    /* Base styles */
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
+      color: rgb(var(--fg));
+      background: rgb(var(--bg));
+      line-height: 1.6;
+    }
+    
+    /* Layout */
+    .admin-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .sidebar {
+      width: 320px;
+      min-width: 320px;
+      background: rgb(var(--card));
+      border-right: 1px solid rgb(var(--border));
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid rgb(var(--border));
+      background: rgb(var(--header));
+    }
+
+    .sidebar-tabs {
+      display: flex;
+      margin-bottom: 12px;
+      background: rgb(var(--input));
+      border-radius: var(--radius);
+      padding: 2px;
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: rgb(var(--muted-fg));
+    }
+
+    .sidebar-tab.active {
+      background: rgb(var(--card));
+      color: rgb(var(--fg));
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .sidebar-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: rgb(var(--primary));
+      margin: 0 0 4px 0;
+    }
+    
+    .sidebar-subtitle {
+      font-size: 13px;
+      color: rgb(var(--muted-fg));
+      margin: 0;
+    }
+    
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      background: rgb(var(--bg));
+    }
+    
+    /* Fix for welcome screen overlap */
+    #welcomeScreen {
+      padding-top: 70px;
+    }
+    
+    /* Components from main app */
+    .btn{
+      appearance:none;
+      border:1px solid rgb(var(--border));
+      border-radius: 12px;
+      height:40px;
+      padding:0 14px;
+      font-weight:700;
+      background: rgb(var(--card));
+      cursor:pointer;
+      transition: all .18s ease;
+      color: rgb(var(--fg));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .btn:hover{transform: translateY(-1px);box-shadow: 0 8px 18px rgba(2,6,23,.08)}
+    .btn:active{transform: translateY(0)}
+    .btn-primary{
+      background: rgb(var(--primary));
+      color: rgb(var(--primary-foreground));
+      border-color: rgb(var(--primary));
+    }
+    .btn-success{
+      background: rgb(var(--success));
+      color: white;
+      border-color: rgb(var(--success));
+    }
+    .btn-warning{
+      background: rgb(var(--warning));
+      color: white;
+      border-color: rgb(var(--warning));
+    }
+    .btn-small{height:34px;padding:0 10px;border-radius:10px;font-weight:600;font-size:13px}
+    .btn-outline{background:transparent;border-color: rgb(var(--ring))}
+    
+    .card{
+      background: rgb(var(--card));
+      color: rgb(var(--card-foreground));
+      border:1px solid rgb(var(--border));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      margin-bottom: 20px;
+    }
+    .card-header{
+      background: rgb(var(--header));
+      border-bottom:1px solid rgb(var(--border));
+      padding:16px 18px;
+    }
+    .card-title{font-weight:800;color: rgb(var(--primary));margin:0}
+    .card-sub{color:rgb(var(--muted-fg));font-size:13px;margin-top:4px}
+    .card-body{padding:18px}
+    
+    .input, .select, .textarea{
+      width:100%;border:1px solid rgb(var(--border));
+      border-radius:12px;background: rgb(var(--input));
+      padding:10px 12px;color: rgb(var(--fg));
+      outline:none; transition: border-color .15s, box-shadow .15s;
+      font-family:inherit;
+    }
+    .input:focus, .select:focus, .textarea:focus{
+      border-color: rgb(var(--ring));
+      box-shadow: 0 0 0 6px color-mix(in oklab, rgb(var(--ring)) 20%, transparent);
+    }
+    .textarea{min-height:120px;resize:vertical}
+    .label{font-size:13px;color:rgb(var(--muted-fg));margin-bottom:6px;font-weight:600;display:block}
+    .helper{font-size:12px;color:rgb(var(--muted-fg));margin-top:6px}
+    
+    .grid{display:grid;gap:16px}
+    .grid.cols-2{grid-template-columns: repeat(2, minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns: repeat(3, minmax(0,1fr))}
+    
+    .stack{display:flex;flex-direction:column;gap:16px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    
+    /* Search bar */
+    .search-container {
+      margin-bottom: 16px;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid rgb(var(--border));
+      border-radius: 8px;
+      background: rgb(var(--input));
+      color: rgb(var(--fg));
+      font-size: 14px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    
+    .search-input:focus {
+      border-color: rgb(var(--ring));
+      box-shadow: 0 0 0 4px color-mix(in oklab, rgb(var(--ring)) 15%, transparent);
+    }
+    
+    .search-input::placeholder {
+      color: rgb(var(--muted-fg));
+    }
+    
+    /* Product list */
+    .product-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .product-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border: 1px solid rgb(var(--border));
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .product-item:hover {
+      background: rgb(var(--accent));
+    }
+    
+    .product-item.active {
+      background: rgb(var(--primary));
+      color: rgb(var(--primary-foreground));
+      border-color: rgb(var(--primary));
+    }
+    
+    .product-item.hidden {
+      display: none;
+    }
+    
+    .product-name {
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .product-meta {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+    
+    /* Tables */
+    .table-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid rgb(var(--border));
+      border-radius: 8px;
+    }
+    
+    .table-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgb(var(--border));
+    }
+    
+    .table-item:last-child {
+      border-bottom: none;
+    }
+    
+    .table-item.active {
+      background: color-mix(in oklab, rgb(var(--primary)) 10%, rgb(var(--card)));
+    }
+    
+    /* Tabs */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid rgb(var(--border));
+      margin-bottom: 20px;
+    }
+    
+    .tab-button {
+      padding: 12px 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 600;
+      color: rgb(var(--muted-fg));
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .tab-button.active {
+      color: rgb(var(--primary));
+      border-bottom-color: rgb(var(--primary));
+    }
+    
+    /* File upload */
+    .file-upload {
+      border: 2px dashed rgb(var(--border));
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .file-upload:hover {
+      border-color: rgb(var(--primary));
+      background: color-mix(in oklab, rgb(var(--primary)) 5%, rgb(var(--card)));
+    }
+    
+    .file-upload.dragover {
+      border-color: rgb(var(--primary));
+      background: color-mix(in oklab, rgb(var(--primary)) 10%, rgb(var(--card)));
+    }
+    
+    /* Result display */
+    .result-box {
+      background: rgb(var(--accent));
+      border: 1px solid rgb(var(--border));
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      color: white;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+    
+    .toast.success { background: rgb(var(--success)); }
+    .toast.error { background: rgb(var(--destructive)); }
+    .toast.warning { background: rgb(var(--warning)); }
+    
+    /* Theme toggle */
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    
+    /* Hide content initially */
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Benchmark table */
+    .benchmark-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    
+    .benchmark-table th,
+    .benchmark-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgb(var(--border));
+    }
+    
+    .benchmark-table th {
+      background: rgb(var(--accent));
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .benchmark-table td {
+      font-size: 13px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .admin-container {
+        flex-direction: column;
+        height: auto;
+      }
+      
+      .sidebar {
+        width: 100%;
+        min-height: auto;
+      }
+      
+      .main-content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme toggle -->
+  <button class="btn btn-outline btn-small theme-toggle" id="themeToggle">Dark</button>
+
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="sidebar-title">Schema Admin</h1>
+        <p class="sidebar-subtitle">Manage tactic mapping schema</p>
+        
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab active" data-tab="products">Products</button>
+          <button class="sidebar-tab" data-tab="subproducts">Subproducts</button>
+        </div>
+      </div>
+      
+      <div class="sidebar-content">
+        <div class="row" style="margin-bottom: 16px;">
+          <button class="btn btn-primary btn-small" id="addProductBtn">+ Add Product</button>
+          <button class="btn btn-outline btn-small" id="importBtn">Import</button>
+          <button class="btn btn-success btn-small" id="exportBtn">Export</button>
+          <button class="btn btn-info btn-small" id="generateCodeBtn">Integration Code</button>
+          <button class="btn btn-warning btn-small" id="loadSampleBtn">Load Sample</button>
+        </div>
+        
+        <div class="search-container">
+          <input type="text" class="search-input" id="productSearch" placeholder="Search products...">
+        </div>
+        
+        <div>
+          <label class="label">Products</label>
+          <ul class="product-list" id="productList">
+            <!-- Products will be rendered here -->
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div id="welcomeScreen">
+        <div class="card">
+          <div class="card-body" style="text-align: center; padding: 40px;">
+            <h2>Welcome to Schema Administrator</h2>
+            <p>Select a product from the sidebar or create a new one to get started.</p>
+            <p class="helper">This tool helps you manage the unified tactic schema for your Report.AI.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="productEditor" style="display: none;">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+          <button class="tab-button active" data-tab="basic">Basic Info</button>
+          <button class="tab-button" data-tab="tables">Tables</button>
+          <button class="tab-button" data-tab="lumina">Lumina Extractors</button>
+          <button class="tab-button" data-tab="ai">AI Config</button>
+          <button class="tab-button" data-tab="testing">Testing</button>
+        </div>
+
+        <!-- Basic Info Tab -->
+        <div class="tab-content active" id="basicTab">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Product Information</div>
+            </div>
+            <div class="card-body">
+              <div class="grid cols-2">
+                <div>
+                  <label class="label">Product Name</label>
+                  <input type="text" class="input" id="productName" placeholder="YouTube, Meta, SEM...">
+                </div>
+                <div>
+                  <label class="label">Product Slug</label>
+                  <input type="text" class="input" id="productSlug" placeholder="youtube" readonly>
+                  <div class="helper">Auto-generated from product name</div>
+                </div>
+              </div>
+              
+              <div>
+                <label class="label">Platforms</label>
+                <input type="text" class="input" id="platforms" placeholder="YouTube, Google Ads (comma separated)">
+              </div>
+              
+              <div class="grid cols-2">
+                <div>
+                  <label class="label">Mediums</label>
+                  <input type="text" class="input" id="mediums" placeholder="Video, Display, Audio (comma separated)">
+                </div>
+                <div>
+                  <label class="label">KPIs</label>
+                  <input type="text" class="input" id="kpis" placeholder="CPM, CTR, Conversions (comma separated)">
+                </div>
+              </div>
+              
+              <div>
+                <label class="label">Tactic Alias Glossary</label>
+                <textarea class="textarea" id="tacticAliases" placeholder="RON=Run of Network&#10;AAT=Advanced Audience Targeting&#10;GEO=Geo Fencing,HLM" rows="4"></textarea>
+                <div class="helper">Format: CODE=Description or CODE=Alias1,Alias2</div>
+              </div>
+              
+              <div>
+                <label class="label">Notes</label>
+                <textarea class="textarea" id="productNotes" placeholder="General notes about this product..."></textarea>
+              </div>
+              
+              <div class="row">
+                <button class="btn btn-primary" id="saveProduct">Save Product</button>
+                <button class="btn btn-outline" id="deleteProduct">Delete Product</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tables Tab -->
+        <div class="tab-content" id="tablesTab">
+          <div class="grid cols-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Tables</div>
+                <button class="btn btn-primary btn-small" id="addTableBtn">+ Add Table</button>
+              </div>
+              <div class="card-body">
+                <div class="table-list" id="tableList">
+                  <!-- Tables will be rendered here -->
+                </div>
+              </div>
+            </div>
+            
+            <div class="card" id="tableEditor" style="display: none;">
+              <div class="card-header">
+                <div class="card-title">Edit Table</div>
+              </div>
+              <div class="card-body stack">
+                <div>
+                  <label class="label">Table Title</label>
+                  <input type="text" class="input" id="tableTitle" placeholder="Monthly Performance">
+                </div>
+                
+                <div>
+                  <label class="label">Table Slug</label>
+                  <input type="text" class="input" id="tableSlug" placeholder="monthly-performance" readonly>
+                </div>
+                
+                <div>
+                  <label class="label">Expected Filenames</label>
+                  <textarea class="textarea" id="tableFilenames" placeholder="report-youtube-monthly-performance.csv&#10;youtube-monthly.csv" style="min-height:80px"></textarea>
+                  <div class="helper">One per line</div>
+                </div>
+                
+                <div>
+                  <label class="label">Aliases</label>
+                  <textarea class="textarea" id="tableAliases" placeholder="monthly&#10;performance" style="min-height:60px"></textarea>
+                  <div class="helper">Alternative names for matching</div>
+                </div>
+                
+                <div>
+                  <label class="label">Required Headers</label>
+                  <textarea class="textarea" id="tableHeaders" placeholder="Date&#10;Impressions&#10;Clicks&#10;CTR"></textarea>
+                  <div class="helper">One per line</div>
+                </div>
+                
+                <div>
+                  <label class="label">Validator JSON (optional)</label>
+                  <textarea class="textarea" id="tableValidator" placeholder='{"required": ["Impressions", "Clicks"], "minColumns": 5}' style="min-height:80px"></textarea>
+                </div>
+                
+                <div class="row">
+                  <button class="btn btn-primary" id="saveTable">Save Table</button>
+                  <button class="btn btn-outline" id="deleteTable">Delete</button>
+                  <button class="btn btn-outline" id="inferHeaders">Infer from CSV</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lumina Extractors Tab -->
+        <div class="tab-content" id="luminaTab">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Lumina Data Extractors</div>
+              <button class="btn btn-primary btn-small" id="addExtractorBtn">+ Add Extractor</button>
+            </div>
+            <div class="card-body">
+              <div id="extractorList">
+                <!-- Extractors will be rendered here -->
+              </div>
+              
+              <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                  <div class="card-title">Test Extractors</div>
+                </div>
+                <div class="card-body">
+                  <label class="label">Paste Lumina JSON Payload</label>
+                  <textarea class="textarea" id="testPayload" placeholder='{"lineItems": [...], "order": {...}}' style="min-height:120px"></textarea>
+                  <button class="btn btn-primary" id="testExtractors" style="margin-top: 12px;">Run Extractors</button>
+                  <div id="extractorResults" class="result-box" style="display: none;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Config Tab -->
+        <div class="tab-content" id="aiTab">
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">AI Guidelines</div>
+              </div>
+              <div class="card-body">
+                <label class="label">Analysis Guidelines</label>
+                <textarea class="textarea" id="aiGuidelines" placeholder="How should AI analyze this product? Key metrics, common issues, best practices..." style="min-height:120px"></textarea>
+                
+                <label class="label">Analysis Prompt Override (optional)</label>
+                <textarea class="textarea" id="aiPrompt" placeholder="Specific prompt instructions for this product..." style="min-height:100px"></textarea>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Platform Configuration</div>
+              </div>
+              <div class="card-body">
+                <label class="label">Platform Notes & Constraints (JSON)</label>
+                <textarea class="textarea" id="platformConfig" placeholder='{"YouTube": {"notes": "Focus on view rates", "constraints": ["Must have video completion data"]}}' style="min-height:100px"></textarea>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Benchmarks</div>
+                <button class="btn btn-primary btn-small" id="addBenchmarkBtn">+ Add Benchmark</button>
+              </div>
+              <div class="card-body">
+                <table class="benchmark-table" id="benchmarkTable">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th>Goal</th>
+                      <th>Warn Below</th>
+                      <th>Unit</th>
+                      <th>Direction</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Benchmarks will be rendered here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testing Tab -->
+        <div class="tab-content" id="testingTab">
+          <div class="grid cols-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Filename Mapping Test</div>
+              </div>
+              <div class="card-body">
+                <label class="label">Test Filename</label>
+                <input type="text" class="input" id="testFilename" placeholder="report-youtube-monthly-performance.csv">
+                <button class="btn btn-primary" id="testFilenameBtn" style="margin-top: 12px;">Test Mapping</button>
+                <div id="filenameResults" class="result-box" style="display: none;"></div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">CSV Header Test</div>
+              </div>
+              <div class="card-body">
+                <label class="label">Upload CSV File</label>
+                <div class="file-upload" id="csvUpload">
+                  <p>Drop CSV file here or click to browse</p>
+                  <input type="file" accept=".csv" id="csvFileInput" style="display: none;">
+                </div>
+                <div id="csvResults" class="result-box" style="display: none;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Subproduct Editor -->
+      <div id="subproductEditor" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Subproduct Editor</div>
+            <div class="card-subtitle">Configure subproduct details and tactic types</div>
+          </div>
+          <div class="card-body">
+            <div class="grid cols-2">
+              <div>
+                <label class="label">Subproduct Name</label>
+                <input type="text" class="input" id="subproductName" placeholder="Targeted Display">
+              </div>
+              <div>
+                <label class="label">Parent Product</label>
+                <input type="text" class="input" id="parentProduct" readonly>
+              </div>
+            </div>
+            
+            <div class="grid cols-2">
+              <div>
+                <label class="label">Data Value</label>
+                <input type="text" class="input" id="dataValue" placeholder="targetedDisplay">
+                <div class="helper">Used in report links</div>
+              </div>
+              <div>
+                <label class="label">Filename Stem</label>
+                <input type="text" class="input" id="filenameStem" placeholder="targeted-display">
+                <div class="helper">Used for CSV filename patterns</div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="label">Platforms</label>
+              <input type="text" class="input" id="subproductPlatforms" placeholder="Select from parent product platforms">
+              <div class="helper">Comma-separated subset of parent product platforms</div>
+            </div>
+            
+            <div>
+              <label class="label">Tactic Types</label>
+              <textarea class="textarea" id="tacticTypes" placeholder="RON,Run of Network,RON 30s&#10;AAT,Advanced Audience Targeting" rows="4"></textarea>
+              <div class="helper">Format: CODE,Name,Alias1,Alias2</div>
+            </div>
+            
+            <div class="row">
+              <button class="btn btn-primary" id="saveSubproduct">Save Subproduct</button>
+              <button class="btn btn-outline" id="deleteSubproduct">Delete Subproduct</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" accept=".json" id="importFileInput" style="display: none;">
+  <input type="file" accept=".csv" id="inferCsvInput" style="display: none;">
+
+  <script>
+    // Schema data structure
+    let schema = {
+      version: 2,
+      products: {}
+    };
+    
+    let currentProduct = null;
+    let currentSubproduct = null;
+    let currentTable = null;
+    let currentTab = 'products'; // 'products' or 'subproducts'
+    
+    // Utility functions
+    function slug(str) {
+      return (str || '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+
+    // Link generation helpers
+    function generateReportLink(dataValue, orderId, timePeriod = 'last30Days', format = 'web') {
+      return `https://townsquarelumina.com/lumina/view/reports/max?reportType=${encodeURIComponent(dataValue)}&timePeriod=${encodeURIComponent(timePeriod)}&woOrderNumber=${encodeURIComponent(orderId)}&reportFormat=${encodeURIComponent(format)}`;
+    }
+
+    function generateLineItemLink(productSlug, lineItemId) {
+      return `https://townsquarelumina.com/lumina/view/lineitem/${productSlug}/${lineItemId}`;
+    }
+
+    // Tactic alias management
+    function addTacticAlias(productName, aliasCode, aliasNames) {
+      if (!schema.products[productName]) return;
+      
+      if (!schema.products[productName].tactic_alias_glossary) {
+        schema.products[productName].tactic_alias_glossary = {};
+      }
+      
+      schema.products[productName].tactic_alias_glossary[aliasCode] = Array.isArray(aliasNames) ? aliasNames : [aliasNames];
+    }
+
+    function addTacticType(productName, subproductName, code, name, aliases = []) {
+      const subproduct = schema.products[productName]?.subproducts[subproductName];
+      if (!subproduct) return;
+      
+      if (!subproduct.tactic_types) {
+        subproduct.tactic_types = [];
+      }
+      
+      subproduct.tactic_types.push({
+        code: code,
+        name: name,
+        aliases: Array.isArray(aliases) ? aliases : [aliases]
+      });
+    }
+
+    // Alias normalization
+    function normalizeTacticAlias(tacticLabel, productName, subproductName = null) {
+      const product = schema.products[productName];
+      if (!product) return null;
+
+      // First check product-level glossary
+      for (const [code, aliases] of Object.entries(product.tactic_alias_glossary || {})) {
+        if (aliases.includes(tacticLabel) || code === tacticLabel) {
+          return { code, name: aliases[0] || code };
+        }
+      }
+
+      // Then check subproduct tactic types if specified
+      if (subproductName && product.subproducts[subproductName]) {
+        const tacticTypes = product.subproducts[subproductName].tactic_types || [];
+        for (const tacticType of tacticTypes) {
+          if (tacticType.code === tacticLabel || 
+              tacticType.name === tacticLabel || 
+              tacticType.aliases.includes(tacticLabel)) {
+            return { code: tacticType.code, name: tacticType.name };
+          }
+        }
+      }
+
+      return null; // No match found
+    }
+
+    // Platform inheritance and effective context
+    function getEffectiveContext(productName, subproductName = null) {
+      const product = schema.products[productName];
+      if (!product) return null;
+
+      let context = {
+        platforms: [...(product.platforms || [])],
+        mediums: [...(product.mediums || [])],
+        kpis: [...(product.kpis || [])],
+        guidelines: product.ai?.guidelines || '',
+        benchmarks: { ...(product.ai?.benchmarks || {}) },
+        platformNotes: { ...(product.ai?.platforms || {}) }
+      };
+
+      // Merge subproduct overrides if specified
+      if (subproductName && product.subproducts[subproductName]) {
+        const subproduct = product.subproducts[subproductName];
+        
+        // Add subproduct platforms to the mix
+        if (subproduct.platforms) {
+          context.platforms = [...new Set([...context.platforms, ...subproduct.platforms])];
+        }
+        
+        // Merge AI guidelines
+        if (subproduct.ai?.guidelines) {
+          context.guidelines = [context.guidelines, subproduct.ai.guidelines].filter(Boolean).join('\n\n');
+        }
+        
+        // Merge benchmarks (subproduct overrides product)
+        if (subproduct.ai?.benchmarks) {
+          context.benchmarks = { ...context.benchmarks, ...subproduct.ai.benchmarks };
+        }
+        
+        // Merge platform notes
+        if (subproduct.ai?.platforms) {
+          context.platformNotes = { ...context.platformNotes, ...subproduct.ai.platforms };
+        }
+      }
+
+      return context;
+    }
+
+    // Export functions
+    function exportToCsvCrosswalk() {
+      const rows = [];
+      
+      // CSV Headers
+      rows.push([
+        'Townsquare',
+        'Platform',
+        'Category', 
+        'Product',
+        'Sub Product',
+        'Sub Product Alias Code',
+        'Medium',
+        'Rate',
+        'KPI',
+        'Data Value'
+      ]);
+      
+      // Generate rows from schema
+      Object.entries(schema.products).forEach(([productName, product]) => {
+        Object.entries(product.subproducts || {}).forEach(([subproductName, subproduct]) => {
+          const tacticTypes = subproduct.tactic_types || [];
+          
+          if (tacticTypes.length === 0) {
+            // Single row for subproduct without tactic types
+            rows.push([
+              'Ignite', // Townsquare
+              subproduct.platforms?.join(', ') || '', // Platform
+              '', // Category (empty for now)
+              productName, // Product
+              subproductName, // Sub Product
+              '', // Sub Product Alias Code
+              product.mediums?.join(', ') || '', // Medium
+              '', // Rate (empty)
+              product.kpis?.join(', ') || '', // KPI
+              subproduct.data_value || '' // Data Value
+            ]);
+          } else {
+            // Multiple rows for each tactic type
+            tacticTypes.forEach(tacticType => {
+              rows.push([
+                'Ignite', // Townsquare
+                subproduct.platforms?.join(', ') || '', // Platform
+                '', // Category
+                productName, // Product
+                subproductName, // Sub Product
+                tacticType.code || '', // Sub Product Alias Code
+                product.mediums?.join(', ') || '', // Medium
+                '', // Rate
+                product.kpis?.join(', ') || '', // KPI
+                subproduct.data_value || '' // Data Value
+              ]);
+            });
+          }
+        });
+      });
+      
+      // Convert to CSV
+      const csvContent = rows.map(row => 
+        row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+      
+      return csvContent;
+    }
+
+    function exportToXml() {
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<TacticSchema version="2">\n';
+      
+      Object.entries(schema.products).forEach(([productName, product]) => {
+        xml += `  <Product name="${productName}" slug="${product.product_slug}">\n`;
+        xml += `    <Platforms>${product.platforms?.join(',') || ''}</Platforms>\n`;
+        xml += `    <Mediums>${product.mediums?.join(',') || ''}</Mediums>\n`;
+        xml += `    <KPIs>${product.kpis?.join(',') || ''}</KPIs>\n`;
+        xml += `    <Notes><![CDATA[${product.notes || ''}]]></Notes>\n`;
+        
+        if (product.tactic_alias_glossary) {
+          xml += '    <TacticAliases>\n';
+          Object.entries(product.tactic_alias_glossary).forEach(([code, aliases]) => {
+            xml += `      <Alias code="${code}">${Array.isArray(aliases) ? aliases.join(',') : aliases}</Alias>\n`;
+          });
+          xml += '    </TacticAliases>\n';
+        }
+        
+        xml += '    <Subproducts>\n';
+        Object.entries(product.subproducts || {}).forEach(([subName, subproduct]) => {
+          xml += `      <Subproduct name="${subName}" dataValue="${subproduct.data_value}" filenameStem="${subproduct.filename_stem}">\n`;
+          xml += `        <Platforms>${subproduct.platforms?.join(',') || ''}</Platforms>\n`;
+          xml += '        <TacticTypes>\n';
+          (subproduct.tactic_types || []).forEach(tt => {
+            xml += `          <TacticType code="${tt.code}" name="${tt.name}">${tt.aliases?.join(',') || ''}</TacticType>\n`;
+          });
+          xml += '        </TacticTypes>\n';
+          xml += '      </Subproduct>\n';
+        });
+        xml += '    </Subproducts>\n';
+        xml += '  </Product>\n';
+      });
+      
+      xml += '</TacticSchema>';
+      return xml;
+    }
+
+    // Main App Integration Helpers - Copy these functions to your main application
+    function createMainAppHelpers() {
+      return `
+    // === REPORT.AI INTEGRATION HELPERS ===
+    // Copy these functions to your main application's JavaScript
+    
+    // 1. CSV File Routing - Deterministic filename matching
+    function matchCsvToTable(filename, csvHeaders) {
+      const lowercaseFilename = filename.toLowerCase();
+      
+      for (const [productName, product] of Object.entries(window.tacticSchema.products)) {
+        for (const [subproductName, subproduct] of Object.entries(product.subproducts || {})) {
+          for (const table of subproduct.tables || []) {
+            // Check exact filename match
+            if (table.filenames?.some(f => f.toLowerCase() === lowercaseFilename)) {
+              return { product: productName, subproduct: subproductName, table: table.title, score: 100 };
+            }
+            
+            // Check alias match  
+            if (table.aliases?.some(a => a.toLowerCase() === lowercaseFilename)) {
+              return { product: productName, subproduct: subproductName, table: table.title, score: 90 };
+            }
+            
+            // Check stem-based pattern: report-{filename_stem}-{table_slug}.csv
+            const expectedPattern = \`report-\${subproduct.filename_stem}-\${slug(table.title)}.csv\`;
+            if (lowercaseFilename === expectedPattern.toLowerCase()) {
+              return { product: productName, subproduct: subproductName, table: table.title, score: 85 };
+            }
+          }
+        }
+      }
+      
+      // Fallback: Header similarity matching
+      if (csvHeaders && csvHeaders.length > 0) {
+        let bestMatch = null;
+        let highestScore = 0;
+        
+        for (const [productName, product] of Object.entries(window.tacticSchema.products)) {
+          for (const [subproductName, subproduct] of Object.entries(product.subproducts || {})) {
+            for (const table of subproduct.tables || []) {
+              if (table.headers && table.headers.length > 0) {
+                const similarity = jaccardSimilarity(csvHeaders, table.headers);
+                if (similarity >= 0.6 && similarity > highestScore) {
+                  highestScore = similarity;
+                  bestMatch = { 
+                    product: productName, 
+                    subproduct: subproductName, 
+                    table: table.title, 
+                    score: Math.round(similarity * 80) // Scale to 0-80 for header matches
+                  };
+                }
+              }
+            }
+          }
+        }
+        return bestMatch;
+      }
+      
+      return null;
+    }
+    
+    // 2. Link Generation
+    function generateReportLink(productName, subproductName, orderId, timePeriod = 'last30Days', format = 'web') {
+      const subproduct = window.tacticSchema.products[productName]?.subproducts[subproductName];
+      if (!subproduct?.data_value) return null;
+      
+      return \`https://townsquarelumina.com/lumina/view/reports/max?reportType=\${encodeURIComponent(subproduct.data_value)}&timePeriod=\${encodeURIComponent(timePeriod)}&woOrderNumber=\${encodeURIComponent(orderId)}&reportFormat=\${encodeURIComponent(format)}\`;
+    }
+    
+    function generateLineItemLink(productName, lineItemId) {
+      const product = window.tacticSchema.products[productName];
+      if (!product?.product_slug) return null;
+      
+      return \`https://townsquarelumina.com/lumina/view/lineitem/\${product.product_slug}/\${lineItemId}\`;
+    }
+    
+    // 3. AI Analysis Enhancement  
+    function getEffectiveAnalysisContext(productName, subproductName = null) {
+      const product = window.tacticSchema.products[productName];
+      if (!product) return null;
+
+      let context = {
+        platforms: [...(product.platforms || [])],
+        mediums: [...(product.mediums || [])],
+        kpis: [...(product.kpis || [])],
+        guidelines: product.ai?.guidelines || '',
+        benchmarks: { ...(product.ai?.benchmarks || {}) },
+        platformNotes: { ...(product.ai?.platforms || {}) }
+      };
+
+      if (subproductName && product.subproducts[subproductName]) {
+        const subproduct = product.subproducts[subproductName];
+        
+        if (subproduct.platforms) {
+          context.platforms = [...new Set([...context.platforms, ...subproduct.platforms])];
+        }
+        
+        if (subproduct.ai?.guidelines) {
+          context.guidelines = [context.guidelines, subproduct.ai.guidelines].filter(Boolean).join('\\n\\n');
+        }
+        
+        if (subproduct.ai?.benchmarks) {
+          context.benchmarks = { ...context.benchmarks, ...subproduct.ai.benchmarks };
+        }
+        
+        if (subproduct.ai?.platforms) {
+          context.platformNotes = { ...context.platformNotes, ...subproduct.ai.platforms };
+        }
+      }
+
+      return context;
+    }
+    
+    // 4. Tactic Normalization
+    function normalizeTacticLabel(tacticLabel, productName, subproductName = null) {
+      const product = window.tacticSchema.products[productName];
+      if (!product) return null;
+
+      // Check product-level glossary
+      for (const [code, aliases] of Object.entries(product.tactic_alias_glossary || {})) {
+        if (aliases.includes(tacticLabel) || code === tacticLabel) {
+          return { code, name: aliases[0] || code };
+        }
+      }
+
+      // Check subproduct tactic types
+      if (subproductName && product.subproducts[subproductName]) {
+        const tacticTypes = product.subproducts[subproductName].tactic_types || [];
+        for (const tacticType of tacticTypes) {
+          if (tacticType.code === tacticLabel || 
+              tacticType.name === tacticLabel || 
+              tacticType.aliases?.includes(tacticLabel)) {
+            return { code: tacticType.code, name: tacticType.name };
+          }
+        }
+      }
+
+      return null;
+    }
+    
+    // Helper: Jaccard similarity for header matching
+    function jaccardSimilarity(set1, set2) {
+      const s1 = new Set(set1.map(h => h.toLowerCase().trim()));
+      const s2 = new Set(set2.map(h => h.toLowerCase().trim()));
+      const intersection = new Set([...s1].filter(x => s2.has(x)));
+      const union = new Set([...s1, ...s2]);
+      return intersection.size / union.size;
+    }
+    
+    // Helper: Slug generation
+    function slug(str) {
+      return (str || '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+    
+    // === END INTEGRATION HELPERS ===
+    `;
+    }
+
+    // Theme management
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      themeToggle.textContent = newTheme === 'dark' ? 'Light' : 'Dark';
+      localStorage.setItem('theme', newTheme);
+    });
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
+    
+    // Utility functions
+    function slug(text) {
+      return (text || '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+    
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => toast.classList.add('show'), 100);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => document.body.removeChild(toast), 300);
+      }, 3000);
+    }
+    
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim().replace(/^["']|["']$/g, ''));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim().replace(/^["']|["']$/g, ''));
+      return result;
+    }
+    
+    // Tab management
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Update active tab button
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Show corresponding tab content
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(button.dataset.tab + 'Tab').classList.add('active');
+      });
+    });
+    
+    // Tab management
+    function switchTab(tabName) {
+      currentTab = tabName;
+      
+      // Update tab buttons
+      document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+      
+      // Update sidebar content based on tab
+      if (tabName === 'products') {
+        renderProductList();
+      } else if (tabName === 'subproducts') {
+        renderSubproductList();
+      }
+    }
+
+    // Subproduct management
+    function renderSubproductList(searchTerm = '') {
+      const productList = document.getElementById('productList');
+      productList.innerHTML = '';
+      
+      const searchLower = searchTerm.toLowerCase();
+      
+      Object.entries(schema.products).forEach(([productName, product]) => {
+        if (product.subproducts) {
+          Object.entries(product.subproducts).forEach(([subproductName, subproduct]) => {
+            // Filter based on search
+            const nameMatches = subproductName.toLowerCase().includes(searchLower);
+            const productMatches = productName.toLowerCase().includes(searchLower);
+            const shouldShow = !searchTerm || nameMatches || productMatches;
+            
+            if (shouldShow) {
+              const item = document.createElement('li');
+              item.className = `product-item ${currentSubproduct === subproductName ? 'active' : ''}`;
+              item.innerHTML = `
+                <div>
+                  <div class="product-name">${subproductName}</div>
+                  <div class="product-meta">${productName} • ${subproduct.tactic_types?.length || 0} tactics</div>
+                </div>
+              `;
+              item.addEventListener('click', () => selectSubproduct(productName, subproductName));
+              productList.appendChild(item);
+            }
+          });
+        }
+      });
+    }
+
+    // Product management
+    function renderProductList(searchTerm = '') {
+      const productList = document.getElementById('productList');
+      productList.innerHTML = '';
+      
+      const searchLower = searchTerm.toLowerCase();
+      
+      Object.entries(schema.products).forEach(([name, product]) => {
+        // Filter products based on search term
+        const nameMatches = name.toLowerCase().includes(searchLower);
+        const platformsMatch = product.platforms?.some(p => p.toLowerCase().includes(searchLower));
+        const notesMatch = product.notes?.toLowerCase().includes(searchLower);
+        
+        // Hide if no match and search term exists
+        const shouldShow = !searchTerm || nameMatches || platformsMatch || notesMatch;
+        
+        const item = document.createElement('li');
+        item.className = `product-item ${currentProduct === name ? 'active' : ''} ${!shouldShow ? 'hidden' : ''}`;
+        item.innerHTML = `
+          <div>
+            <div class="product-name">${name}</div>
+            <div class="product-meta">${product.tables?.length || 0} tables • ${product.platforms?.join(', ') || 'No platforms'}</div>
+          </div>
+        `;
+        item.addEventListener('click', () => selectProduct(name));
+        productList.appendChild(item);
+      });
+      
+      // Show message if no results
+      const visibleItems = productList.querySelectorAll('.product-item:not(.hidden)');
+      if (visibleItems.length === 0 && searchTerm) {
+        const noResults = document.createElement('li');
+        noResults.style.padding = '12px';
+        noResults.style.color = 'rgb(var(--muted-fg))';
+        noResults.style.textAlign = 'center';
+        noResults.textContent = 'No products found';
+        productList.appendChild(noResults);
+      }
+    }
+    
+    // Product search functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      // Tab switching
+      document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          switchTab(tab.dataset.tab);
+        });
+      });
+      
+      const searchInput = document.getElementById('productSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          if (currentTab === 'products') {
+            renderProductList(e.target.value.trim());
+          } else {
+            renderSubproductList(e.target.value.trim());
+          }
+        });
+        
+        // Clear search on ESC key
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            searchInput.value = '';
+            renderProductList();
+          }
+        });
+      }
+    });
+    
+    function selectProduct(productName) {
+      currentProduct = productName;
+      currentSubproduct = null; // Clear subproduct selection
+      currentTable = null;
+      
+      renderProductList();
+      showProductEditor();
+      loadProductData();
+      renderTableList();
+    }
+
+    function selectSubproduct(productName, subproductName) {
+      currentProduct = productName;
+      currentSubproduct = subproductName;
+      renderSubproductList();
+      showSubproductEditor();
+    }
+    
+    function showProductEditor() {
+      document.getElementById('welcomeScreen').style.display = 'none';
+      document.getElementById('productEditor').style.display = 'block';
+    }
+
+    function showSubproductEditor() {
+      document.getElementById('welcomeScreen').style.display = 'none';
+      document.getElementById('productEditor').style.display = 'none';
+      document.getElementById('subproductEditor').style.display = 'block';
+      loadSubproductData();
+    }
+
+    function loadSubproductData() {
+      if (!currentProduct || !currentSubproduct) return;
+      
+      const subproduct = schema.products[currentProduct]?.subproducts[currentSubproduct];
+      if (!subproduct) return;
+      
+      document.getElementById('subproductName').value = currentSubproduct;
+      document.getElementById('parentProduct').value = currentProduct;
+      document.getElementById('dataValue').value = subproduct.data_value || '';
+      document.getElementById('filenameStem').value = subproduct.filename_stem || '';
+      document.getElementById('subproductPlatforms').value = subproduct.platforms?.join(', ') || '';
+      
+      // Load tactic types
+      const tacticTypesText = (subproduct.tactic_types || [])
+        .map(tt => `${tt.code},${tt.name}${tt.aliases?.length ? ',' + tt.aliases.join(',') : ''}`)
+        .join('\n');
+      document.getElementById('tacticTypes').value = tacticTypesText;
+    }
+    
+    function loadProductData() {
+      if (!currentProduct || !schema.products[currentProduct]) return;
+      
+      const product = schema.products[currentProduct];
+      document.getElementById('productName').value = currentProduct;
+      document.getElementById('productSlug').value = product.product_slug || slug(currentProduct);
+      document.getElementById('platforms').value = product.platforms?.join(', ') || '';
+      document.getElementById('mediums').value = product.mediums?.join(', ') || '';
+      document.getElementById('kpis').value = product.kpis?.join(', ') || '';
+      document.getElementById('productNotes').value = product.notes || '';
+      
+      // Load tactic alias glossary
+      const glossary = product.tactic_alias_glossary || {};
+      const glossaryText = Object.entries(glossary)
+        .map(([code, aliases]) => `${code}=${Array.isArray(aliases) ? aliases.join(',') : aliases}`)
+        .join('\n');
+      document.getElementById('tacticAliases').value = glossaryText;
+      
+      // Load AI config
+      const ai = product.ai || {};
+      document.getElementById('aiGuidelines').value = ai.guidelines || '';
+      document.getElementById('aiPrompt').value = ai.analysis_prompt || '';
+      document.getElementById('platformConfig').value = JSON.stringify(ai.platforms || {}, null, 2);
+      
+      renderBenchmarks();
+      renderExtractors();
+    }
+    
+    // Auto-update slug when product name changes
+    document.getElementById('productName').addEventListener('input', (e) => {
+      document.getElementById('productSlug').value = slug(e.target.value);
+    });
+    
+    // Add product
+    document.getElementById('addProductBtn').addEventListener('click', () => {
+      const name = prompt('Product name:');
+      if (name && !schema.products[name]) {
+        schema.products[name] = {
+          product_slug: slug(name),
+          platforms: [],
+          mediums: [],
+          kpis: [],
+          notes: '',
+          tactic_alias_glossary: {},
+          subproducts: {},
+          lumina: { extractors: [] },
+          ai: { guidelines: '', platforms: {}, benchmarks: {} }
+        };
+        selectProduct(name);
+        showToast(`Added product: ${name}`);
+      }
+    });
+
+    // Add subproduct
+    function addSubproduct(productName) {
+      const name = prompt('Subproduct name:');
+      if (name && schema.products[productName] && !schema.products[productName].subproducts[name]) {
+        schema.products[productName].subproducts[name] = {
+          data_value: name.toLowerCase().replace(/\s+/g, ''),
+          filename_stem: slug(name),
+          platforms: [],
+          tactic_types: [],
+          tables: [],
+          lumina: { extractors: [] },
+          ai: { guidelines: '', platforms: {}, benchmarks: {} }
+        };
+        showToast(`Added subproduct: ${name}`);
+        renderProductList(); // Refresh the list
+      }
+    }
+    
+    // Save product
+    document.getElementById('saveProduct').addEventListener('click', () => {
+      if (!currentProduct) return;
+      
+      const newName = document.getElementById('productName').value.trim();
+      const platforms = document.getElementById('platforms').value
+        .split(',').map(p => p.trim()).filter(p => p);
+      const mediums = document.getElementById('mediums').value
+        .split(',').map(m => m.trim()).filter(m => m);
+      const kpis = document.getElementById('kpis').value
+        .split(',').map(k => k.trim()).filter(k => k);
+      const notes = document.getElementById('productNotes').value.trim();
+      
+      // Parse tactic alias glossary
+      const tacticAliasText = document.getElementById('tacticAliases').value.trim();
+      const tacticAliasGlossary = {};
+      if (tacticAliasText) {
+        tacticAliasText.split('\n').forEach(line => {
+          const [code, aliasesStr] = line.split('=').map(s => s.trim());
+          if (code && aliasesStr) {
+            tacticAliasGlossary[code] = aliasesStr.split(',').map(a => a.trim()).filter(a => a);
+          }
+        });
+      }
+      
+      // Update or rename product
+      if (newName !== currentProduct) {
+        schema.products[newName] = schema.products[currentProduct];
+        delete schema.products[currentProduct];
+        currentProduct = newName;
+      }
+      
+      const product = schema.products[currentProduct];
+      product.product_slug = slug(newName);
+      product.platforms = platforms;
+      product.mediums = mediums;
+      product.kpis = kpis;
+      product.tactic_alias_glossary = tacticAliasGlossary;
+      product.notes = notes;
+      
+      // Save AI config
+      product.ai = product.ai || {};
+      product.ai.guidelines = document.getElementById('aiGuidelines').value.trim();
+      product.ai.analysis_prompt = document.getElementById('aiPrompt').value.trim();
+      
+      try {
+        const platformConfig = document.getElementById('platformConfig').value.trim();
+        product.ai.platforms = platformConfig ? JSON.parse(platformConfig) : {};
+      } catch (e) {
+        showToast('Invalid platform config JSON', 'error');
+        return;
+      }
+      
+      renderProductList();
+      showToast('Product saved');
+    });
+    
+    // Delete product
+    document.getElementById('deleteProduct').addEventListener('click', () => {
+      if (!currentProduct) return;
+      
+      if (confirm(`Delete product "${currentProduct}"? This cannot be undone.`)) {
+        delete schema.products[currentProduct];
+        currentProduct = null;
+        currentTable = null;
+        
+        renderProductList();
+        document.getElementById('welcomeScreen').style.display = 'block';
+        document.getElementById('productEditor').style.display = 'none';
+        
+        showToast('Product deleted');
+      }
+    });
+    
+    // Table management
+    function renderTableList() {
+      if (!currentProduct) return;
+      
+      const tableList = document.getElementById('tableList');
+      tableList.innerHTML = '';
+      
+      const product = schema.products[currentProduct];
+      if (!product.tables) product.tables = [];
+      
+      product.tables.forEach((table, index) => {
+        const item = document.createElement('div');
+        item.className = `table-item ${currentTable === index ? 'active' : ''}`;
+        item.innerHTML = `
+          <div>
+            <div style="font-weight: 600;">${table.title}</div>
+            <div style="font-size: 11px; color: rgb(var(--muted-fg));">${table.filenames?.length || 0} filenames • ${table.headers?.length || 0} headers</div>
+          </div>
+        `;
+        item.addEventListener('click', () => selectTable(index));
+        tableList.appendChild(item);
+      });
+    }
+    
+    function selectTable(tableIndex) {
+      currentTable = tableIndex;
+      renderTableList();
+      loadTableData();
+      document.getElementById('tableEditor').style.display = 'block';
+    }
+    
+    function loadTableData() {
+      if (!currentProduct || currentTable === null) return;
+      
+      const table = schema.products[currentProduct].tables[currentTable];
+      document.getElementById('tableTitle').value = table.title || '';
+      document.getElementById('tableSlug').value = table.table_slug || '';
+      document.getElementById('tableFilenames').value = (table.filenames || []).join('\n');
+      document.getElementById('tableAliases').value = (table.aliases || []).join('\n');
+      document.getElementById('tableHeaders').value = (table.headers || []).join('\n');
+      document.getElementById('tableValidator').value = table.validator ? 
+        JSON.stringify(table.validator, null, 2) : '';
+    }
+    
+    // Auto-update table slug
+    document.getElementById('tableTitle').addEventListener('input', (e) => {
+      document.getElementById('tableSlug').value = slug(e.target.value);
+    });
+    
+    // Add table
+    document.getElementById('addTableBtn').addEventListener('click', () => {
+      if (!currentProduct) return;
+      
+      const product = schema.products[currentProduct];
+      const newTable = {
+        title: 'New Table',
+        table_slug: 'new-table',
+        filenames: [],
+        aliases: [],
+        headers: [],
+        validator: null
+      };
+      
+      product.tables.push(newTable);
+      selectTable(product.tables.length - 1);
+      showToast('Added new table');
+    });
+    
+    // Save table
+    document.getElementById('saveTable').addEventListener('click', () => {
+      if (!currentProduct || currentTable === null) return;
+      
+      const table = schema.products[currentProduct].tables[currentTable];
+      table.title = document.getElementById('tableTitle').value.trim();
+      table.table_slug = document.getElementById('tableSlug').value.trim();
+      table.filenames = document.getElementById('tableFilenames').value
+        .split('\n').map(f => f.trim()).filter(f => f);
+      table.aliases = document.getElementById('tableAliases').value
+        .split('\n').map(a => a.trim()).filter(a => a);
+      table.headers = document.getElementById('tableHeaders').value
+        .split('\n').map(h => h.trim()).filter(h => h);
+      
+      try {
+        const validatorText = document.getElementById('tableValidator').value.trim();
+        table.validator = validatorText ? JSON.parse(validatorText) : null;
+      } catch (e) {
+        showToast('Invalid validator JSON', 'error');
+        return;
+      }
+      
+      renderTableList();
+      showToast('Table saved');
+    });
+    
+    // Delete table
+    document.getElementById('deleteTable').addEventListener('click', () => {
+      if (!currentProduct || currentTable === null) return;
+      
+      if (confirm('Delete this table? This cannot be undone.')) {
+        schema.products[currentProduct].tables.splice(currentTable, 1);
+        currentTable = null;
+        renderTableList();
+        document.getElementById('tableEditor').style.display = 'none';
+        showToast('Table deleted');
+      }
+    });
+    
+    // CSV header inference
+    document.getElementById('inferHeaders').addEventListener('click', () => {
+      document.getElementById('inferCsvInput').click();
+    });
+    
+    document.getElementById('inferCsvInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target.result;
+        const firstLine = text.split('\n')[0];
+        if (firstLine) {
+          const headers = parseCSVLine(firstLine);
+          document.getElementById('tableHeaders').value = headers.join('\n');
+          showToast(`Inferred ${headers.length} headers from CSV`);
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    // Extractor management
+    function renderExtractors() {
+      if (!currentProduct) return;
+      
+      const extractorList = document.getElementById('extractorList');
+      const product = schema.products[currentProduct];
+      const extractors = product.lumina?.extractors || [];
+      
+      extractorList.innerHTML = '';
+      
+      extractors.forEach((extractor, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-body">
+            <div class="grid cols-2">
+              <div>
+                <label class="label">Name</label>
+                <input type="text" class="input extractor-name" value="${extractor.name || ''}" data-index="${index}">
+              </div>
+              <div>
+                <label class="label">Path</label>
+                <input type="text" class="input extractor-path" value="${extractor.path || ''}" data-index="${index}" placeholder="lineItems[].product">
+              </div>
+            </div>
+            <div class="grid cols-3">
+              <div>
+                <label class="label">When (JSON)</label>
+                <input type="text" class="input extractor-when" value='${JSON.stringify(extractor.when || {})}' data-index="${index}" placeholder='{"product": "YouTube"}'>
+              </div>
+              <div>
+                <label class="label">Aggregate</label>
+                <select class="select extractor-aggregate" data-index="${index}">
+                  <option value="">None</option>
+                  <option value="first" ${extractor.aggregate === 'first' ? 'selected' : ''}>First</option>
+                  <option value="unique" ${extractor.aggregate === 'unique' ? 'selected' : ''}>Unique</option>
+                  <option value="sum" ${extractor.aggregate === 'sum' ? 'selected' : ''}>Sum</option>
+                  <option value="join" ${extractor.aggregate === 'join' ? 'selected' : ''}>Join</option>
+                </select>
+              </div>
+              <div style="display: flex; align-items: end;">
+                <button class="btn btn-outline btn-small delete-extractor" data-index="${index}">Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+        extractorList.appendChild(card);
+      });
+      
+      // Bind events
+      document.querySelectorAll('.extractor-name, .extractor-path, .extractor-when, .extractor-aggregate')
+        .forEach(input => {
+          input.addEventListener('change', saveExtractor);
+        });
+      
+      document.querySelectorAll('.delete-extractor').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          extractors.splice(index, 1);
+          renderExtractors();
+        });
+      });
+    }
+    
+    function saveExtractor(e) {
+      const index = parseInt(e.target.dataset.index);
+      const product = schema.products[currentProduct];
+      const extractor = product.lumina.extractors[index];
+      
+      if (e.target.classList.contains('extractor-name')) {
+        extractor.name = e.target.value;
+      } else if (e.target.classList.contains('extractor-path')) {
+        extractor.path = e.target.value;
+      } else if (e.target.classList.contains('extractor-when')) {
+        try {
+          extractor.when = JSON.parse(e.target.value);
+        } catch (err) {
+          showToast('Invalid JSON in when clause', 'error');
+        }
+      } else if (e.target.classList.contains('extractor-aggregate')) {
+        extractor.aggregate = e.target.value || null;
+      }
+    }
+    
+    // Add extractor
+    document.getElementById('addExtractorBtn').addEventListener('click', () => {
+      if (!currentProduct) return;
+      
+      const product = schema.products[currentProduct];
+      if (!product.lumina) product.lumina = { extractors: [] };
+      
+      product.lumina.extractors.push({
+        name: 'New Extractor',
+        path: '',
+        when: {},
+        aggregate: null
+      });
+      
+      renderExtractors();
+    });
+    
+    // Test extractors
+    document.getElementById('testExtractors').addEventListener('click', () => {
+      const payloadText = document.getElementById('testPayload').value.trim();
+      if (!payloadText) return;
+      
+      try {
+        const payload = JSON.parse(payloadText);
+        const product = schema.products[currentProduct];
+        const extractors = product.lumina?.extractors || [];
+        const results = {};
+        
+        extractors.forEach(extractor => {
+          const result = extractPath(payload, extractor.path, extractor.when, extractor.aggregate);
+          results[extractor.name] = result;
+        });
+        
+        const resultsEl = document.getElementById('extractorResults');
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = JSON.stringify(results, null, 2);
+        
+      } catch (e) {
+        showToast('Invalid JSON payload', 'error');
+      }
+    });
+    
+    // Path extraction utility
+    function extractPath(obj, path, when = {}, aggregate = null) {
+      try {
+        // Simple path parser for dot notation with array support
+        const parts = path.split('.');
+        let current = obj;
+        
+        for (const part of parts) {
+          if (part.includes('[]')) {
+            const arrayPath = part.replace('[]', '');
+            current = current[arrayPath];
+            if (!Array.isArray(current)) return null;
+            
+            // Apply when filter if specified
+            if (Object.keys(when).length > 0) {
+              current = current.filter(item => {
+                return Object.entries(when).every(([key, value]) => item[key] === value);
+              });
+            }
+            
+            // Continue with remaining path for each array item
+            const remainingPath = parts.slice(parts.indexOf(part) + 1).join('.');
+            if (remainingPath) {
+              current = current.map(item => extractPath(item, remainingPath, {}, null));
+            }
+            
+            // Apply aggregation
+            if (aggregate) {
+              switch (aggregate) {
+                case 'first': return current[0] || null;
+                case 'unique': return [...new Set(current.flat())];
+                case 'sum': return current.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+                case 'join': return current.flat().join(', ');
+                default: return current;
+              }
+            }
+            
+            return current;
+          } else {
+            current = current[part];
+            if (current === undefined) return null;
+          }
+        }
+        
+        return current;
+      } catch (e) {
+        return null;
+      }
+    }
+    
+    // Benchmark management
+    function renderBenchmarks() {
+      if (!currentProduct) return;
+      
+      const tbody = document.querySelector('#benchmarkTable tbody');
+      const product = schema.products[currentProduct];
+      const benchmarks = product.ai?.benchmarks || {};
+      
+      tbody.innerHTML = '';
+      
+      Object.entries(benchmarks).forEach(([metric, config]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><input type="text" class="input" style="font-size:13px;padding:4px 8px;height:auto;" value="${metric}" data-field="metric" data-original="${metric}"></td>
+          <td><input type="number" class="input" style="font-size:13px;padding:4px 8px;height:auto;" value="${config.goal || ''}" data-field="goal" data-metric="${metric}" step="any"></td>
+          <td><input type="number" class="input" style="font-size:13px;padding:4px 8px;height:auto;" value="${config.warn_below || ''}" data-field="warn_below" data-metric="${metric}" step="any"></td>
+          <td><input type="text" class="input" style="font-size:13px;padding:4px 8px;height:auto;" value="${config.unit || ''}" data-field="unit" data-metric="${metric}"></td>
+          <td>
+            <select class="select" style="font-size:13px;padding:4px 8px;height:auto;" data-field="direction" data-metric="${metric}">
+              <option value="higher_better" ${config.direction === 'higher_better' ? 'selected' : ''}>Higher Better</option>
+              <option value="lower_better" ${config.direction === 'lower_better' ? 'selected' : ''}>Lower Better</option>
+            </select>
+          </td>
+          <td><button class="btn btn-outline btn-small" onclick="deleteBenchmark('${metric}')">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+      
+      // Bind change events
+      tbody.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('change', saveBenchmark);
+      });
+    }
+    
+    function saveBenchmark(e) {
+      const field = e.target.dataset.field;
+      const metric = e.target.dataset.metric;
+      const originalMetric = e.target.dataset.original;
+      const product = schema.products[currentProduct];
+      
+      if (!product.ai) product.ai = {};
+      if (!product.ai.benchmarks) product.ai.benchmarks = {};
+      
+      if (field === 'metric' && originalMetric !== e.target.value) {
+        // Rename metric
+        const oldConfig = product.ai.benchmarks[originalMetric];
+        delete product.ai.benchmarks[originalMetric];
+        product.ai.benchmarks[e.target.value] = oldConfig;
+        renderBenchmarks();
+      } else {
+        // Update field
+        if (!product.ai.benchmarks[metric]) {
+          product.ai.benchmarks[metric] = {};
+        }
+        product.ai.benchmarks[metric][field] = e.target.value;
+      }
+    }
+    
+    window.deleteBenchmark = function(metric) {
+      if (confirm(`Delete benchmark for "${metric}"?`)) {
+        delete schema.products[currentProduct].ai.benchmarks[metric];
+        renderBenchmarks();
+      }
+    };
+    
+    // Add benchmark
+    document.getElementById('addBenchmarkBtn').addEventListener('click', () => {
+      if (!currentProduct) return;
+      
+      const metric = prompt('Benchmark metric name:');
+      if (metric) {
+        const product = schema.products[currentProduct];
+        if (!product.ai) product.ai = {};
+        if (!product.ai.benchmarks) product.ai.benchmarks = {};
+        
+        product.ai.benchmarks[metric] = {
+          goal: 0,
+          warn_below: 0,
+          unit: '',
+          direction: 'higher_better'
+        };
+        
+        renderBenchmarks();
+      }
+    });
+    
+    // Testing functionality
+    document.getElementById('testFilenameBtn').addEventListener('click', () => {
+      const filename = document.getElementById('testFilename').value.trim();
+      if (!filename) return;
+      
+      const results = testFilenameMapping(filename);
+      const resultsEl = document.getElementById('filenameResults');
+      resultsEl.style.display = 'block';
+      resultsEl.innerHTML = JSON.stringify(results, null, 2);
+    });
+    
+    function testFilenameMapping(filename) {
+      const results = [];
+      
+      Object.entries(schema.products).forEach(([productName, product]) => {
+        product.tables?.forEach(table => {
+          let score = 0;
+          let matchType = 'none';
+          
+          // Test exact filename match
+          if (table.filenames?.includes(filename)) {
+            score = 100;
+            matchType = 'exact_filename';
+          }
+          // Test alias match
+          else if (table.aliases?.some(alias => filename.toLowerCase().includes(alias.toLowerCase()))) {
+            score = 80;
+            matchType = 'alias';
+          }
+          // Test pattern match
+          else {
+            const pattern = new RegExp(`^report-${slug(productName)}-${table.table_slug}.*\\.csv$`, 'i');
+            if (pattern.test(filename)) {
+              score = 90;
+              matchType = 'pattern';
+            }
+          }
+          
+          if (score > 0) {
+            results.push({
+              product: productName,
+              table: table.title,
+              score,
+              matchType
+            });
+          }
+        });
+      });
+      
+      return results.sort((a, b) => b.score - a.score);
+    }
+    
+    // CSV testing
+    document.getElementById('csvUpload').addEventListener('click', () => {
+      document.getElementById('csvFileInput').click();
+    });
+    
+    document.getElementById('csvFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target.result;
+        const firstLine = text.split('\n')[0];
+        if (firstLine) {
+          const headers = parseCSVLine(firstLine);
+          const matches = findBestHeaderMatch(headers);
+          
+          const resultsEl = document.getElementById('csvResults');
+          resultsEl.style.display = 'block';
+          resultsEl.innerHTML = JSON.stringify({
+            detectedHeaders: headers,
+            bestMatches: matches
+          }, null, 2);
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    function findBestHeaderMatch(headers) {
+      const results = [];
+      
+      Object.entries(schema.products).forEach(([productName, product]) => {
+        product.tables?.forEach(table => {
+          if (table.headers?.length > 0) {
+            const similarity = jaccardSimilarity(headers, table.headers);
+            if (similarity > 0.3) {
+              results.push({
+                product: productName,
+                table: table.title,
+                similarity: Math.round(similarity * 100) / 100,
+                matchingHeaders: headers.filter(h => table.headers.includes(h)),
+                missingHeaders: table.headers.filter(h => !headers.includes(h))
+              });
+            }
+          }
+        });
+      });
+      
+      return results.sort((a, b) => b.similarity - a.similarity);
+    }
+    
+    function jaccardSimilarity(set1, set2) {
+      const s1 = new Set(set1.map(h => h.toLowerCase()));
+      const s2 = new Set(set2.map(h => h.toLowerCase()));
+      
+      if (s1.size === 0 && s2.size === 0) return 1;
+      if (s1.size === 0 || s2.size === 0) return 0;
+      
+      const intersection = new Set([...s1].filter(x => s2.has(x)));
+      const union = new Set([...s1, ...s2]);
+      
+      return intersection.size / union.size;
+    }
+    
+    // Import/Export functionality
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importFileInput').click();
+    });
+    
+    document.getElementById('importFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          
+          if (data.version === 1) {
+            // Import unified schema
+            schema = data;
+          } else {
+            // Import legacy csv-headers.json
+            schema = convertLegacySchema(data);
+          }
+          
+          currentProduct = null;
+          currentTable = null;
+          renderProductList();
+          
+          document.getElementById('welcomeScreen').style.display = 'block';
+          document.getElementById('productEditor').style.display = 'none';
+          
+          showToast('Schema imported successfully');
+        } catch (e) {
+          showToast('Invalid JSON file', 'error');
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    function convertLegacySchema(legacyData) {
+      const converted = {
+        version: 1,
+        products: {}
+      };
+      
+      Object.entries(legacyData).forEach(([productName, productData]) => {
+        if (productData.root) {
+          converted.products[productName] = {
+            product_slug: slug(productName),
+            platforms: [productName],
+            notes: '',
+            tables: productData.root.map(table => ({
+              title: table.title,
+              table_slug: slug(table.title),
+              filenames: table.filename ? [table.filename] : [],
+              aliases: [],
+              headers: table.headers || [],
+              validator: null
+            })),
+            lumina: { extractors: [] },
+            ai: { guidelines: '', platforms: {}, benchmarks: {} }
+          };
+        }
+      });
+      
+      return converted;
+    }
+    
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const format = prompt('Export format:\n1. JSON (unified_tactic_schema.json)\n2. CSV Crosswalk (tactic_crosswalk.csv)\n3. XML (tactic_schema.xml)\n\nEnter 1, 2, or 3:', '1');
+      
+      let content, filename, mimeType;
+      
+      switch(format) {
+        case '2':
+          content = exportToCsvCrosswalk();
+          filename = 'tactic_crosswalk.csv';
+          mimeType = 'text/csv';
+          break;
+        case '3':
+          content = exportToXml();
+          filename = 'tactic_schema.xml';
+          mimeType = 'application/xml';
+          break;
+        default:
+          content = JSON.stringify(schema, null, 2);
+          filename = 'unified_tactic_schema.json';
+          mimeType = 'application/json';
+      }
+      
+      const dataBlob = new Blob([content], { type: mimeType });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = filename;
+      link.click();
+      
+      showToast(`Schema exported as ${filename}`);
+    });
+
+    // Generate integration code
+    document.getElementById('generateCodeBtn').addEventListener('click', () => {
+      const helpers = createMainAppHelpers();
+      const dataBlob = new Blob([helpers], { type: 'text/javascript' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = 'tactic_schema_helpers.js';
+      link.click();
+      
+      showToast('Integration helpers exported as tactic_schema_helpers.js');
+    });
+
+    // Load sample data
+    document.getElementById('loadSampleBtn').addEventListener('click', () => {
+      if (confirm('This will replace your current schema with sample data. Continue?')) {
+        loadSampleData();
+      }
+    });
+
+    function loadSampleData() {
+      // Sample data based on GPT Tactic Reference CSV
+      schema = {
+        "version": 2,
+        "products": {
+          "Blended Tactics": {
+            "product_slug": "blended-tactics",
+            "platforms": ["Xandr"],
+            "mediums": ["Display", "Video"],
+            "kpis": ["CPM", "CTR", "Conversions", "CPA"],
+            "notes": "Multi-tactic programmatic campaigns",
+            "tactic_alias_glossary": {
+              "RON": ["Run of Network"],
+              "AAT": ["Advanced Audience Targeting"],
+              "WTG": ["Website Targeting"],
+              "KWD": ["Keyword Targeting"],
+              "GEO": ["Geo Fencing", "HLM"],
+              "RTG": ["Retargeting"],
+              "CRM": ["CRM Targeting"]
+            },
+            "subproducts": {
+              "Targeted Display": {
+                "data_value": "targetedDisplay",
+                "filename_stem": "targeted-display",
+                "platforms": ["Xandr"],
+                "tactic_types": [
+                  { "code": "RON", "name": "Run of Network", "aliases": [] },
+                  { "code": "AAT", "name": "Advanced Audience Targeting", "aliases": [] },
+                  { "code": "GEO", "name": "Geo Fencing", "aliases": ["HLM"] }
+                ],
+                "tables": [
+                  {
+                    "title": "Monthly Performance",
+                    "table_slug": "monthly-performance",
+                    "filenames": ["report-targeted-display-monthly.csv"],
+                    "aliases": ["monthly", "monthly-report"],
+                    "headers": ["Date", "Impressions", "Clicks", "CTR", "Spend", "Conversions"]
+                  }
+                ],
+                "lumina": { "extractors": [] },
+                "ai": { 
+                  "guidelines": "Focus on tactic performance and audience targeting effectiveness",
+                  "platforms": {}, 
+                  "benchmarks": {
+                    "CTR": { "goal": 0.08, "warn_below": 0.05, "unit": "percentage", "direction": "higher_better" }
+                  }
+                }
+              }
+            },
+            "lumina": { "extractors": [] },
+            "ai": { 
+              "guidelines": "Analyze multi-tactic blended campaigns with focus on cross-tactic optimization",
+              "platforms": {
+                "Xandr": { "notes": "Programmatic platform with advanced targeting options" }
+              },
+              "benchmarks": {
+                "CPM": { "goal": 8.0, "warn_below": 12.0, "unit": "USD", "direction": "lower_better" }
+              }
+            }
+          },
+          "STV": {
+            "product_slug": "stv",
+            "platforms": ["MadHive", "Hulu", "YouTube"],
+            "mediums": ["Video", "CTV", "OTT"],
+            "kpis": ["CPM", "Completion Rate", "Reach", "Frequency"],
+            "notes": "Streaming TV and Connected TV campaigns",
+            "tactic_alias_glossary": {
+              "AAT-STV": ["Advanced Audience Targeting OTT"],
+              "RON-STV": ["Run of Network STV"]
+            },
+            "subproducts": {
+              "Advanced Audience Targeting OTT": {
+                "data_value": "streamingStv",
+                "filename_stem": "advanced-audience-targeting-ott",
+                "platforms": ["MadHive"],
+                "tactic_types": [
+                  { "code": "AAT-STV", "name": "Advanced Audience Targeting OTT", "aliases": [] }
+                ],
+                "tables": [],
+                "lumina": { "extractors": [] },
+                "ai": { 
+                  "guidelines": "Focus on completion rates and audience precision",
+                  "platforms": {},
+                  "benchmarks": {
+                    "Completion Rate": { "goal": 0.85, "warn_below": 0.70, "unit": "ratio", "direction": "higher_better" }
+                  }
+                }
+              }
+            },
+            "lumina": { "extractors": [] },
+            "ai": { 
+              "guidelines": "Analyze streaming TV performance with focus on completion rates and reach optimization",
+              "platforms": {
+                "MadHive": { "notes": "Premium CTV platform" }
+              },
+              "benchmarks": {
+                "CPM": { "goal": 35.0, "warn_below": 50.0, "unit": "USD", "direction": "lower_better" }
+              }
+            }
+          }
+        }
+      };
+      
+      currentProduct = null;
+      currentSubproduct = null;
+      renderProductList();
+      document.getElementById('welcomeScreen').style.display = 'block';
+      document.getElementById('productEditor').style.display = 'none';
+      document.getElementById('subproductEditor').style.display = 'none';
+      showToast('Sample data loaded successfully');
+    }
+
+    // Subproduct save/delete handlers
+    document.getElementById('saveSubproduct').addEventListener('click', () => {
+      if (!currentProduct || !currentSubproduct) return;
+      
+      const newName = document.getElementById('subproductName').value.trim();
+      const dataValue = document.getElementById('dataValue').value.trim();
+      const filenameStem = document.getElementById('filenameStem').value.trim();
+      const platforms = document.getElementById('subproductPlatforms').value
+        .split(',').map(p => p.trim()).filter(p => p);
+      
+      // Parse tactic types
+      const tacticTypesText = document.getElementById('tacticTypes').value.trim();
+      const tacticTypes = [];
+      if (tacticTypesText) {
+        tacticTypesText.split('\n').forEach(line => {
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length >= 2) {
+            tacticTypes.push({
+              code: parts[0],
+              name: parts[1],
+              aliases: parts.slice(2)
+            });
+          }
+        });
+      }
+      
+      const product = schema.products[currentProduct];
+      if (!product.subproducts) product.subproducts = {};
+      
+      // Update or rename subproduct
+      if (newName !== currentSubproduct) {
+        product.subproducts[newName] = product.subproducts[currentSubproduct];
+        delete product.subproducts[currentSubproduct];
+        currentSubproduct = newName;
+      }
+      
+      const subproduct = product.subproducts[currentSubproduct];
+      subproduct.data_value = dataValue;
+      subproduct.filename_stem = filenameStem;
+      subproduct.platforms = platforms;
+      subproduct.tactic_types = tacticTypes;
+      
+      renderSubproductList();
+      showToast('Subproduct saved');
+    });
+
+    document.getElementById('deleteSubproduct').addEventListener('click', () => {
+      if (!currentProduct || !currentSubproduct) return;
+      
+      if (confirm(`Delete subproduct "${currentSubproduct}"?`)) {
+        delete schema.products[currentProduct].subproducts[currentSubproduct];
+        currentSubproduct = null;
+        
+        renderSubproductList();
+        document.getElementById('subproductEditor').style.display = 'none';
+        document.getElementById('welcomeScreen').style.display = 'block';
+        
+        showToast('Subproduct deleted');
+      }
+    });
+    
+    // Initialize
+    renderProductList();
+  </script>
+</body>
+</html>

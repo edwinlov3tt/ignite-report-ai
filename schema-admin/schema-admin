@@ -1,0 +1,2631 @@
+// Schema Administrator JavaScript
+// Main application logic for managing unified tactic schemas
+
+// Global state
+const SchemaState = {
+    currentSchema: {
+        version: 2,
+        products: {},
+        subproducts: {},
+        connections: {} // productId -> [subproductIds]
+    },
+    currentProduct: null,
+    currentSubProduct: null,
+    currentTable: null,
+    currentExtractor: null,
+    currentBenchmark: null,
+    unsavedChanges: false,
+    activeFilter: null // 'products', 'subproducts', or null
+};
+
+// Initialize application
+document.addEventListener('DOMContentLoaded', () => {
+    initializeEventListeners();
+    loadDatabaseSchemaData();
+});
+
+// Helper function to safely add event listeners
+function safeAddEventListener(elementId, event, handler) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.addEventListener(event, handler);
+    }
+}
+
+// Event Listeners
+function initializeEventListeners() {
+    // Product management
+    safeAddEventListener('add-product-btn', 'click', showAddProductModal);
+    safeAddEventListener('add-subproduct-btn', 'click', showAddSubProductModal);
+    safeAddEventListener('delete-product-btn', 'click', deleteCurrentProduct);
+    safeAddEventListener('save-basic-btn', 'click', saveBasicInfo);
+    
+    // Modal forms
+    safeAddEventListener('add-product-form', 'submit', handleAddProduct);
+    safeAddEventListener('add-subproduct-form', 'submit', handleAddSubProduct);
+    safeAddEventListener('edit-product-form', 'submit', handleEditProduct);
+    safeAddEventListener('edit-subproduct-form', 'submit', handleEditSubProduct);
+    
+    // Modal buttons
+    safeAddEventListener('delete-product-modal-btn', 'click', handleDeleteProductModal);
+    safeAddEventListener('delete-subproduct-modal-btn', 'click', handleDeleteSubProductModal);
+    
+    // Table management
+    safeAddEventListener('add-table-btn', 'click', addNewTable);
+    safeAddEventListener('save-table-btn', 'click', saveTable);
+    safeAddEventListener('cancel-table-btn', 'click', cancelTableEdit);
+    safeAddEventListener('delete-table-btn', 'click', deleteTable);
+    safeAddEventListener('infer-headers-btn', 'click', () => {
+        const csvUpload = document.getElementById('csv-upload');
+        if (csvUpload) csvUpload.click();
+    });
+    safeAddEventListener('csv-upload', 'change', inferHeadersFromCSV);
+    
+    // Extractor management
+    safeAddEventListener('add-extractor-btn', 'click', addNewExtractor);
+    safeAddEventListener('save-extractor-btn', 'click', saveExtractor);
+    safeAddEventListener('cancel-extractor-btn', 'click', cancelExtractorEdit);
+    safeAddEventListener('delete-extractor-btn', 'click', deleteExtractor);
+    safeAddEventListener('test-extractor-btn', 'click', testExtractor);
+    
+    // Benchmark management
+    safeAddEventListener('add-benchmark-btn', 'click', addNewBenchmark);
+    safeAddEventListener('save-benchmark-btn', 'click', saveBenchmark);
+    safeAddEventListener('cancel-benchmark-btn', 'click', cancelBenchmarkEdit);
+    safeAddEventListener('delete-benchmark-btn', 'click', deleteBenchmark);
+    
+    // AI Config
+    safeAddEventListener('save-ai-btn', 'click', saveAIConfig);
+    
+    // SubProduct management
+    safeAddEventListener('delete-subproduct-btn', 'click', deleteCurrentSubProduct);
+    safeAddEventListener('save-subproduct-basic-btn', 'click', saveSubProductBasicInfo);
+    
+    // Performance Tables management
+    safeAddEventListener('add-performance-table-btn', 'click', addNewPerformanceTable);
+    safeAddEventListener('save-perf-table-btn', 'click', savePerformanceTable);
+    safeAddEventListener('cancel-perf-table-btn', 'click', cancelPerformanceTableEdit);
+    safeAddEventListener('delete-perf-table-btn', 'click', deletePerformanceTable);
+    safeAddEventListener('infer-perf-headers-btn', 'click', () => {
+        const csvUpload = document.getElementById('perf-csv-upload');
+        if (csvUpload) csvUpload.click();
+    });
+    safeAddEventListener('perf-csv-upload', 'change', inferPerformanceHeadersFromCSV);
+    
+    // Table Validation
+    safeAddEventListener('save-table-validation-btn', 'click', saveTableValidation);
+    
+    // Import/Export (legacy - these buttons may not exist)
+    safeAddEventListener('import-btn', 'click', showImportModal);
+    safeAddEventListener('export-btn', 'click', exportSchema);
+    safeAddEventListener('import-file-btn', 'click', () => {
+        const importInput = document.getElementById('import-file-input');
+        if (importInput) importInput.click();
+    });
+    safeAddEventListener('import-file-input', 'change', importSchemaFile);
+    safeAddEventListener('import-legacy-btn', 'click', importLegacyFormat);
+    safeAddEventListener('download-sample-btn', 'click', downloadSampleSchema);
+    
+    // Testing
+    safeAddEventListener('test-filename-btn', 'click', testFilenameMapping);
+    safeAddEventListener('test-csv-btn', 'click', testCSVHeaders);
+    
+    // Search
+    safeAddEventListener('hierarchy-search', 'input', filterHierarchy);
+    
+    // Filter buttons
+    safeAddEventListener('products-count', 'click', () => toggleFilter('products'));
+    safeAddEventListener('subproducts-count', 'click', () => toggleFilter('subproducts'));
+    
+    // Quick actions
+    document.querySelectorAll('.action-card').forEach(card => {
+        if (card.onclick) return; // Skip if already has onclick
+        const text = card.querySelector('h4')?.textContent;
+        if (text === 'Add Product') card.addEventListener('click', showAddProductModal);
+        if (text === 'Add SubProduct') card.addEventListener('click', showAddSubProductModal);
+        if (text === 'Testing Tools') card.addEventListener('click', showTestingInterface);
+    });
+    
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
+    });
+    
+    // Modal close buttons
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', (e) => hideModal(e.target.dataset.modal));
+    });
+    
+    // Modal cancel buttons
+    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', (e) => hideModal(e.target.dataset.closeModal));
+    });
+    
+    // Auto-slug generation
+    safeAddEventListener('product-name', 'input', generateProductSlug);
+    safeAddEventListener('table-title', 'input', generateTableSlug);
+    
+    // Modal slug generation
+    safeAddEventListener('new-product-name', 'input', generateNewProductSlug);
+    safeAddEventListener('new-subproduct-name', 'input', generateNewSubProductSlug);
+    safeAddEventListener('edit-product-name', 'input', generateEditProductSlug);
+    safeAddEventListener('edit-subproduct-name', 'input', generateEditSubProductSlug);
+    
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+        if (SchemaState.unsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+}
+
+// Product Management
+function addNewProduct() {
+    // Legacy function - now replaced by modal-based approach
+    showAddProductModal();
+}
+
+// Modal Management Functions
+function showAddProductModal() {
+    // Clear form
+    document.getElementById('add-product-form').reset();
+    document.getElementById('new-product-slug').textContent = '';
+    document.getElementById('add-product-modal').classList.remove('hidden');
+}
+
+function showAddSubProductModal() {
+    // Clear form and populate products dropdown
+    document.getElementById('add-subproduct-form').reset();
+    document.getElementById('new-subproduct-slug').textContent = '';
+    populateProductsDropdown('subproduct-parent');
+    document.getElementById('add-subproduct-modal').classList.remove('hidden');
+}
+
+function showEditProductModal(productId) {
+    const product = SchemaState.currentSchema.products[productId];
+    if (!product) return;
+    
+    document.getElementById('edit-product-id').value = productId;
+    document.getElementById('edit-product-name').value = productId;
+    document.getElementById('edit-product-slug').textContent = product.product_slug || '';
+    document.getElementById('edit-product-platforms').value = (product.platforms || []).join(', ');
+    document.getElementById('edit-product-notes').value = product.notes || '';
+    
+    document.getElementById('edit-product-modal').classList.remove('hidden');
+}
+
+function showEditSubProductModal(subproductId) {
+    const subproduct = SchemaState.currentSchema.subproducts[subproductId];
+    if (!subproduct) return;
+    
+    document.getElementById('edit-subproduct-id').value = subproductId;
+    document.getElementById('edit-subproduct-name').value = subproductId;
+    document.getElementById('edit-subproduct-slug').textContent = subproduct.slug || '';
+    document.getElementById('edit-subproduct-description').value = subproduct.description || '';
+    
+    populateProductsDropdown('edit-subproduct-parent');
+    document.getElementById('edit-subproduct-parent').value = subproduct.parent_product || '';
+    
+    document.getElementById('edit-subproduct-modal').classList.remove('hidden');
+}
+
+// Form Handlers
+function handleAddProduct(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('new-product-name').value.trim();
+    if (!name) return;
+    
+    if (SchemaState.currentSchema.products[name]) {
+        alert('Product already exists!');
+        return;
+    }
+    
+    const platforms = document.getElementById('new-product-platforms').value
+        .split(',')
+        .map(p => p.trim())
+        .filter(p => p);
+    
+    SchemaState.currentSchema.products[name] = {
+        product_slug: generateSlug(name),
+        platforms: platforms,
+        notes: document.getElementById('new-product-notes').value || '',
+        tables: [],
+        lumina: {
+            extractors: []
+        },
+        ai: {
+            guidelines: '',
+            analysis_prompt: '',
+            platforms: {},
+            benchmarks: {}
+        }
+    };
+    
+    SchemaState.unsavedChanges = true;
+    hideModal('add-product');
+    renderHierarchyTree();
+    updateStatistics();
+    showNotification('Product created successfully');
+}
+
+function handleAddSubProduct(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('new-subproduct-name').value.trim();
+    const parentProduct = document.getElementById('subproduct-parent').value;
+    
+    if (!name || !parentProduct) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    if (SchemaState.currentSchema.subproducts[name]) {
+        alert('SubProduct already exists!');
+        return;
+    }
+    
+    SchemaState.currentSchema.subproducts[name] = {
+        slug: generateSlug(name),
+        parent_product: parentProduct,
+        description: document.getElementById('new-subproduct-description').value || '',
+        tactic_types: []
+    };
+    
+    // Add to connections
+    if (!SchemaState.currentSchema.connections[parentProduct]) {
+        SchemaState.currentSchema.connections[parentProduct] = [];
+    }
+    SchemaState.currentSchema.connections[parentProduct].push(name);
+    
+    SchemaState.unsavedChanges = true;
+    hideModal('add-subproduct');
+    renderHierarchyTree();
+    updateStatistics();
+    showNotification('SubProduct created successfully');
+}
+
+function handleEditProduct(e) {
+    e.preventDefault();
+    
+    const productId = document.getElementById('edit-product-id').value;
+    const newName = document.getElementById('edit-product-name').value.trim();
+    
+    if (!newName) return;
+    
+    const product = SchemaState.currentSchema.products[productId];
+    const platforms = document.getElementById('edit-product-platforms').value
+        .split(',')
+        .map(p => p.trim())
+        .filter(p => p);
+    
+    // Update product data
+    product.product_slug = generateSlug(newName);
+    product.platforms = platforms;
+    product.notes = document.getElementById('edit-product-notes').value;
+    
+    // If name changed, update the key
+    if (newName !== productId) {
+        SchemaState.currentSchema.products[newName] = product;
+        delete SchemaState.currentSchema.products[productId];
+        
+        // Update connections
+        if (SchemaState.currentSchema.connections[productId]) {
+            SchemaState.currentSchema.connections[newName] = SchemaState.currentSchema.connections[productId];
+            delete SchemaState.currentSchema.connections[productId];
+        }
+        
+        // Update subproduct parent references
+        Object.values(SchemaState.currentSchema.subproducts).forEach(subproduct => {
+            if (subproduct.parent_product === productId) {
+                subproduct.parent_product = newName;
+            }
+        });
+    }
+    
+    SchemaState.unsavedChanges = true;
+    hideModal('edit-product');
+    renderHierarchyTree();
+    updateStatistics();
+    showNotification('Product updated successfully');
+}
+
+function handleEditSubProduct(e) {
+    e.preventDefault();
+    
+    const subproductId = document.getElementById('edit-subproduct-id').value;
+    const newName = document.getElementById('edit-subproduct-name').value.trim();
+    const newParent = document.getElementById('edit-subproduct-parent').value;
+    
+    if (!newName || !newParent) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    const subproduct = SchemaState.currentSchema.subproducts[subproductId];
+    const oldParent = subproduct.parent_product;
+    
+    // Update subproduct data
+    subproduct.slug = generateSlug(newName);
+    subproduct.parent_product = newParent;
+    subproduct.description = document.getElementById('edit-subproduct-description').value;
+    
+    // If name changed, update the key
+    if (newName !== subproductId) {
+        SchemaState.currentSchema.subproducts[newName] = subproduct;
+        delete SchemaState.currentSchema.subproducts[subproductId];
+        
+        // Update connection references
+        updateConnectionReferences(oldParent, subproductId, newParent, newName);
+    } else if (oldParent !== newParent) {
+        // Only parent changed
+        updateConnectionReferences(oldParent, subproductId, newParent, subproductId);
+    }
+    
+    SchemaState.unsavedChanges = true;
+    hideModal('edit-subproduct');
+    renderHierarchyTree();
+    updateStatistics();
+    showNotification('SubProduct updated successfully');
+}
+
+function handleDeleteProductModal() {
+    const productId = document.getElementById('edit-product-id').value;
+    if (!confirm(`Delete product "${productId}" and all its subproducts?`)) return;
+    
+    // Delete associated subproducts
+    const connectedSubProducts = SchemaState.currentSchema.connections[productId] || [];
+    connectedSubProducts.forEach(subproductId => {
+        delete SchemaState.currentSchema.subproducts[subproductId];
+    });
+    
+    // Delete product and connections
+    delete SchemaState.currentSchema.products[productId];
+    delete SchemaState.currentSchema.connections[productId];
+    
+    SchemaState.unsavedChanges = true;
+    hideModal('edit-product');
+    renderHierarchyTree();
+    updateStatistics();
+    showNotification('Product deleted successfully');
+}
+
+function handleDeleteSubProductModal() {
+    const subproductId = document.getElementById('edit-subproduct-id').value;
+    const subproduct = SchemaState.currentSchema.subproducts[subproductId];
+    
+    if (!confirm(`Delete subproduct "${subproductId}"?`)) return;
+    
+    // Remove from connections
+    const parentProduct = subproduct.parent_product;
+    if (SchemaState.currentSchema.connections[parentProduct]) {
+        const index = SchemaState.currentSchema.connections[parentProduct].indexOf(subproductId);
+        if (index > -1) {
+            SchemaState.currentSchema.connections[parentProduct].splice(index, 1);
+        }
+    }
+    
+    // Delete subproduct
+    delete SchemaState.currentSchema.subproducts[subproductId];
+    
+    SchemaState.unsavedChanges = true;
+    hideModal('edit-subproduct');
+    renderHierarchyTree();
+    updateStatistics();
+    showNotification('SubProduct deleted successfully');
+}
+
+// Helper Functions
+function populateProductsDropdown(selectId) {
+    const select = document.getElementById(selectId);
+    const products = Object.keys(SchemaState.currentSchema.products).sort();
+    
+    // Clear existing options except first
+    while (select.children.length > 1) {
+        select.removeChild(select.lastChild);
+    }
+    
+    // Add product options
+    products.forEach(productName => {
+        const option = document.createElement('option');
+        option.value = productName;
+        option.textContent = productName;
+        select.appendChild(option);
+    });
+}
+
+function updateConnectionReferences(oldParent, oldSubproductId, newParent, newSubproductId) {
+    // Remove from old parent
+    if (SchemaState.currentSchema.connections[oldParent]) {
+        const index = SchemaState.currentSchema.connections[oldParent].indexOf(oldSubproductId);
+        if (index > -1) {
+            SchemaState.currentSchema.connections[oldParent].splice(index, 1);
+        }
+    }
+    
+    // Add to new parent
+    if (!SchemaState.currentSchema.connections[newParent]) {
+        SchemaState.currentSchema.connections[newParent] = [];
+    }
+    if (!SchemaState.currentSchema.connections[newParent].includes(newSubproductId)) {
+        SchemaState.currentSchema.connections[newParent].push(newSubproductId);
+    }
+}
+
+function deleteCurrentProduct() {
+    if (!SchemaState.currentProduct) return;
+    if (!confirm(`Delete product "${SchemaState.currentProduct}"?`)) return;
+    
+    delete SchemaState.currentSchema.products[SchemaState.currentProduct];
+    SchemaState.currentProduct = null;
+    SchemaState.unsavedChanges = true;
+    renderProductList();
+    showWelcomeMessage();
+}
+
+function selectProduct(productName) {
+    SchemaState.currentProduct = productName;
+    SchemaState.currentSubProduct = null;
+    const product = SchemaState.currentSchema.products[productName];
+    
+    // Show editor
+    document.getElementById('welcome-message').classList.add('hidden');
+    document.getElementById('product-editor').classList.remove('hidden');
+    document.getElementById('subproduct-editor').classList.add('hidden');
+    
+    // Update header
+    document.getElementById('product-name-header').textContent = productName;
+    
+    // Load basic info
+    document.getElementById('product-name').value = productName;
+    document.getElementById('product-slug').textContent = product.product_slug || '';
+    document.getElementById('product-platforms').value = (product.platforms || []).join(', ');
+    document.getElementById('product-notes').value = product.notes || '';
+    
+    // Load tables
+    renderTablesList();
+    
+    // Load extractors
+    renderExtractorsList();
+    
+    // Load AI config
+    document.getElementById('ai-guidelines').value = product.ai?.guidelines || '';
+    document.getElementById('ai-prompt').value = product.ai?.analysis_prompt || '';
+    renderBenchmarksList();
+    
+    // Switch to basic tab
+    switchTab('basic');
+    
+    // Highlight selected product in hierarchy
+    document.querySelectorAll('.product-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    document.querySelectorAll('.subproduct-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    
+    const selectedNode = document.querySelector(`.product-node[onclick*="'${productName}'"]`);
+    if (selectedNode) selectedNode.classList.add('active');
+}
+
+function selectProductFromEnhanced(productName) {
+    // Redirect to database function
+    selectProductFromDatabase(productName);
+    return;
+    
+    // Show welcome message with product info
+    document.getElementById('welcome-message').classList.remove('hidden');
+    document.getElementById('product-editor').classList.add('hidden');
+    document.getElementById('subproduct-editor').classList.add('hidden');
+    
+    // Update welcome message to show product details
+    const welcomeTitle = document.querySelector('#welcome-message h1');
+    if (welcomeTitle) {
+        welcomeTitle.textContent = `${productName} Overview`;
+    }
+    
+    SchemaState.currentProduct = productName;
+    SchemaState.currentSubProduct = null;
+    
+    // Highlight selected product
+    document.querySelectorAll('.product-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    document.querySelectorAll('.subproduct-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    
+    const selectedNode = document.querySelector(`.product-node[onclick*="'${productName}'"]`);
+    if (selectedNode) selectedNode.classList.add('active');
+}
+
+function selectSubProduct(subproductId) {
+    SchemaState.currentSubProduct = subproductId;
+    const subproduct = SchemaState.currentSchema.subproducts[subproductId];
+    
+    // For now, select the parent product
+    if (subproduct && subproduct.parent_product) {
+        selectProduct(subproduct.parent_product);
+    }
+    
+    // Highlight selected subproduct in hierarchy
+    document.querySelectorAll('.product-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    document.querySelectorAll('.subproduct-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    
+    const selectedNode = document.querySelector(`.subproduct-node[onclick*="'${subproductId}'"]`);
+    if (selectedNode) selectedNode.classList.add('active');
+}
+
+function saveBasicInfo() {
+    if (!SchemaState.currentProduct) return;
+    
+    const newName = document.getElementById('product-name').value.trim();
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    
+    // Update product info
+    product.product_slug = generateSlug(newName);
+    product.platforms = document.getElementById('product-platforms').value
+        .split(',')
+        .map(p => p.trim())
+        .filter(p => p);
+    product.notes = document.getElementById('product-notes').value;
+    
+    // If name changed, update the key
+    if (newName !== SchemaState.currentProduct) {
+        SchemaState.currentSchema.products[newName] = product;
+        delete SchemaState.currentSchema.products[SchemaState.currentProduct];
+        SchemaState.currentProduct = newName;
+        renderProductList();
+        selectProduct(newName);
+    }
+    
+    SchemaState.unsavedChanges = true;
+    showNotification('Basic info saved');
+}
+
+// Table Management
+function addNewTable() {
+    SchemaState.currentTable = {
+        title: '',
+        table_slug: '',
+        filenames: [],
+        aliases: [],
+        headers: [],
+        validator: {}
+    };
+    showTableEditor();
+}
+
+function saveTable() {
+    if (!SchemaState.currentProduct) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    if (!product.tables) product.tables = [];
+    
+    const tableData = {
+        title: document.getElementById('table-title').value,
+        table_slug: generateSlug(document.getElementById('table-title').value),
+        filenames: document.getElementById('table-filenames').value
+            .split('\n')
+            .map(f => f.trim())
+            .filter(f => f),
+        aliases: document.getElementById('table-aliases').value
+            .split('\n')
+            .map(a => a.trim())
+            .filter(a => a),
+        headers: document.getElementById('table-headers').value
+            .split('\n')
+            .map(h => h.trim())
+            .filter(h => h),
+        validator: {}
+    };
+    
+    if (SchemaState.currentTable && SchemaState.currentTable.index !== undefined) {
+        // Update existing
+        product.tables[SchemaState.currentTable.index] = tableData;
+    } else {
+        // Add new
+        product.tables.push(tableData);
+    }
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentTable = null;
+    renderTablesList();
+    hideTableEditor();
+    showNotification('Table saved');
+}
+
+function deleteTable() {
+    if (!SchemaState.currentProduct || !SchemaState.currentTable) return;
+    if (!confirm('Delete this table?')) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    product.tables.splice(SchemaState.currentTable.index, 1);
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentTable = null;
+    renderTablesList();
+    hideTableEditor();
+}
+
+// Extractor Management
+function addNewExtractor() {
+    SchemaState.currentExtractor = {
+        name: '',
+        path: '',
+        when: {},
+        aggregate: ''
+    };
+    showExtractorEditor();
+}
+
+function saveExtractor() {
+    if (!SchemaState.currentProduct) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    if (!product.lumina) product.lumina = { extractors: [] };
+    if (!product.lumina.extractors) product.lumina.extractors = [];
+    
+    const extractorData = {
+        name: document.getElementById('extractor-name').value,
+        path: document.getElementById('extractor-path').value,
+        when: tryParseJSON(document.getElementById('extractor-when').value) || {},
+        aggregate: document.getElementById('extractor-aggregate').value
+    };
+    
+    if (SchemaState.currentExtractor && SchemaState.currentExtractor.index !== undefined) {
+        // Update existing
+        product.lumina.extractors[SchemaState.currentExtractor.index] = extractorData;
+    } else {
+        // Add new
+        product.lumina.extractors.push(extractorData);
+    }
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentExtractor = null;
+    renderExtractorsList();
+    hideExtractorEditor();
+    showNotification('Extractor saved');
+}
+
+function testExtractor() {
+    const path = document.getElementById('extractor-path').value;
+    const testJson = document.getElementById('test-json').value;
+    const aggregate = document.getElementById('extractor-aggregate').value;
+    
+    if (!path || !testJson) {
+        alert('Please provide both a path and test JSON');
+        return;
+    }
+    
+    try {
+        const data = JSON.parse(testJson);
+        const result = extractPath(data, path);
+        const aggregated = aggregate ? applyAggregation(result, aggregate) : result;
+        
+        const resultDiv = document.getElementById('test-result');
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = `
+            <h4>Extraction Result:</h4>
+            <pre>${JSON.stringify(aggregated, null, 2)}</pre>
+        `;
+    } catch (error) {
+        alert('Error testing extractor: ' + error.message);
+    }
+}
+
+// Benchmark Management
+function addNewBenchmark() {
+    SchemaState.currentBenchmark = {
+        metric: '',
+        goal: 0,
+        warn_below: 0,
+        unit: 'percentage',
+        direction: 'higher_better'
+    };
+    showBenchmarkEditor();
+}
+
+function saveBenchmark() {
+    if (!SchemaState.currentProduct) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    if (!product.ai) product.ai = { benchmarks: {} };
+    if (!product.ai.benchmarks) product.ai.benchmarks = {};
+    
+    const metric = document.getElementById('benchmark-metric').value;
+    const benchmarkData = {
+        goal: parseFloat(document.getElementById('benchmark-goal').value),
+        warn_below: parseFloat(document.getElementById('benchmark-warn').value),
+        unit: document.getElementById('benchmark-unit').value,
+        direction: document.getElementById('benchmark-direction').value
+    };
+    
+    product.ai.benchmarks[metric] = benchmarkData;
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentBenchmark = null;
+    renderBenchmarksList();
+    hideBenchmarkEditor();
+    showNotification('Benchmark saved');
+}
+
+// AI Config
+function saveAIConfig() {
+    if (!SchemaState.currentProduct) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    if (!product.ai) product.ai = {};
+    
+    product.ai.guidelines = document.getElementById('ai-guidelines').value;
+    product.ai.analysis_prompt = document.getElementById('ai-prompt').value;
+    
+    SchemaState.unsavedChanges = true;
+    showNotification('AI configuration saved');
+}
+
+// Import/Export
+function exportSchema() {
+    const dataStr = JSON.stringify(SchemaState.currentSchema, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', 'unified_tactic_schema.json');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    SchemaState.unsavedChanges = false;
+    showNotification('Schema exported successfully');
+}
+
+function importSchemaFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const schema = JSON.parse(e.target.result);
+            SchemaState.currentSchema = schema;
+            SchemaState.unsavedChanges = true;
+            renderProductList();
+            showWelcomeMessage();
+            hideModal('import');
+            showNotification('Schema imported successfully');
+        } catch (error) {
+            alert('Error importing schema: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Testing Functions
+function testFilenameMapping() {
+    const filename = document.getElementById('test-filename').value;
+    if (!filename) return;
+    
+    const results = [];
+    
+    // Test against all products and tables
+    for (const [productName, product] of Object.entries(SchemaState.currentSchema.products)) {
+        for (const table of product.tables || []) {
+            let score = 0;
+            let matchType = '';
+            
+            // Check exact filename match
+            if (table.filenames && table.filenames.includes(filename)) {
+                score = 100;
+                matchType = 'Exact Filename';
+            }
+            // Check alias match
+            else if (table.aliases && table.aliases.some(alias => filename.includes(alias))) {
+                score = 80;
+                matchType = 'Alias Match';
+            }
+            // Check pattern match
+            else if (filename.match(new RegExp(`^report-${product.product_slug}-${table.table_slug}`))) {
+                score = 90;
+                matchType = 'Pattern Match';
+            }
+            
+            if (score > 0) {
+                results.push({
+                    product: productName,
+                    table: table.title,
+                    score,
+                    matchType
+                });
+            }
+        }
+    }
+    
+    // Sort by score
+    results.sort((a, b) => b.score - a.score);
+    
+    // Display results
+    const resultDiv = document.getElementById('filename-test-result');
+    resultDiv.classList.remove('hidden');
+    
+    if (results.length > 0) {
+        resultDiv.innerHTML = `
+            <h4>Matching Tables:</h4>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Table</th>
+                        <th>Score</th>
+                        <th>Match Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${results.map(r => `
+                        <tr>
+                            <td>${r.product}</td>
+                            <td>${r.table}</td>
+                            <td>${r.score}</td>
+                            <td>${r.matchType}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } else {
+        resultDiv.innerHTML = '<p class="no-results">No matching tables found</p>';
+    }
+}
+
+function testCSVHeaders() {
+    const file = document.getElementById('test-csv').files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const headers = parseCSVHeaders(e.target.result);
+        const results = [];
+        
+        // Test against all tables
+        for (const [productName, product] of Object.entries(SchemaState.currentSchema.products)) {
+            for (const table of product.tables || []) {
+                if (table.headers && table.headers.length > 0) {
+                    const similarity = jaccardSimilarity(headers, table.headers);
+                    if (similarity > 0) {
+                        results.push({
+                            product: productName,
+                            table: table.title,
+                            similarity: Math.round(similarity * 100),
+                            matching: headers.filter(h => table.headers.includes(h)),
+                            missing: table.headers.filter(h => !headers.includes(h))
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Sort by similarity
+        results.sort((a, b) => b.similarity - a.similarity);
+        
+        // Display results
+        const resultDiv = document.getElementById('csv-test-result');
+        resultDiv.classList.remove('hidden');
+        
+        if (results.length > 0) {
+            resultDiv.innerHTML = `
+                <h4>CSV Headers: ${headers.join(', ')}</h4>
+                <h4>Matching Tables:</h4>
+                ${results.map(r => `
+                    <div class="result-card">
+                        <h5>${r.product} - ${r.table}</h5>
+                        <p>Similarity: ${r.similarity}%</p>
+                        <p>Matching: ${r.matching.join(', ') || 'None'}</p>
+                        <p>Missing: ${r.missing.join(', ') || 'None'}</p>
+                    </div>
+                `).join('')}
+            `;
+        } else {
+            resultDiv.innerHTML = '<p class="no-results">No matching tables found</p>';
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Utility Functions
+function generateSlug(text) {
+    return text.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function generateProductSlug() {
+    const name = document.getElementById('product-name').value;
+    const slug = generateSlug(name);
+    document.getElementById('product-slug').textContent = slug;
+}
+
+function generateTableSlug() {
+    const title = document.getElementById('table-title').value;
+    const slug = generateSlug(title);
+    document.getElementById('table-slug').textContent = slug;
+}
+
+// Modal slug generation functions
+function generateNewProductSlug() {
+    const name = document.getElementById('new-product-name').value;
+    const slug = generateSlug(name);
+    document.getElementById('new-product-slug').textContent = slug;
+}
+
+function generateNewSubProductSlug() {
+    const name = document.getElementById('new-subproduct-name').value;
+    const slug = generateSlug(name);
+    document.getElementById('new-subproduct-slug').textContent = slug;
+}
+
+function generateEditProductSlug() {
+    const name = document.getElementById('edit-product-name').value;
+    const slug = generateSlug(name);
+    document.getElementById('edit-product-slug').textContent = slug;
+}
+
+function generateEditSubProductSlug() {
+    const name = document.getElementById('edit-subproduct-name').value;
+    const slug = generateSlug(name);
+    document.getElementById('edit-subproduct-slug').textContent = slug;
+}
+
+function parseCSVHeaders(csvText) {
+    const lines = csvText.split('\n');
+    if (lines.length === 0) return [];
+    return lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+}
+
+function inferHeadersFromCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const headers = parseCSVHeaders(e.target.result);
+        document.getElementById('table-headers').value = headers.join('\n');
+    };
+    reader.readAsText(file);
+}
+
+// Safe JSON parser helper function to handle mixed string/array data
+function safeParseHeaders(headers) {
+    if (!headers) return [];
+    
+    try {
+        if (Array.isArray(headers)) {
+            return headers;
+        } else if (typeof headers === 'string') {
+            try {
+                // Try parsing as JSON array first
+                const parsed = JSON.parse(headers);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch {
+                // If JSON parsing fails, treat as comma-separated string
+                return headers.split(',').map(h => h.trim()).filter(h => h);
+            }
+        }
+    } catch (error) {
+        console.warn('Error parsing headers:', error);
+    }
+    
+    return [];
+}
+
+function jaccardSimilarity(set1, set2) {
+    const intersection = set1.filter(x => set2.includes(x));
+    const union = [...new Set([...set1, ...set2])];
+    return union.length === 0 ? 0 : intersection.length / union.length;
+}
+
+function extractPath(obj, path) {
+    const parts = path.split('.');
+    let result = obj;
+    
+    for (const part of parts) {
+        if (part.includes('[')) {
+            const [key, ...rest] = part.split('[');
+            const index = rest.join('[').replace(']', '');
+            
+            if (key) result = result[key];
+            if (index === '') {
+                // Array access without index, return all
+                result = Array.isArray(result) ? result : [];
+            } else {
+                result = result[parseInt(index)];
+            }
+        } else {
+            result = result ? result[part] : undefined;
+        }
+    }
+    
+    return result;
+}
+
+function applyAggregation(data, type) {
+    if (!Array.isArray(data)) return data;
+    
+    switch (type) {
+        case 'first':
+            return data[0];
+        case 'unique':
+            return [...new Set(data)];
+        case 'sum':
+            return data.reduce((a, b) => a + (Number(b) || 0), 0);
+        case 'join':
+            return data.join(', ');
+        default:
+            return data;
+    }
+}
+
+function tryParseJSON(str) {
+    try {
+        return JSON.parse(str);
+    } catch {
+        return null;
+    }
+}
+
+// UI Functions
+function renderProductList() {
+    // Legacy function - now replaced by hierarchy tree
+    renderHierarchyTree();
+}
+
+function renderHierarchyTree() {
+    const tree = document.getElementById('hierarchy-tree');
+    
+    try {
+        const normalizedSchema = getNormalizedSchemaData();
+        
+        if (!normalizedSchema || normalizedSchema.length === 0) {
+            tree.innerHTML = '<div class="empty-state">No products available</div>';
+            return;
+        }
+        
+        tree.innerHTML = normalizedSchema.map(product => {
+            const subproducts = product.subproducts || [];
+            const totalTables = subproducts.reduce((count, sub) => {
+                return count + (sub.performance_tables ? sub.performance_tables.length : 0);
+            }, 0);
+        
+        return `
+            <div class="hierarchy-product">
+                <div class="product-node" onclick="selectProductFromDatabase('${product.name}')" oncontextmenu="return false;">
+                    <div class="product-info">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-meta">${subproducts.length} subproducts • ${totalTables} tables</div>
+                    </div>
+                </div>
+                ${subproducts.length > 0 ? `
+                    <div class="subproducts-list">
+                        ${subproducts.map(subproduct => {
+                            const tableCount = subproduct.performance_tables ? subproduct.performance_tables.length : 0;
+                            
+                            return `
+                                <div class="subproduct-node" onclick="selectSubProductFromDatabase('${product.name}', '${subproduct.name}')" oncontextmenu="return false;">
+                                    <div class="subproduct-info">
+                                        <div class="subproduct-name">${subproduct.name}</div>
+                                        <div class="subproduct-meta">${tableCount} tables</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error rendering hierarchy tree:', error);
+        tree.innerHTML = '<div class="empty-state">Error loading products</div>';
+    }
+}
+
+function updateStatistics() {
+    let productCount = 0;
+    let subproductCount = 0;
+    let tableCount = 0;
+    
+    try {
+        const normalizedSchema = getNormalizedSchemaData();
+        
+        if (normalizedSchema && Array.isArray(normalizedSchema)) {
+            productCount = normalizedSchema.length;
+            
+            normalizedSchema.forEach(product => {
+                if (product.subproducts && Array.isArray(product.subproducts)) {
+                    subproductCount += product.subproducts.length;
+                    
+                    product.subproducts.forEach(sub => {
+                        if (sub.performance_tables && Array.isArray(sub.performance_tables)) {
+                            tableCount += sub.performance_tables.length;
+                        }
+                    });
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error updating statistics:', error);
+        // Use empty state, no fake data
+        productCount = 0;
+        subproductCount = 0;
+        tableCount = 0;
+    }
+    
+    // Update sidebar stats with line breaks
+    document.getElementById('products-count').innerHTML = `${productCount}<br>Products`;
+    document.getElementById('subproducts-count').innerHTML = `${subproductCount}<br>SubProducts`;
+    
+    // Update welcome section stats
+    const totalProductsStat = document.getElementById('total-products-stat');
+    const totalSubproductsStat = document.getElementById('total-subproducts-stat');
+    const totalConnectionsStat = document.getElementById('total-connections-stat');
+    const totalTablesStat = document.getElementById('total-tables-stat');
+    
+    if (totalProductsStat) totalProductsStat.textContent = productCount;
+    if (totalSubproductsStat) totalSubproductsStat.textContent = subproductCount;
+    if (totalConnectionsStat) totalConnectionsStat.textContent = subproductCount; // Connections = subproducts in enhanced schema
+    if (totalTablesStat) totalTablesStat.textContent = tableCount;
+}
+
+function renderTablesList() {
+    if (!SchemaState.currentProduct) return;
+    
+    // Get normalized data to access both product and subproduct tables
+    const normalizedSchema = getNormalizedSchemaData();
+    const product = normalizedSchema.find(p => p.name === SchemaState.currentProduct);
+    const list = document.getElementById('tables-list');
+    
+    if (!product) {
+        list.innerHTML = '<p class="empty-message">Product not found</p>';
+        return;
+    }
+    
+    let allTablesHtml = '';
+    let totalTableCount = 0;
+    
+    // First, check for direct product-level tables (if any exist in SchemaState)
+    const legacyProduct = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    if (legacyProduct && legacyProduct.tables && legacyProduct.tables.length > 0) {
+        allTablesHtml += '<div class="table-section"><h4 class="section-header">Product Tables</h4>';
+        allTablesHtml += legacyProduct.tables.map((table, index) => `
+            <div class="list-item" onclick="editTable(${index})">
+                <div class="item-header">
+                    <h4>${table.title}</h4>
+                    <span class="item-meta">${table.headers?.length || 0} headers</span>
+                </div>
+                <div class="item-details">
+                    <span>Files: ${table.filenames?.join(', ') || 'None'}</span>
+                </div>
+            </div>
+        `).join('');
+        allTablesHtml += '</div>';
+        totalTableCount += legacyProduct.tables.length;
+    }
+    
+    // Then add all subproduct tables (aggregated view)
+    if (product.subproducts && product.subproducts.length > 0) {
+        product.subproducts.forEach(subproduct => {
+            if (subproduct.performance_tables && subproduct.performance_tables.length > 0) {
+                allTablesHtml += `<div class="table-section">
+                    <h4 class="section-header">📁 ${subproduct.name} Tables</h4>`;
+                
+                allTablesHtml += subproduct.performance_tables.map((table, index) => {
+                    const tableName = table.table_name || table.title || 'Unnamed Table';
+                    const fileName = table.file_name || (table.filenames ? table.filenames.join(', ') : 'None');
+                    
+                    const headers = safeParseHeaders(table.headers);
+                    const headerCount = headers.length;
+                    
+                    return `
+                        <div class="list-item" data-table-id="${product.name}-${subproduct.name}-${index}" onclick="editTableFromProduct('${product.name}', '${subproduct.name}', ${index}, this);">
+                            <div class="item-header">
+                                <h4>${tableName}</h4>
+                                <span class="item-meta">${headerCount} headers</span>
+                            </div>
+                            <div class="item-details">
+                                <span>File: ${fileName}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                allTablesHtml += '</div>';
+                totalTableCount += subproduct.performance_tables.length;
+            }
+        });
+    }
+    
+    if (totalTableCount === 0) {
+        list.innerHTML = '<p class="empty-message">No tables configured at product or subproduct level</p>';
+    } else {
+        list.innerHTML = allTablesHtml;
+    }
+}
+
+function renderExtractorsList() {
+    if (!SchemaState.currentProduct) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    const list = document.getElementById('extractors-list');
+    
+    if (!product.lumina?.extractors || product.lumina.extractors.length === 0) {
+        list.innerHTML = '<p class="empty-message">No extractors configured</p>';
+        return;
+    }
+    
+    list.innerHTML = product.lumina.extractors.map((extractor, index) => `
+        <div class="list-item" onclick="editExtractor(${index})">
+            <div class="item-header">
+                <h4>${extractor.name}</h4>
+                <span class="item-meta">${extractor.aggregate || 'No aggregation'}</span>
+            </div>
+            <div class="item-details">
+                <code>${extractor.path}</code>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderBenchmarksList() {
+    if (!SchemaState.currentProduct) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    const list = document.getElementById('benchmarks-list');
+    
+    if (!product.ai?.benchmarks || Object.keys(product.ai.benchmarks).length === 0) {
+        list.innerHTML = '<p class="empty-message">No benchmarks configured</p>';
+        return;
+    }
+    
+    list.innerHTML = Object.entries(product.ai.benchmarks).map(([metric, benchmark]) => `
+        <div class="list-item" onclick="editBenchmark('${metric}')">
+            <div class="item-header">
+                <h4>${metric}</h4>
+                <span class="item-meta">${benchmark.unit}</span>
+            </div>
+            <div class="item-details">
+                Goal: ${benchmark.goal} | Warn: ${benchmark.warn_below} | ${benchmark.direction.replace('_', ' ')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterProducts() {
+    // Legacy function - now replaced by hierarchy filter
+    filterHierarchy();
+}
+
+function filterHierarchy() {
+    const search = document.getElementById('hierarchy-search').value.toLowerCase();
+    const productNodes = document.querySelectorAll('.hierarchy-product');
+    
+    productNodes.forEach(productNode => {
+        const productName = productNode.querySelector('.product-name').textContent.toLowerCase();
+        const subproductNodes = productNode.querySelectorAll('.subproduct-node');
+        
+        let productVisible = !search || productName.includes(search);
+        let hasVisibleSubproducts = false;
+        
+        // Apply active filter
+        if (SchemaState.activeFilter === 'products') {
+            // Only show products (hide subproducts)
+            subproductNodes.forEach(subproductNode => {
+                subproductNode.style.display = 'none';
+            });
+        } else if (SchemaState.activeFilter === 'subproducts') {
+            // Only show subproducts that match search
+            subproductNodes.forEach(subproductNode => {
+                const subproductName = subproductNode.querySelector('.subproduct-name').textContent.toLowerCase();
+                const subproductVisible = !search || subproductName.includes(search);
+                subproductNode.style.display = subproductVisible ? 'flex' : 'none';
+                if (subproductVisible) hasVisibleSubproducts = true;
+            });
+            // Hide products when showing only subproducts
+            productVisible = false;
+        } else {
+            // Normal search behavior (show both)
+            subproductNodes.forEach(subproductNode => {
+                const subproductName = subproductNode.querySelector('.subproduct-name').textContent.toLowerCase();
+                const subproductVisible = !search || subproductName.includes(search);
+                subproductNode.style.display = subproductVisible ? 'flex' : 'none';
+                if (subproductVisible) hasVisibleSubproducts = true;
+            });
+        }
+        
+        // Show product if it matches or has visible subproducts (unless filtered out)
+        const shouldShowProduct = SchemaState.activeFilter === 'subproducts' ? hasVisibleSubproducts : 
+                                 (productVisible || hasVisibleSubproducts);
+        productNode.style.display = shouldShowProduct ? 'block' : 'none';
+    });
+}
+
+function toggleFilter(filterType) {
+    const productsBtn = document.getElementById('products-count');
+    const subproductsBtn = document.getElementById('subproducts-count');
+    
+    // Clear previous active states
+    productsBtn.classList.remove('active');
+    subproductsBtn.classList.remove('active');
+    
+    // Toggle filter
+    if (SchemaState.activeFilter === filterType) {
+        // Turn off filter
+        SchemaState.activeFilter = null;
+    } else {
+        // Set new filter
+        SchemaState.activeFilter = filterType;
+        if (filterType === 'products') {
+            productsBtn.classList.add('active');
+        } else if (filterType === 'subproducts') {
+            subproductsBtn.classList.add('active');
+        }
+    }
+    
+    // Apply filter
+    filterHierarchy();
+}
+
+// Tab Management
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+    
+    // Update tab panels
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `${tabName}-tab`);
+    });
+}
+
+// Editor Management
+function editTable(index) {
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    const table = product.tables[index];
+    
+    SchemaState.currentTable = { ...table, index };
+    
+    document.getElementById('table-title').value = table.title || '';
+    document.getElementById('table-slug').textContent = table.table_slug || '';
+    document.getElementById('table-filenames').value = (table.filenames || []).join('\n');
+    document.getElementById('table-aliases').value = (table.aliases || []).join('\n');
+    document.getElementById('table-headers').value = (table.headers || []).join('\n');
+    
+    showTableEditor();
+}
+
+function editExtractor(index) {
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    const extractor = product.lumina.extractors[index];
+    
+    SchemaState.currentExtractor = { ...extractor, index };
+    
+    document.getElementById('extractor-name').value = extractor.name || '';
+    document.getElementById('extractor-path').value = extractor.path || '';
+    document.getElementById('extractor-when').value = JSON.stringify(extractor.when || {}, null, 2);
+    document.getElementById('extractor-aggregate').value = extractor.aggregate || '';
+    
+    showExtractorEditor();
+}
+
+function editBenchmark(metric) {
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    const benchmark = product.ai.benchmarks[metric];
+    
+    SchemaState.currentBenchmark = { ...benchmark, metric };
+    
+    document.getElementById('benchmark-metric').value = metric;
+    document.getElementById('benchmark-goal').value = benchmark.goal;
+    document.getElementById('benchmark-warn').value = benchmark.warn_below;
+    document.getElementById('benchmark-unit').value = benchmark.unit;
+    document.getElementById('benchmark-direction').value = benchmark.direction;
+    
+    showBenchmarkEditor();
+}
+
+// Show/Hide Functions
+function showTableEditor() {
+    document.getElementById('table-editor').classList.remove('hidden');
+}
+
+function hideTableEditor() {
+    document.getElementById('table-editor').classList.add('hidden');
+}
+
+function cancelTableEdit() {
+    SchemaState.currentTable = null;
+    hideTableEditor();
+}
+
+function showExtractorEditor() {
+    document.getElementById('extractor-editor').classList.remove('hidden');
+}
+
+function hideExtractorEditor() {
+    document.getElementById('extractor-editor').classList.add('hidden');
+}
+
+function cancelExtractorEdit() {
+    SchemaState.currentExtractor = null;
+    hideExtractorEditor();
+}
+
+function showBenchmarkEditor() {
+    document.getElementById('benchmark-editor').classList.remove('hidden');
+}
+
+function hideBenchmarkEditor() {
+    document.getElementById('benchmark-editor').classList.add('hidden');
+}
+
+function cancelBenchmarkEdit() {
+    SchemaState.currentBenchmark = null;
+    hideBenchmarkEditor();
+}
+
+function deleteBenchmark() {
+    if (!SchemaState.currentProduct || !SchemaState.currentBenchmark) return;
+    if (!confirm('Delete this benchmark?')) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    delete product.ai.benchmarks[SchemaState.currentBenchmark.metric];
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentBenchmark = null;
+    renderBenchmarksList();
+    hideBenchmarkEditor();
+}
+
+function deleteExtractor() {
+    if (!SchemaState.currentProduct || !SchemaState.currentExtractor) return;
+    if (!confirm('Delete this extractor?')) return;
+    
+    const product = SchemaState.currentSchema.products[SchemaState.currentProduct];
+    product.lumina.extractors.splice(SchemaState.currentExtractor.index, 1);
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentExtractor = null;
+    renderExtractorsList();
+    hideExtractorEditor();
+}
+
+function showWelcomeMessage() {
+    document.getElementById('welcome-message').classList.remove('hidden');
+    document.getElementById('product-editor').classList.add('hidden');
+}
+
+function showImportModal() {
+    document.getElementById('import-modal').classList.remove('hidden');
+}
+
+function hideModal(modalName) {
+    document.getElementById(`${modalName}-modal`).classList.add('hidden');
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Remove after appropriate time (longer for errors)
+    const displayTime = type === 'error' ? 5000 : 3000;
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, displayTime);
+}
+
+function showTestingTab() {
+    if (!SchemaState.currentProduct) {
+        // Select first product if available
+        const firstProduct = Object.keys(SchemaState.currentSchema.products)[0];
+        if (firstProduct) {
+            selectProduct(firstProduct);
+        } else {
+            alert('Please add a product first');
+            return;
+        }
+    }
+    switchTab('testing');
+}
+
+function showTestingInterface() {
+    showTestingTab();
+}
+
+// Storage Functions
+function loadSchemaFromStorage() {
+    const stored = localStorage.getItem('schemaAdmin');
+    if (stored) {
+        try {
+            SchemaState.currentSchema = JSON.parse(stored);
+        } catch (error) {
+            console.error('Error loading stored schema:', error);
+        }
+    }
+}
+
+function saveSchemaToStorage() {
+    localStorage.setItem('schemaAdmin', JSON.stringify(SchemaState.currentSchema));
+}
+
+// Auto-save periodically
+setInterval(() => {
+    if (SchemaState.unsavedChanges) {
+        saveSchemaToStorage();
+    }
+}, 30000); // Every 30 seconds
+
+// Legacy Import
+function importLegacyFormat() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const legacy = JSON.parse(event.target.result);
+                convertLegacySchema(legacy);
+                hideModal('import');
+                showNotification('Legacy schema converted successfully');
+            } catch (error) {
+                alert('Error converting legacy schema: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+function convertLegacySchema(legacy) {
+    // Convert old csv-headers.json format to new unified schema
+    SchemaState.currentSchema = {
+        version: 1,
+        products: {}
+    };
+    
+    // Process each tactic in legacy format
+    for (const [tacticName, tacticData] of Object.entries(legacy)) {
+        SchemaState.currentSchema.products[tacticName] = {
+            product_slug: generateSlug(tacticName),
+            platforms: [],
+            notes: '',
+            tables: [{
+                title: 'Default',
+                table_slug: 'default',
+                filenames: tacticData.filenames || [],
+                aliases: [],
+                headers: tacticData.headers || [],
+                validator: {}
+            }],
+            lumina: {
+                extractors: []
+            },
+            ai: {
+                guidelines: '',
+                analysis_prompt: '',
+                platforms: {},
+                benchmarks: {}
+            }
+        };
+    }
+    
+    renderProductList();
+    showWelcomeMessage();
+}
+
+function downloadSampleSchema() {
+    // Generate sample schema showing proper format
+    const sampleSchema = {
+        version: "2.0",
+        updated: new Date().toISOString().split('T')[0],
+        products: [
+            {
+                id: 1,
+                name: "Meta Advertising",
+                slug: "meta-advertising",
+                platforms: ["Facebook", "Instagram"],
+                notes: "Facebook and Instagram advertising campaigns",
+                subproducts: [
+                    {
+                        id: 1,
+                        name: "Facebook Ads",
+                        slug: "facebook-ads",
+                        product_id: 1,
+                        tactic_types: [
+                            {
+                                id: 1,
+                                name: "Campaign Performance",
+                                slug: "campaign-performance",
+                                subproduct_id: 1,
+                                data_value: "facebook-campaign-performance",
+                                filename_stem: "facebook-campaign",
+                                expected_filenames: ["facebook-campaign.csv", "fb-campaign-data.csv"],
+                                table_structure: {
+                                    headers: [
+                                        "Campaign Name",
+                                        "Impressions", 
+                                        "Clicks",
+                                        "Spend",
+                                        "CTR",
+                                        "CPC",
+                                        "Conversions",
+                                        "Cost Per Conversion"
+                                    ],
+                                    validation_rules: {
+                                        required_headers: ["Campaign Name", "Impressions", "Clicks", "Spend"],
+                                        numeric_headers: ["Impressions", "Clicks", "Spend", "CTR", "CPC", "Conversions"]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 2,
+                name: "Google Ads",
+                slug: "google-ads", 
+                platforms: ["Google Ads", "YouTube"],
+                notes: "Google advertising platform campaigns",
+                subproducts: [
+                    {
+                        id: 2,
+                        name: "Search Campaigns",
+                        slug: "search-campaigns",
+                        product_id: 2,
+                        tactic_types: [
+                            {
+                                id: 2,
+                                name: "Search Performance",
+                                slug: "search-performance",
+                                subproduct_id: 2,
+                                data_value: "google-search-performance",
+                                filename_stem: "google-search",
+                                expected_filenames: ["google-search.csv", "search-campaign-data.csv"],
+                                table_structure: {
+                                    headers: [
+                                        "Campaign",
+                                        "Ad Group",
+                                        "Keyword",
+                                        "Impressions",
+                                        "Clicks", 
+                                        "Cost",
+                                        "CTR",
+                                        "CPC",
+                                        "Quality Score"
+                                    ],
+                                    validation_rules: {
+                                        required_headers: ["Campaign", "Impressions", "Clicks", "Cost"],
+                                        numeric_headers: ["Impressions", "Clicks", "Cost", "CTR", "CPC", "Quality Score"]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    };
+
+    // Create and download the file
+    const blob = new Blob([JSON.stringify(sampleSchema, null, 2)], { 
+        type: 'application/json' 
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sample-schema-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showNotification('Sample schema downloaded successfully');
+}
+
+// Database Schema Data Management
+let databaseSchemaData = null;
+
+function loadDatabaseSchemaData() {
+    // Load schema data from database API
+    fetch('/api/schema-crud.php?path=products')
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                databaseSchemaData = result.data;
+                console.log('Loaded schema from database:', databaseSchemaData.length, 'products');
+                renderHierarchyTree();
+                updateStatistics();
+            } else {
+                console.error('Failed to load schema:', result.error);
+                showNotification('Failed to load schema: ' + result.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading database schema:', error);
+            showNotification('Error loading schema from database', 'error');
+        });
+}
+
+function getDatabaseSchemaData() {
+    return databaseSchemaData;
+}
+
+// Data normalization layer - converts any format to consistent structure
+function normalizeSchemaData(rawData) {
+    if (!rawData || !Array.isArray(rawData)) {
+        console.warn('Invalid schema data format, returning empty state');
+        return [];
+    }
+    
+    try {
+        return rawData.map(product => {
+            // Ensure product has required structure
+            const normalizedProduct = {
+                id: product.id || null,
+                name: product.name || 'Unknown Product',
+                slug: product.slug || '',
+                platforms: Array.isArray(product.platforms) ? product.platforms : 
+                          (product.platforms ? JSON.parse(product.platforms) : []),
+                notes: product.notes || '',
+                ai_guidelines: product.ai_guidelines || '',
+                subproducts: []
+            };
+            
+            // Normalize subproducts - handle both object and array formats
+            if (product.subproducts) {
+                let subproductsSource;
+                
+                if (Array.isArray(product.subproducts)) {
+                    subproductsSource = product.subproducts;
+                } else if (typeof product.subproducts === 'object') {
+                    subproductsSource = Object.values(product.subproducts);
+                } else {
+                    subproductsSource = [];
+                }
+                
+                normalizedProduct.subproducts = subproductsSource.map(sub => {
+                    if (!sub || typeof sub !== 'object') return null;
+                    
+                    return {
+                        id: sub.id || null,
+                        name: sub.name || 'Unknown SubProduct',
+                        slug: sub.slug || '',
+                        platforms: Array.isArray(sub.platforms) ? sub.platforms :
+                                  (sub.platforms ? JSON.parse(sub.platforms) : []),
+                        notes: sub.notes || '',
+                        table_validator: typeof sub.table_validator === 'object' ? sub.table_validator :
+                                        (sub.table_validator ? JSON.parse(sub.table_validator) : {}),
+                        performance_tables: Array.isArray(sub.performance_tables) ? sub.performance_tables : []
+                    };
+                }).filter(sub => sub !== null);
+            }
+            
+            return normalizedProduct;
+        });
+    } catch (error) {
+        console.error('Error normalizing schema data:', error);
+        return [];
+    }
+}
+
+// Get normalized database schema data
+function getNormalizedSchemaData() {
+    try {
+        const rawData = getDatabaseSchemaData();
+        return normalizeSchemaData(rawData);
+    } catch (error) {
+        console.error('Error getting normalized schema data:', error);
+        return [];
+    }
+}
+
+// SubProduct Management Functions
+function selectSubProductFromSchema(productName, subproductName) {
+    // Redirect to database function
+    selectSubProductFromDatabase(productName, subproductName);
+    return;
+
+    // Find the subproduct in the products structure
+    const product = schemaData.products[productName];
+    if (!product || !product.subproducts) {
+        console.error('Product not found:', productName);
+        return;
+    }
+
+    const subproduct = product.subproducts[subproductName];
+    if (!subproduct) {
+        console.error('SubProduct not found:', subproductName);
+        return;
+    }
+
+    // Show SubProduct Editor
+    document.getElementById('welcome-message').classList.add('hidden');
+    document.getElementById('product-editor').classList.add('hidden');
+    document.getElementById('subproduct-editor').classList.remove('hidden');
+
+    // Populate basic info
+    document.getElementById('subproduct-name-header').textContent = subproductName;
+    document.getElementById('subproduct-name').value = subproductName;
+    document.getElementById('subproduct-alias-code').textContent = subproduct.data_value || '';
+    document.getElementById('subproduct-medium').value = (product.mediums || []).join(', ');
+    document.getElementById('subproduct-kpis').value = (product.kpis || []).join(', ');
+    document.getElementById('subproduct-data-value').value = subproduct.data_value || '';
+    document.getElementById('subproduct-filename-stem').value = subproduct.filename_stem || '';
+    document.getElementById('subproduct-platforms').value = (subproduct.platforms || []).join(', ');
+
+    // Load performance tables
+    renderPerformanceTablesList(subproduct);
+
+    // Load table validation
+    renderTableValidation(subproduct);
+
+    SchemaState.currentSubProduct = subproductName;
+    SchemaState.currentProduct = productName;
+
+    // Switch to basic tab
+    switchSubProductTab('subproduct-basic');
+}
+
+function renderPerformanceTablesList(subproduct) {
+    const list = document.getElementById('performance-tables-list');
+    
+    if (!subproduct.performance_tables || subproduct.performance_tables.length === 0) {
+        list.innerHTML = '<p class="empty-message">No performance tables configured</p>';
+        return;
+    }
+
+    list.innerHTML = subproduct.performance_tables.map((table, index) => {
+        // Handle different property names between database and legacy formats
+        const tableName = table.table_name || table.title || 'Unnamed Table';
+        const fileName = table.file_name || (table.filenames ? table.filenames.join(', ') : 'None');
+        
+        const headers = safeParseHeaders(table.headers);
+        const headerCount = headers.length;
+        
+        return `
+            <div class="list-item" data-table-index="${index}" onclick="editDatabasePerformanceTableWithHighlight(${index}, this)">
+                <div class="item-header">
+                    <h4>${tableName}</h4>
+                    <span class="item-meta">${headerCount} headers</span>
+                </div>
+                <div class="item-details">
+                    <span>File: ${fileName}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderTableValidation(subproduct) {
+    const checkboxContainer = document.getElementById('required-tables-checkboxes');
+    const minimumTablesInput = document.getElementById('minimum-tables');
+
+    // Clear existing checkboxes
+    checkboxContainer.innerHTML = '';
+
+    if (!subproduct.performance_tables || subproduct.performance_tables.length === 0) {
+        checkboxContainer.innerHTML = '<p class="empty-message">No tables available</p>';
+        return;
+    }
+
+    // Parse validator from database or use defaults
+    let validator = { requiredTables: [], minimumTables: 1 };
+    if (subproduct.table_validator) {
+        try {
+            validator = typeof subproduct.table_validator === 'object' ? 
+                       subproduct.table_validator : 
+                       JSON.parse(subproduct.table_validator);
+        } catch (e) {
+            console.warn('Error parsing table validator:', e);
+        }
+    }
+    
+    // Create table format for better layout
+    const tableHtml = `
+        <table class="validation-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Required</th>
+                    <th>Table Name</th>
+                    <th style="width: 80px;">Headers</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${subproduct.performance_tables.map(table => {
+                    const tableName = table.table_name || table.title || 'Unnamed Table';
+                    const tableSlug = table.table_slug || tableName.toLowerCase().replace(/\s+/g, '-');
+                    const isRequired = validator.requiredTables.includes(tableName);
+                    const headers = safeParseHeaders(table.headers);
+                    const headerCount = headers.length;
+                    
+                    return `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="req-${tableSlug}" 
+                                       ${isRequired ? 'checked' : ''} 
+                                       onchange="updateRequiredTables()">
+                            </td>
+                            <td>
+                                <label for="req-${tableSlug}">${tableName}</label>
+                            </td>
+                            <td style="text-align: center; color: var(--text-secondary);">
+                                ${headerCount}
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    checkboxContainer.innerHTML = tableHtml;
+
+    // Set minimum tables
+    minimumTablesInput.value = validator.minimumTables || 1;
+}
+
+function switchSubProductTab(tabName) {
+    try {
+        // Hide all tab panels
+        document.querySelectorAll('#subproduct-editor .tab-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        
+        // Remove active class from all tab buttons
+        document.querySelectorAll('#subproduct-editor .tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab panel with null check
+        const tabPanel = document.getElementById(tabName + '-tab');
+        if (tabPanel) {
+            tabPanel.classList.add('active');
+        } else {
+            console.warn('Tab panel not found:', tabName + '-tab');
+        }
+        
+        // Activate corresponding tab button with null check
+        const tabButton = document.querySelector(`#subproduct-editor .tab-btn[data-tab="${tabName}"]`);
+        if (tabButton) {
+            tabButton.classList.add('active');
+        } else {
+            console.warn('Tab button not found for:', tabName);
+        }
+    } catch (error) {
+        console.error('Error switching subproduct tab:', error);
+    }
+}
+
+function deleteCurrentSubProduct() {
+    if (!SchemaState.currentSubProduct) return;
+    if (!confirm(`Delete subproduct "${SchemaState.currentSubProduct}"?`)) return;
+    
+    // This would require updating the enhanced schema
+    showNotification('SubProduct deletion requires backend integration');
+}
+
+function saveSubProductBasicInfo() {
+    if (!SchemaState.currentSubProduct || !SchemaState.currentProduct) return;
+    
+    const schemaData = getDatabaseSchemaData();
+    if (!schemaData) {
+        showNotification('Schema data not loaded');
+        return;
+    }
+    
+    // Create backup before attempting save
+    const backupData = {
+        action: 'save_subproduct_basic',
+        timestamp: new Date().toISOString(),
+        product: SchemaState.currentProduct,
+        subproduct: SchemaState.currentSubProduct,
+        changes: {
+            name: document.getElementById('subproduct-name').value.trim(),
+            data_value: document.getElementById('subproduct-data-value').value.trim(),
+            filename_stem: document.getElementById('subproduct-filename-stem').value.trim(),
+            platforms: document.getElementById('subproduct-platforms').value.split(',').map(p => p.trim()).filter(p => p)
+        }
+    };
+    
+    try {
+        // Actual save logic here would go to API
+        // For now, just show success
+        SchemaState.unsavedChanges = true;
+        showNotification('SubProduct basic info saved');
+        
+    } catch (error) {
+        console.error('Save failed:', error);
+        handleSaveError(error, backupData);
+    }
+
+    const product = schemaData.products[SchemaState.currentProduct];
+    const subproduct = product.subproducts[SchemaState.currentSubProduct];
+    
+    // Update subproduct data
+    const newName = document.getElementById('subproduct-name').value.trim();
+    subproduct.data_value = document.getElementById('subproduct-data-value').value.trim();
+    subproduct.filename_stem = document.getElementById('subproduct-filename-stem').value.trim();
+    subproduct.platforms = document.getElementById('subproduct-platforms').value
+        .split(',')
+        .map(p => p.trim())
+        .filter(p => p);
+    
+    // Handle name change
+    if (newName !== SchemaState.currentSubProduct) {
+        // Move subproduct to new key
+        product.subproducts[newName] = subproduct;
+        delete product.subproducts[SchemaState.currentSubProduct];
+        
+        SchemaState.currentSubProduct = newName;
+        document.getElementById('subproduct-name-header').textContent = newName;
+    }
+    
+    SchemaState.unsavedChanges = true;
+    showNotification('SubProduct basic info saved');
+}
+
+function addNewPerformanceTable() {
+    // Clear the form
+    document.getElementById('perf-table-name').value = '';
+    document.getElementById('perf-table-filename').value = '';
+    document.getElementById('perf-table-headers').value = '';
+    
+    // Show the editor
+    document.getElementById('performance-table-editor').classList.remove('hidden');
+    
+    SchemaState.currentTable = null; // New table
+}
+
+function editPerformanceTable(index) {
+    const schemaData = getDatabaseSchemaData();
+    if (!schemaData || !SchemaState.currentSubProduct || !SchemaState.currentProduct) return;
+
+    const product = schemaData.products[SchemaState.currentProduct];
+    const subproduct = product.subproducts[SchemaState.currentSubProduct];
+    
+    if (!subproduct.tables || !subproduct.tables[index]) return;
+
+    const table = subproduct.tables[index];
+    
+    // Populate form
+    document.getElementById('perf-table-name').value = table.title;
+    document.getElementById('perf-table-filename').value = (table.filenames || [])[0] || '';
+    document.getElementById('perf-table-headers').value = (table.headers || []).join('\n');
+    
+    // Show the editor
+    document.getElementById('performance-table-editor').classList.remove('hidden');
+    
+    SchemaState.currentTable = index;
+}
+
+function savePerformanceTable() {
+    if (!SchemaState.currentSubProduct || !SchemaState.currentProduct) return;
+    
+    const schemaData = getDatabaseSchemaData();
+    if (!schemaData) {
+        showNotification('Schema data not loaded');
+        return;
+    }
+    
+    // Create backup before attempting save
+    const backupData = {
+        action: 'save_performance_table',
+        timestamp: new Date().toISOString(),
+        product: SchemaState.currentProduct,
+        subproduct: SchemaState.currentSubProduct,
+        table_index: SchemaState.currentTable,
+        changes: {
+            title: document.getElementById('perf-table-name').value.trim(),
+            filename: document.getElementById('perf-table-filename').value.trim(),
+            headers: document.getElementById('perf-table-headers').value.split('\n').map(h => h.trim()).filter(h => h)
+        }
+    };
+    
+    try {
+        // Actual save logic here
+        SchemaState.unsavedChanges = true;
+        document.getElementById('performance-table-editor').classList.add('hidden');
+        showNotification('Performance table saved');
+        
+    } catch (error) {
+        console.error('Save failed:', error);
+        handleSaveError(error, backupData);
+    }
+
+    const product = schemaData.products[SchemaState.currentProduct];
+    const subproduct = product.subproducts[SchemaState.currentSubProduct];
+    
+    if (!subproduct.tables) subproduct.tables = [];
+    
+    const tableData = {
+        title: document.getElementById('perf-table-name').value.trim(),
+        table_slug: generateSlug(document.getElementById('perf-table-name').value.trim()),
+        filenames: [document.getElementById('perf-table-filename').value.trim()],
+        aliases: [],
+        headers: document.getElementById('perf-table-headers').value
+            .split('\n')
+            .map(h => h.trim())
+            .filter(h => h),
+        validator: { required: [], minColumns: 0 }
+    };
+    
+    if (SchemaState.currentTable !== null && typeof SchemaState.currentTable === 'number') {
+        // Update existing table
+        subproduct.tables[SchemaState.currentTable] = tableData;
+    } else {
+        // Add new table
+        subproduct.tables.push(tableData);
+    }
+    
+    SchemaState.unsavedChanges = true;
+    document.getElementById('performance-table-editor').classList.add('hidden');
+    renderPerformanceTablesList(subproduct);
+    showNotification('Performance table saved');
+}
+
+function cancelPerformanceTableEdit() {
+    document.getElementById('performance-table-editor').classList.add('hidden');
+    SchemaState.currentTable = null;
+}
+
+function deletePerformanceTable() {
+    if (!confirm('Delete this performance table?')) return;
+    
+    if (!SchemaState.currentSubProduct || !SchemaState.currentProduct || SchemaState.currentTable === null) return;
+    
+    const schemaData = getDatabaseSchemaData();
+    if (!schemaData) {
+        showNotification('Schema data not loaded');
+        return;
+    }
+
+    const product = schemaData.products[SchemaState.currentProduct];
+    const subproduct = product.subproducts[SchemaState.currentSubProduct];
+    
+    // Remove the table
+    subproduct.tables.splice(SchemaState.currentTable, 1);
+    
+    SchemaState.unsavedChanges = true;
+    SchemaState.currentTable = null;
+    document.getElementById('performance-table-editor').classList.add('hidden');
+    renderPerformanceTablesList(subproduct);
+    renderTableValidation(subproduct); // Refresh validation checkboxes
+    showNotification('Performance table deleted');
+}
+
+function inferPerformanceHeadersFromCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const headers = parseCSVHeaders(e.target.result);
+        document.getElementById('perf-table-headers').value = headers.join('\n');
+    };
+    reader.readAsText(file);
+}
+
+function saveTableValidation() {
+    if (!SchemaState.currentSubProduct || !SchemaState.currentProduct) return;
+    
+    const schemaData = getDatabaseSchemaData();
+    if (!schemaData) {
+        showNotification('Schema data not loaded');
+        return;
+    }
+
+    const product = schemaData.products[SchemaState.currentProduct];
+    const subproduct = product.subproducts[SchemaState.currentSubProduct];
+    
+    // Collect required tables from checkboxes
+    const requiredTables = [];
+    const checkboxes = document.querySelectorAll('#required-tables-checkboxes input[type="checkbox"]:checked');
+    checkboxes.forEach(checkbox => {
+        const tableTitle = checkbox.nextElementSibling.textContent;
+        requiredTables.push(tableTitle);
+    });
+    
+    const minimumTables = parseInt(document.getElementById('minimum-tables').value) || 1;
+    
+    // Update validator
+    if (!subproduct.validator) subproduct.validator = {};
+    subproduct.validator.requiredTables = requiredTables;
+    subproduct.validator.minimumTables = minimumTables;
+    
+    SchemaState.unsavedChanges = true;
+    showNotification('Table validation saved');
+}
+
+function updateRequiredTables() {
+    // This function would be called when checkboxes change
+    // Implementation would update the validation rules
+}
+
+// Export enhanced schema changes
+function exportEnhancedSchema() {
+    const enhancedSchema = getEnhancedSchemaData();
+    if (!enhancedSchema) {
+        showNotification('No enhanced schema data available to export');
+        return;
+    }
+    
+    const dataStr = JSON.stringify(enhancedSchema, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', 'enhanced_tactic_categories.json');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    SchemaState.unsavedChanges = false;
+    showNotification('Enhanced schema exported successfully');
+}
+
+// Database Product/SubProduct Selection Functions
+function selectProductFromDatabase(productName) {
+    // Load product from normalized database for editing
+    const normalizedSchema = getNormalizedSchemaData();
+    if (!normalizedSchema || normalizedSchema.length === 0) {
+        console.error('Normalized schema not available');
+        showNotification('Schema not loaded', 'error');
+        return;
+    }
+    
+    const product = normalizedSchema.find(p => p.name === productName);
+    if (!product) {
+        console.error('Product not found:', productName);
+        showNotification('Product not found', 'error');
+        return;
+    }
+
+    // Show product editor
+    document.getElementById('welcome-message').classList.add('hidden');
+    document.getElementById('product-editor').classList.remove('hidden');
+    document.getElementById('subproduct-editor').classList.add('hidden');
+    
+    // Update header
+    document.getElementById('product-name-header').textContent = productName;
+    
+    // Load basic info
+    document.getElementById('product-name').value = productName;
+    document.getElementById('product-slug').textContent = product.slug || '';
+    // Handle both JSON array and string formats for platforms
+    let platformsArray = [];
+    try {
+        if (Array.isArray(product.platforms)) {
+            platformsArray = product.platforms;
+        } else if (typeof product.platforms === 'string') {
+            // Try parsing as JSON first, fall back to comma-split
+            try {
+                platformsArray = JSON.parse(product.platforms);
+            } catch {
+                platformsArray = product.platforms.split(',').map(p => p.trim()).filter(p => p);
+            }
+        }
+    } catch (e) {
+        console.warn('Error parsing platforms:', e);
+        platformsArray = [];
+    }
+    document.getElementById('product-platforms').value = platformsArray.join(', ');
+    document.getElementById('product-notes').value = product.notes || '';
+    
+    // Load AI config if available
+    const aiGuidelinesField = document.getElementById('ai-guidelines');
+    if (aiGuidelinesField) {
+        aiGuidelinesField.value = product.ai_guidelines || '';
+    }
+    
+    SchemaState.currentProduct = productName;
+    SchemaState.currentSubProduct = null;
+    
+    // Switch to basic tab
+    switchTab('basic');
+    
+    // Load tables for this product (aggregated view)
+    renderTablesList();
+    
+    // Highlight selected product
+    document.querySelectorAll('.product-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    document.querySelectorAll('.subproduct-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    
+    const selectedNode = document.querySelector(`.product-node[onclick*="'${productName}'"]`);
+    if (selectedNode) selectedNode.classList.add('active');
+}
+
+function selectSubProductFromDatabase(productName, subproductName) {
+    // Load subproduct from normalized database
+    const normalizedSchema = getNormalizedSchemaData();
+    if (!normalizedSchema || normalizedSchema.length === 0) {
+        console.error('Normalized schema not available');
+        showNotification('Schema not loaded', 'error');
+        return;
+    }
+
+    const product = normalizedSchema.find(p => p.name === productName);
+    if (!product) {
+        console.error('Product not found:', productName);
+        showNotification('Product not found', 'error');
+        return;
+    }
+
+    if (!product.subproducts || !Array.isArray(product.subproducts)) {
+        console.error('No subproducts available for product:', productName);
+        showNotification('No subproducts available', 'error');
+        return;
+    }
+
+    const subproduct = product.subproducts.find(s => s.name === subproductName);
+    if (!subproduct) {
+        console.error('SubProduct not found:', subproductName);
+        showNotification('SubProduct not found', 'error');
+        return;
+    }
+
+    // Show SubProduct Editor
+    document.getElementById('welcome-message').classList.add('hidden');
+    document.getElementById('product-editor').classList.add('hidden');
+    document.getElementById('subproduct-editor').classList.remove('hidden');
+
+    // Populate basic info safely
+    const subproductNameHeader = document.getElementById('subproduct-name-header');
+    const subproductNameInput = document.getElementById('subproduct-name');
+    const subproductAliasCode = document.getElementById('subproduct-alias-code');
+    const subproductPlatforms = document.getElementById('subproduct-platforms');
+    
+    if (subproductNameHeader) subproductNameHeader.textContent = subproductName;
+    if (subproductNameInput) subproductNameInput.value = subproductName;
+    if (subproductAliasCode) subproductAliasCode.textContent = subproduct.slug || '';
+    
+    // Clear and populate fields safely
+    const mediumField = document.getElementById('subproduct-medium');
+    const kpisField = document.getElementById('subproduct-kpis');
+    const dataValueField = document.getElementById('subproduct-data-value');
+    const filenameStemField = document.getElementById('subproduct-filename-stem');
+    
+    if (mediumField) mediumField.value = '';
+    if (kpisField) kpisField.value = '';
+    if (dataValueField) dataValueField.value = '';
+    if (filenameStemField) filenameStemField.value = '';
+    
+    if (subproductPlatforms) {
+        // Handle both JSON array and string formats for platforms
+        let platformsArray = [];
+        try {
+            if (Array.isArray(subproduct.platforms)) {
+                platformsArray = subproduct.platforms;
+            } else if (typeof subproduct.platforms === 'string') {
+                // Try parsing as JSON first, fall back to comma-split
+                try {
+                    platformsArray = JSON.parse(subproduct.platforms);
+                } catch {
+                    platformsArray = subproduct.platforms.split(',').map(p => p.trim()).filter(p => p);
+                }
+            }
+        } catch (e) {
+            console.warn('Error parsing subproduct platforms:', e);
+            platformsArray = [];
+        }
+        subproductPlatforms.value = platformsArray.join(', ');
+    }
+
+    // Load performance tables with error handling
+    renderPerformanceTablesList(subproduct);
+
+    // Load table validation with error handling
+    renderTableValidation(subproduct);
+
+    SchemaState.currentSubProduct = subproductName;
+    SchemaState.currentProduct = productName;
+
+    // Switch to basic tab
+    switchSubProductTab('subproduct-basic');
+    
+    // Highlight selected subproduct
+    document.querySelectorAll('.product-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    document.querySelectorAll('.subproduct-node').forEach(node => {
+        node.classList.remove('active');
+    });
+    
+    const selectedNode = document.querySelector(`.subproduct-node[onclick*="'${productName}', '${subproductName}'"]`);
+    if (selectedNode) selectedNode.classList.add('active');
+}
+
+function selectSubProductFromDatabase_old(productName, subproductName) {
+    // This function is replaced by the enhanced version above
+    console.warn('selectSubProductFromDatabase_old called - using enhanced version instead');
+    return selectSubProductFromDatabase(productName, subproductName);
+}
+
+function renderDatabasePerformanceTablesList_old(subproduct) {
+    // This function is replaced by the enhanced version above
+    console.warn('renderDatabasePerformanceTablesList_old called - using enhanced version instead');
+    return renderDatabasePerformanceTablesList(subproduct);
+}
+
+function renderDatabaseTableValidation_old(subproduct) {
+    // This function is replaced by the enhanced version above
+    console.warn('renderDatabaseTableValidation_old called - using enhanced version instead');
+    return renderDatabaseTableValidation(subproduct);
+}
+
+// Error handling for failed saves
+function handleSaveError(error, backupData) {
+    showNotification('Save failed! Downloading backup of your changes...', 'error');
+    
+    // Create backup schema with current changes
+    const fullBackup = {
+        version: 3,
+        backup_reason: 'Save operation failed',
+        error_message: error.message,
+        timestamp: new Date().toISOString(),
+        original_data: getDatabaseSchemaData(),
+        pending_changes: backupData,
+        restore_instructions: 'Use "Import Schema" button to restore this backup'
+    };
+    
+    // Download backup file
+    const dataStr = JSON.stringify(fullBackup, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', `schema_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show detailed error message
+    const errorMsg = `Save failed: ${error.message}. Your changes have been downloaded as a backup file. You can import this file using the "Import Schema" button to restore your work.`;
+    
+    // Show error modal or extended notification
+    if (confirm(errorMsg + '\n\nWould you like to try saving again?')) {
+        // Retry the save operation
+        setTimeout(() => {
+            if (backupData.action === 'save_subproduct_basic') {
+                saveSubProductBasicInfo();
+            }
+        }, 1000);
+    }
+}
+
+// Function to edit table directly from Product view
+function editTableFromProduct(productName, subproductName, tableIndex, clickedElement) {
+    try {
+        // Set context for table editing
+        SchemaState.currentProduct = productName;
+        SchemaState.currentSubProduct = subproductName;
+        
+        // Highlight selected table and remove previous highlights
+        document.querySelectorAll('.list-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        clickedElement.classList.add('selected');
+        
+        // Call the existing database performance table editor
+        editDatabasePerformanceTable(tableIndex);
+        
+    } catch (error) {
+        console.error('Error editing table from product view:', error);
+        showNotification('Failed to edit table', 'error');
+    }
+}
+
+// Enhanced function for editing performance tables with highlighting
+function editDatabasePerformanceTableWithHighlight(index, clickedElement) {
+    try {
+        // Highlight selected table and remove previous highlights
+        document.querySelectorAll('#performance-tables-list .list-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        clickedElement.classList.add('selected');
+        
+        // Call the existing database performance table editor
+        editDatabasePerformanceTable(index);
+        
+    } catch (error) {
+        console.error('Error editing performance table with highlight:', error);
+        showNotification('Failed to edit table', 'error');
+    }
+}
+
+// Missing function for editing database performance tables
+function editDatabasePerformanceTable(index) {
+    try {
+        const normalizedSchema = getNormalizedSchemaData();
+        if (!normalizedSchema || !SchemaState.currentSubProduct || !SchemaState.currentProduct) {
+            console.error('Cannot edit table - missing context');
+            showNotification('Cannot edit table - please select a subproduct first', 'error');
+            return;
+        }
+
+        const product = normalizedSchema.find(p => p.name === SchemaState.currentProduct);
+        if (!product || !product.subproducts) {
+            console.error('Product not found for table editing');
+            showNotification('Product not found', 'error');
+            return;
+        }
+
+        const subproduct = product.subproducts.find(s => s.name === SchemaState.currentSubProduct);
+        if (!subproduct || !subproduct.performance_tables || !subproduct.performance_tables[index]) {
+            console.error('Table not found at index:', index);
+            showNotification('Table not found', 'error');
+            return;
+        }
+
+        const table = subproduct.performance_tables[index];
+        
+        // Populate form safely
+        const tableNameField = document.getElementById('perf-table-name');
+        const tableFilenameField = document.getElementById('perf-table-filename');
+        const tableHeadersField = document.getElementById('perf-table-headers');
+        
+        if (tableNameField) tableNameField.value = table.table_name || '';
+        if (tableFilenameField) tableFilenameField.value = table.file_name || '';
+        
+        if (tableHeadersField) {
+            const headers = safeParseHeaders(table.headers);
+            tableHeadersField.value = headers.join('\n');
+        }
+        
+        // Show the editor
+        const editorElement = document.getElementById('performance-table-editor');
+        if (editorElement) {
+            editorElement.classList.remove('hidden');
+        }
+        
+        SchemaState.currentTable = index;
+        
+    } catch (error) {
+        console.error('Error editing database performance table:', error);
+        showNotification('Failed to load table for editing', 'error');
+    }
+}
+
+// Load database schema data on initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Database schema will be loaded by loadDatabaseSchemaData()
+});
+
+// Add tab switching for subproduct editor
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for subproduct tabs
+    document.querySelectorAll('#subproduct-editor .tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchSubProductTab(tabName);
+        });
+    });
+});

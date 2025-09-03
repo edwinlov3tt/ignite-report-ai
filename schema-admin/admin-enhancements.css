@@ -1,0 +1,308 @@
+/* Schema Admin Database Enhancements */
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.loading-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10001;
+    animation: slideIn 0.3s ease;
+    max-width: 400px;
+}
+
+.notification-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.notification-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.notification-info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.notification.fade-out {
+    animation: slideOut 0.3s ease;
+    opacity: 0;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Database Status Indicator */
+.db-status {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    z-index: 1000;
+}
+
+.db-status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.db-status.connected .db-status-indicator {
+    background: #28a745;
+}
+
+.db-status.disconnected .db-status-indicator {
+    background: #dc3545;
+}
+
+.db-status.syncing .db-status-indicator {
+    background: #ffc107;
+    animation: pulse 0.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Export Options Panel */
+.export-options-panel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.export-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.export-option {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 5px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.export-option:hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+}
+
+.export-option .icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.export-option .format {
+    font-weight: bold;
+    color: #333;
+}
+
+.export-option .description {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Version History Panel */
+.version-history {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.version-item {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.version-item:hover {
+    background: #f8f9fa;
+}
+
+.version-info {
+    flex: 1;
+}
+
+.version-number {
+    font-weight: bold;
+    color: #333;
+}
+
+.version-date {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.version-description {
+    font-size: 13px;
+    color: #495057;
+    margin-top: 5px;
+}
+
+.version-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.version-actions button {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+/* Auto-save Indicator */
+.autosave-indicator {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    padding: 8px 15px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 12px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.autosave-indicator.visible {
+    opacity: 1;
+}
+
+.autosave-indicator.saving {
+    color: #ffc107;
+}
+
+.autosave-indicator.saved {
+    color: #28a745;
+}
+
+/* Enhanced Form Styles */
+.form-actions-sticky {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 15px 0;
+    border-top: 2px solid #e9ecef;
+    margin-top: 20px;
+}
+
+.db-sync-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #e7f3ff;
+    color: #0066cc;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 10px;
+}
+
+.db-sync-badge.synced {
+    background: #d4edda;
+    color: #155724;
+}
+
+.db-sync-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.db-sync-badge.error {
+    background: #f8d7da;
+    color: #721c24;
+}

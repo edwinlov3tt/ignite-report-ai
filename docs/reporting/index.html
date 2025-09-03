@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Analysis Guide - Report.AI Documentation</title>
+    <link rel="stylesheet" href="../../context/creative-docs/design-tokens.css">
+    <style>
+        /* Documentation Styles - Following Design System */
+        :root {
+            --doc-max-width: 1200px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .docs-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid var(--border-default);
+            padding: var(--space-8);
+        }
+
+        .header-content {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .docs-title {
+            font-size: var(--text-title-2xl-size);
+            font-weight: var(--text-title-2xl-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .docs-subtitle {
+            font-size: var(--text-body-lg-size);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .breadcrumb {
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb a {
+            color: #CF0E0F;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* Container */
+        .docs-container {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            padding: var(--space-8);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--space-8);
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            height: fit-content;
+            position: sticky;
+            top: var(--space-4);
+        }
+
+        .toc h3 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            padding-bottom: var(--space-2);
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc li {
+            margin-bottom: var(--space-2);
+        }
+
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            padding: var(--space-2);
+            display: block;
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .toc a:hover,
+        .toc a.active {
+            color: #CF0E0F;
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        .toc ul ul {
+            margin-left: var(--space-4);
+            margin-top: var(--space-2);
+        }
+
+        .toc ul ul a {
+            font-size: var(--text-body-xs-size);
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            min-width: 0;
+        }
+
+        .content-section {
+            margin-bottom: var(--space-12);
+        }
+
+        .content-section h2 {
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-6) 0;
+            padding-bottom: var(--space-3);
+            border-bottom: 2px solid #CF0E0F;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .content-section h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: var(--space-8) 0 var(--space-4) 0;
+        }
+
+        .content-section h4 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: var(--space-6) 0 var(--space-3) 0;
+        }
+
+        .content-section p {
+            margin-bottom: var(--space-4);
+            line-height: 1.7;
+        }
+
+        /* Steps */
+        .steps-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+            padding-bottom: var(--space-6);
+            border-bottom: 1px solid var(--border-muted);
+        }
+
+        .step-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .step-number {
+            background: #CF0E0F;
+            color: white;
+            border-radius: var(--radii-full);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-body-sm-size);
+            font-weight: var(--text-body-xs-weight);
+            flex-shrink: 0;
+            margin-top: var(--space-1);
+        }
+
+        .step-content h4 {
+            margin: 0 0 var(--space-2) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #f8fafc;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-sm);
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: var(--text-body-sm-size);
+            color: var(--text-primary);
+            overflow-x: auto;
+        }
+
+        /* Info Boxes */
+        .info-box {
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .info-box.tip {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .info-box.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .info-box.danger {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.05);
+        }
+
+        .info-box h4 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .info-box p {
+            margin: 0;
+        }
+
+        /* Screenshots */
+        .screenshot {
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            margin: var(--space-6) 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .screenshot img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .screenshot-caption {
+            background: var(--bg-muted);
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .feature-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+        }
+
+        .feature-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .feature-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+        }
+
+        /* Navigation */
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-8) 0;
+            border-top: 1px solid var(--border-default);
+            margin-top: var(--space-12);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: #CF0E0F;
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            font-weight: 500;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .nav-link:hover {
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .docs-container {
+                grid-template-columns: 1fr;
+                gap: var(--space-6);
+            }
+
+            .toc {
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: var(--space-4);
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hide scrollbars */
+        .toc,
+        .main-content,
+        .code-block {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .toc::-webkit-scrollbar,
+        .main-content::-webkit-scrollbar,
+        .code-block::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <div class="header-content">
+            <div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../">Documentation</a> > <span>Campaign Analysis</span>
+                </nav>
+                <h1 class="docs-title">Campaign Analysis Guide</h1>
+                <p class="docs-subtitle">Complete walkthrough for analyzing marketing campaigns with AI</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="docs-container">
+        <!-- Table of Contents -->
+        <nav class="toc" aria-label="Table of Contents">
+            <h3>📋 Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#campaign-data">Campaign Data</a>
+                    <ul>
+                        <li><a href="#lumina-urls">Lumina URLs</a></li>
+                        <li><a href="#tactic-detection">Tactic Detection</a></li>
+                    </ul>
+                </li>
+                <li><a href="#file-uploads">File Uploads</a>
+                    <ul>
+                        <li><a href="#bulk-upload">Bulk Upload</a></li>
+                        <li><a href="#tactic-specific">Tactic-Specific</a></li>
+                        <li><a href="#individual-tables">Individual Tables</a></li>
+                    </ul>
+                </li>
+                <li><a href="#configuration">Configuration</a></li>
+                <li><a href="#ai-analysis">AI Analysis</a></li>
+                <li><a href="#results">Results & Export</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <section id="overview" class="content-section">
+                <h2>📊 Overview</h2>
+                <p>Report.AI is an AI-powered marketing campaign analysis tool that transforms your campaign data into actionable insights. Using data from the Lumina platform and your CSV performance files, it generates comprehensive reports with strategic recommendations.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Automatic Detection</h4>
+                        <p>Intelligently identifies campaign tactics from Lumina data using advanced mapping algorithms</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📁</span>Smart File Routing</h4>
+                        <p>Automatically sorts CSV files to correct tables using filename patterns and header analysis</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🤖</span>AI-Powered Analysis</h4>
+                        <p>Generates comprehensive reports using Claude AI with schema-enhanced context</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Performance Tracking</h4>
+                        <p>Monitor campaign metrics with color-coded status indicators and progress tracking</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="getting-started" class="content-section">
+                <h2>🚀 Getting Started</h2>
+                <p>Follow this step-by-step process to analyze your marketing campaign:</p>
+
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Get Campaign URL</h4>
+                            <p>Navigate to your campaign in the Lumina platform and copy the URL from the address bar.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Load Campaign Data</h4>
+                            <p>Paste the Lumina URL into Report.AI to automatically fetch campaign details and detect tactics.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Upload Performance Data</h4>
+                            <p>Upload your CSV files containing campaign performance metrics using our intelligent file routing system.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Configure Analysis</h4>
+                            <p>Set company information, analysis timeframe, and AI preferences to customize your report.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Generate Report</h4>
+                            <p>Let AI analyze your data and generate comprehensive insights with strategic recommendations.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="campaign-data" class="content-section">
+                <h2>📈 Campaign Data</h2>
+                <p>Report.AI integrates directly with the Lumina platform to fetch campaign information and automatically detect tactics.</p>
+
+                <h3 id="lumina-urls">Lumina URL Processing</h3>
+                <p>The system accepts Lumina platform URLs and automatically extracts the campaign order ID for API processing.</p>
+
+                <div class="info-box tip">
+                    <h4>💡 Supported URL Formats</h4>
+                    <p>Report.AI supports any Lumina URL containing a 24-character hex ObjectID. The system automatically strips query parameters like <code>?tab=line_items</code> or <code>?tab=tasks</code>.</p>
+                </div>
+
+                <div class="code-block">
+Example Lumina URL:
+https://townsquarelumina.com/lumina/view/order/677430e377ff89a87ff6c62f?tab=line_items
+
+Extracted Order ID:
+677430e377ff89a87ff6c62f
+                </div>
+
+                <h3 id="tactic-detection">Automatic Tactic Detection</h3>
+                <p>Once campaign data is loaded, Report.AI automatically identifies tactics using the enhanced tactic categories system.</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🟢</span>Live/Complete</h4>
+                        <p>Active campaigns with performance data</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🟡</span>Pending Details</h4>
+                        <p>Campaigns awaiting additional information</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔴</span>Cancelled</h4>
+                        <p>Campaigns that have been cancelled</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🩷</span>Draft</h4>
+                        <p>Campaigns still in planning phase</p>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Tactic Removal</h4>
+                    <p>You can remove tactics from analysis by clicking the 'X' button on any tactic chip. This is useful for excluding cancelled or irrelevant tactics from your report.</p>
+                </div>
+            </section>
+
+            <section id="file-uploads" class="content-section">
+                <h2>📁 File Upload System</h2>
+                <p>Report.AI features an intelligent file upload system that automatically routes CSV files to the correct data tables.</p>
+
+                <h3 id="bulk-upload">Bulk Upload - Auto-sort Across All Tactics</h3>
+                <p>The most efficient way to upload data. Simply drag and drop all your CSV files, and the system will automatically sort them to the correct tactics and tables.</p>
+
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Filename Pattern Recognition</h4>
+                            <p>Files with patterns like <code>report-targeted-display-monthly-performance.csv</code> are automatically routed to the correct table.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Header Similarity Matching</h4>
+                            <p>If filename patterns don't match, the system analyzes CSV headers using Jaccard similarity (≥ 0.6 threshold).</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Progress Tracking</h4>
+                            <p>Visual indicators show upload completion per tactic (e.g., "3/9 uploaded").</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Optimal File Naming</h4>
+                    <p>For best results, use descriptive filenames that include the tactic type and data category. The system recognizes patterns and will route files more accurately.</p>
+                </div>
+
+                <h3 id="tactic-specific">Tactic-Specific Bulk Upload</h3>
+                <p>Upload multiple CSV files for a single tactic. This method is useful when you have several performance reports for one tactic type.</p>
+
+                <h3 id="individual-tables">Individual Table Upload</h3>
+                <p>For precise control, upload files directly to specific tables using the drag-and-drop interface on each table card.</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">✅</span>File Validation</h4>
+                        <p>Automatic CSV format validation with comprehensive error reporting</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Smart Parsing</h4>
+                        <p>Handles comma-separated numbers (e.g., "1,234,567") and various CSV formats</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">💾</span>Size Limits</h4>
+                        <p>Supports CSV files up to 10MB with efficient processing</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="configuration" class="content-section">
+                <h2>🔧 Configuration</h2>
+                <p>Customize your analysis by configuring company information, time ranges, and AI settings.</p>
+
+                <h3>Company Information</h3>
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Auto-Population</h4>
+                            <p>Company name is automatically extracted from Lumina campaign data.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Industry Selection</h4>
+                            <p>Choose from predefined categories (Home Services, Auto, Healthcare, etc.) to provide AI with industry context.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Marketing Objectives</h4>
+                            <p>Add campaign goals, constraints, and special considerations for more targeted analysis.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Analysis Time Range</h3>
+                <p>Select the time period for your analysis. This affects both the data analysis scope and Lumina platform report links.</p>
+
+                <div class="info-box tip">
+                    <h4>💡 Time Range Options</h4>
+                    <p>Choose from preset options (30, 60, 90, 120, 150, 180 days) or set a custom date range. The system automatically updates platform links when the time range changes.</p>
+                </div>
+
+                <h3>AI Configuration</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🎚️</span>Temperature Control</h4>
+                        <p>Adjust creativity vs. precision (0.0-1.0) for AI analysis tone</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">💬</span>Tone Selection</h4>
+                        <p>Choose from Concise, Professional, Conversational, Encouraging, or Casual</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Custom Instructions</h4>
+                        <p>Add specific requirements or focus areas for the analysis</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Chart Control</h4>
+                        <p>Option to include or exclude data visualizations in the report</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ai-analysis" class="content-section">
+                <h2>🤖 AI Analysis Engine</h2>
+                <p>Report.AI uses Anthropic's Claude AI with enhanced context to generate comprehensive campaign analysis.</p>
+
+                <h3>Analysis Components</h3>
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Executive Summary</h4>
+                            <p>High-level overview of campaign performance and key findings.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Performance Analysis</h4>
+                            <p>Detailed breakdown per tactic with normalized names and benchmark comparisons.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Trend Analysis</h4>
+                            <p>Identifies patterns and trends with platform-specific constraints and benchmarks.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Strategic Recommendations</h4>
+                            <p>Actionable insights based on performance data and industry best practices.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Data Visualizations</h4>
+                            <p>Charts and graphs with KPI-specific formatting (optional).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Enhanced Context</h4>
+                    <p>The AI receives enriched context including complete lineItem details, tactic normalization, platform constraints, and benchmark targets from the hierarchical schema system.</p>
+                </div>
+            </section>
+
+            <section id="results" class="content-section">
+                <h2>📋 Results & Export</h2>
+                <p>Once analysis is complete, you can view, export, and share your comprehensive campaign report.</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📄</span>Structured Output</h4>
+                        <p>Clean, organized sections with executive summary, analysis, and recommendations</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span>Copy to Clipboard</h4>
+                        <p>One-click copying of formatted analysis text for easy sharing</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🖨️</span>Print Optimization</h4>
+                        <p>Clean layouts optimized for physical documents and PDFs</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📱</span>Mobile Optimized</h4>
+                        <p>Responsive results view with mobile-optimized navigation</p>
+                    </div>
+                </div>
+
+                <h3>Lumina Platform Integration</h3>
+                <p>Direct access to Lumina platform data with intelligent URL construction:</p>
+
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Line Item Links (Blue)</h4>
+                            <p>Direct links to individual line item details in the Lumina platform.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Reporting Links (Green)</h4>
+                            <p>Links to performance reports with automatic time range integration.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="troubleshooting" class="content-section">
+                <h2>🔧 Troubleshooting</h2>
+                <p>Common issues and their solutions:</p>
+
+                <div class="info-box danger">
+                    <h4>🚫 Invalid Lumina URL</h4>
+                    <p>Ensure your URL contains a valid 24-character hex ObjectID. URLs should be from the Lumina platform order view pages.</p>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ File Upload Errors</h4>
+                    <p>Check that files are in CSV format and under 10MB. Ensure proper CSV structure with headers in the first row.</p>
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Poor File Routing</h4>
+                    <p>Use descriptive filenames that include tactic types and data categories. The system performs better with clear naming conventions.</p>
+                </div>
+
+                <h3>Getting Help</h3>
+                <p>If you encounter issues not covered in this guide:</p>
+                <ul>
+                    <li>Check the browser console for technical errors</li>
+                    <li>Verify your Lumina platform access permissions</li>
+                    <li>Ensure stable internet connection for API calls</li>
+                    <li>Try refreshing the page and starting over</li>
+                </ul>
+            </section>
+
+            <nav class="page-nav">
+                <a href="../" class="nav-link">← Back to Documentation</a>
+                <a href="../schema-admin/" class="nav-link">Schema Admin Guide →</a>
+            </nav>
+        </main>
+    </div>
+
+    <script>
+        // Table of Contents functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tocLinks = document.querySelectorAll('.toc a');
+            const sections = document.querySelectorAll('.content-section');
+
+            // Update active TOC link based on scroll position
+            function updateActiveTocLink() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.getBoundingClientRect().top;
+                    if (sectionTop <= 100) {
+                        current = section.id;
+                    }
+                });
+
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // Smooth scrolling for TOC links
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Listen for scroll events
+            window.addEventListener('scroll', updateActiveTocLink);
+            updateActiveTocLink(); // Initial call
+        });
+    </script>
+</body>
+</html>

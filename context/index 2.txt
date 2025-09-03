@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report.AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 class="brand-title">Report.AI</h1>
+            <div class="theme-toggle" id="theme-switcher">
+                <button title="Switch to light mode" class="active">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>
+                </button>
+                <button title="Switch to dark mode">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <section id="data-ingestion" class="report-container">
+                <div class="section-header">
+                    <span class="step-indicator">1</span>
+                    <h2>Campaign Data</h2>
+                </div>
+                <p>Start by entering a Lumina Order URL to fetch the campaign details.</p>
+                <div class="input-group">
+                    <input type="text" id="lumina-url-input" placeholder="e.g., https://townsquarelumina.com/lumina/view/order/..." class="url-input">
+                    <button id="fetch-campaign-btn" class="generate-btn">
+                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Fetch Campaign
+                    </button>
+                </div>
+                <div id="tactic-display-area" class="hidden">
+                    <h3>Detected Tactics</h3>
+                    <div id="tactic-chips" class="chip-container"></div>
+                </div>
+            </section>
+
+            <section id="configuration" class="report-container hidden">
+                <div class="section-header">
+                    <span class="step-indicator">2</span>
+                    <h2>Company & Campaign Configuration</h2>
+                </div>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="company-name">Company / Client</label>
+                        <input type="text" id="company-name" class="styled-input" placeholder="Auto-populated from API">
+                    </div>
+                    <div class="form-field">
+                        <label for="industry-select">Industry</label>
+                        <select id="industry-select" class="filter-select">
+                            <option value="">Select Industry</option>
+                            <option value="home-services">Home Services</option>
+                            <option value="automotive">Automotive</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="legal">Legal</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="marketing-objectives">Marketing Objectives & Notes</label>
+                    <textarea id="marketing-objectives" class="styled-textarea" placeholder="e.g., Primary goal is to drive qualified leads for the new service line..."></textarea>
+                </div>
+            </section>
+
+            <section id="file-uploads" class="report-container hidden">
+                <div class="section-header">
+                    <span class="step-indicator">3</span>
+                    <h2>Upload Performance Data</h2>
+                </div>
+                <div id="tactic-upload-cards" class="grid-layout">
+                    </div>
+            </section>
+            
+            <section id="ai-analysis" class="report-container hidden">
+                <div class="section-header">
+                    <span class="step-indicator">4</span>
+                    <h2>Generate AI Analysis</h2>
+                </div>
+                <p>Configure the AI model and generate your comprehensive report.</p>
+                <button id="generate-analysis-btn" class="generate-btn large-btn">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    Generate Report
+                </button>
+            </section>
+            
+            <section id="results-display" class="report-container hidden">
+                <div class="section-header">
+                    <span class="step-indicator">✓</span>
+                    <h2>AI-Powered Campaign Analysis</h2>
+                    <a href="#" class="view-toggle">View Raw</a>
+                </div>
+            
+                <div class="analysis-block">
+                    <h3 class="analysis-title">Executive Summary</h3>
+                    <p class="analysis-subtitle">Campaign Overview</p>
+                    <p>This campaign for Smith & Jones Home Services ran for 90 days with the primary objective of driving qualified leads. The campaign utilized a multi-channel approach including Targeted Display, Video Pre-Roll, and SEM to maximize reach and engagement. Overall, the campaign successfully generated significant impression volume and a steady stream of conversions, though there is room for optimization in the video channels.</p>
+                </div>
+            
+                <div class="analysis-block">
+                    <h3 class="analysis-title">Key Performance Indicators</h3>
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Impressions</span>
+                            <p class="kpi-value">2.4M</p>
+                            <span class="kpi-change positive">+4.2%</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Clicks</span>
+                            <p class="kpi-value">45,200</p>
+                            <span class="kpi-change negative">-0.5%</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Conversions</span>
+                            <p class="kpi-value">512.00</p>
+                            <span class="kpi-change positive">+12.8%</span>
+                        </div>
+                         <div class="kpi-card">
+                            <span class="kpi-label">CTR</span>
+                            <p class="kpi-value">2.8%</p>
+                            <span class="kpi-change positive">+1.1%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analysis-block">
+                    <h3 class="analysis-title">Trend Analysis</h3>
+                    <div class="trend-grid">
+                        <div class="trend-card">
+                            <h4>Impressions Trend</h4>
+                            <p>Impressions saw a consistent upward trend month-over-month, indicating strong reach and effective audience targeting. The final month saw the highest volume, aligning with increased seasonal demand.</p>
+                            <a href="#" class="read-more">Read more...</a>
+                        </div>
+                        <div class="trend-card">
+                            <h4>Conversion Rate Fluctuation</h4>
+                            <p>The conversion rate peaked mid-campaign but saw a slight dip in the final weeks. This may suggest ad fatigue or a shift in user intent that requires creative refreshment.</p>
+                            <a href="#" class="read-more">Read more...</a>
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="analysis-block">
+                    <h3 class="analysis-title">Strategic Recommendations</h3>
+                    <div class="recommendation-accordion">
+                        <details class="accordion-item" open>
+                            <summary>
+                                <span class="accordion-title">Reallocate Budget from Video to SEM</span>
+                                <span class="accordion-icon">+</span>
+                            </summary>
+                            <div class="accordion-content">
+                                <p>While Video Pre-Roll generated high impressions, its cost per conversion was 45% higher than SEM. Shifting 15% of the video budget to the top-performing SEM keywords could increase overall lead volume by an estimated 8-12%.</p>
+                            </div>
+                        </details>
+                        <details class="accordion-item">
+                            <summary>
+                                <span class="accordion-title">Refresh Display Ad Creatives</span>
+                                <span class="accordion-icon">+</span>
+                            </summary>
+                            <div class="accordion-content">
+                                <p>The declining CTR in the final month suggests potential ad fatigue. Introduce a new set of A/B tested creatives focusing on the updated seasonal promotion to reinvigorate audience engagement.</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

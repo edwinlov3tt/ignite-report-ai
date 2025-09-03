@@ -1,0 +1,72 @@
+# Report.AI - Apache Configuration
+
+# Enable CORS for API endpoints
+<IfModule mod_headers.c>
+    # Dynamic CORS origin handling for development and production
+    SetEnvIf Origin "^http(s)?://(localhost|127\.0\.0\.1|.*\.edwinlovett\.com)(:[0-9]+)?$" CORS_ALLOW_ORIGIN=$0
+    Header always set Access-Control-Allow-Origin %{CORS_ALLOW_ORIGIN}e env=CORS_ALLOW_ORIGIN
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# Handle preflight OPTIONS requests and directory redirects
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Force trailing slash for backend admin tools (schema-admin subdirectories)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_URI} /schema-admin/[^/]+$
+    RewriteRule ^(.*)$ /$1/ [R=301,L]
+    
+    # Handle schema-admin directory access
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} /schema-admin/([^/]+)/$
+    RewriteRule ^schema-admin/([^/]+)/$ /schema-admin/$1/index.html [L]
+    
+    # Handle main schema-admin access
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^schema-admin/$ /schema-admin/index.html [L]
+    
+    # Handle preflight OPTIONS requests
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# PHP settings (if needed)
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 60
+    php_value memory_limit 128M
+</IfModule>
+
+# Deny access to sensitive files
+<FilesMatch "\.(env|log|md)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Enable gzip compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Cache control
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType application/json "access plus 0 seconds"
+</IfModule>

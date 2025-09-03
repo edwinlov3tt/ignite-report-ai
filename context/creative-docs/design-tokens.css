@@ -1,0 +1,397 @@
+/* Design Tokens CSS Variables - Strategic Marketing Research Tool */
+
+:root {
+  /* Base Color Palette */
+  --color-gray-25: #fefefe;
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #64748b;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #1e293b;
+  
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-primary: #CF0E0F;
+  --color-red-primary-dark: #A00B0C;
+  
+  --color-green-50: #ecfdf5;
+  --color-green-100: #d1fae5;
+  --color-green-200: #a7f3d0;
+  --color-green-300: #6ee7b7;
+  --color-green-400: #34d399;
+  --color-green-500: #10b981;
+  --color-green-600: #059669;
+  --color-green-700: #047857;
+  --color-green-800: #065f46;
+  --color-green-900: #064e3b;
+  
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-linkedin: #0a66c2;
+  
+  --color-yellow-50: #fffbeb;
+  --color-yellow-100: #fef3c7;
+  --color-yellow-200: #fde68a;
+  --color-yellow-300: #fcd34d;
+  --color-yellow-400: #fbbf24;
+  --color-yellow-500: #f59e0b;
+  --color-yellow-600: #d97706;
+  --color-yellow-700: #b45309;
+  --color-yellow-800: #92400e;
+  --color-yellow-900: #78350f;
+
+  /* Semantic Color Roles */
+  --bg-canvas: var(--color-gray-50);
+  --bg-surface: #ffffff;
+  --bg-muted: var(--color-gray-100);
+  --bg-gradient-primary: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-gray-200) 100%);
+  --bg-gradient-red: linear-gradient(135deg, var(--color-red-primary) 0%, var(--color-red-primary-dark) 100%);
+  
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-500);
+  --text-muted: var(--color-gray-700);
+  --text-inverse: #ffffff;
+  
+  --border-default: var(--color-gray-200);
+  --border-muted: var(--color-gray-100);
+  --border-emphasis: var(--color-red-primary);
+  
+  --focus-ring: rgba(207, 14, 15, 0.1);
+  --focus-ring-contrast: 2px solid var(--color-gray-900);
+  
+  --status-success: var(--color-green-500);
+  --status-success-dark: var(--color-green-600);
+  --status-warning: var(--color-yellow-500);
+  --status-error: var(--color-red-600);
+  --status-info: var(--color-blue-500);
+  
+  /* Button Semantic Tokens */
+  --button-primary-bg: var(--color-red-primary);
+  --button-primary-fg: #ffffff;
+  --button-primary-hover-bg: var(--color-red-primary-dark);
+  --button-primary-disabled-bg: var(--color-red-primary);
+  --button-primary-disabled-opacity: 0.7;
+  
+  --button-secondary-bg: var(--color-green-500);
+  --button-secondary-fg: #ffffff;
+  --button-secondary-hover-bg: var(--color-green-600);
+  --button-secondary-disabled-opacity: 0.7;
+  
+  --button-gray-bg: var(--color-gray-600);
+  --button-gray-fg: #ffffff;
+  --button-gray-hover-bg: var(--color-gray-700);
+  
+  --button-ghost-bg: transparent;
+  --button-ghost-fg: var(--color-gray-700);
+  --button-ghost-hover-bg: var(--color-gray-100);
+  --button-ghost-hover-fg: var(--color-gray-900);
+  
+  --button-linkedin-bg: var(--color-blue-linkedin);
+  --button-linkedin-fg: #ffffff;
+  --button-linkedin-hover-bg: #004182;
+
+  /* Spacing Scale (8px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Border Radius - Normalized Scale */
+  --radii-none: 0px;
+  --radii-xs: 4px;
+  --radii-sm: 8px;
+  --radii-md: 12px;
+  --radii-lg: 16px;
+  --radii-xl: 24px;
+  --radii-full: 9999px;
+
+  /* Shadows */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Duration & Easing */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 400ms;
+  
+  --easing-standard: ease;
+  --easing-emphasized: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-decelerated: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --easing-accelerated: cubic-bezier(0.4, 0.0, 1, 1);
+  
+  /* Motion Tokens */
+  --motion-raise-duration: 200ms;
+  --motion-raise-easing: ease;
+  --motion-raise-transform: translateY(-2px);
+  
+  --motion-tap-duration: 150ms;
+  --motion-tap-easing: ease;
+  --motion-tap-transform: translateY(-1px);
+
+  /* Typography */
+  --font-family-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  
+  /* Title Sizes */
+  --text-title-3xl-size: 48px;
+  --text-title-3xl-line: 1.2;
+  --text-title-3xl-weight: 700;
+  
+  --text-title-2xl-size: 40px;
+  --text-title-2xl-line: 1.2;
+  --text-title-2xl-weight: 700;
+  
+  --text-title-xl-size: 32px;
+  --text-title-xl-line: 1.3;
+  --text-title-xl-weight: 700;
+  
+  --text-title-lg-size: 24px;
+  --text-title-lg-line: 1.4;
+  --text-title-lg-weight: 700;
+  
+  --text-title-md-size: 20px;
+  --text-title-md-line: 1.4;
+  --text-title-md-weight: 600;
+  
+  --text-title-sm-size: 18px;
+  --text-title-sm-line: 1.4;
+  --text-title-sm-weight: 600;
+  
+  /* Body Sizes */
+  --text-body-lg-size: 20px;
+  --text-body-lg-line: 1.6;
+  --text-body-lg-weight: 400;
+  
+  --text-body-md-size: 16px;
+  --text-body-md-line: 1.6;
+  --text-body-md-weight: 400;
+  
+  --text-body-sm-size: 14px;
+  --text-body-sm-line: 1.5;
+  --text-body-sm-weight: 400;
+  
+  --text-body-xs-size: 12px;
+  --text-body-xs-line: 1.4;
+  --text-body-xs-weight: 500;
+
+  /* Container Sizes */
+  --container-app: 1200px;
+  --container-dashboard: 1400px;
+  --container-contacts: 1280px;
+  --container-modal: 400px;
+  --container-padding-desktop: 32px;
+  --container-padding-mobile: 16px;
+  
+  /* Grid System */
+  --grid-gap-sm: 16px;
+  --grid-gap-md: 24px;
+  --grid-gap-lg: 32px;
+  --grid-min-card: 300px;
+  --grid-min-contact: 350px;
+  --grid-min-decision: 300px;
+  
+  /* Table Tokens */
+  --table-row-height: 48px;
+  --table-row-padding: 16px;
+  --table-header-bg: var(--color-gray-50);
+  --table-header-fg: var(--color-gray-700);
+  --table-hover-bg: var(--color-gray-50);
+  --table-zebra-odd: #ffffff;
+  --table-zebra-even: var(--color-gray-50);
+  
+  /* Icon Sizes - Standardized */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  
+  --button-sm-height: 32px;
+  --button-sm-padding: 8px 16px;
+  --button-md-height: 40px;
+  --button-md-padding: 12px 24px;
+  --button-lg-height: 48px;
+  --button-lg-padding: 16px 32px;
+  
+  --input-sm-height: 32px;
+  --input-sm-padding: 8px 12px;
+  --input-md-height: 40px;
+  --input-md-padding: 12px 16px;
+  --input-lg-height: 48px;
+  --input-lg-padding: 16px 20px;
+
+  /* Breakpoints */
+  --breakpoint-mobile: 768px;
+  --breakpoint-tablet: 1024px;
+  --breakpoint-desktop: 1200px;
+  --breakpoint-wide: 1400px;
+
+  /* Z-Index */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-tooltip: 1001;
+  --z-skip-link: 2000;
+}
+
+/* Optional: Dark Theme (currently not implemented in the application) */
+/* Dark Theme - Planned (Contrast Checked) */
+[data-theme="dark"] {
+  --bg-canvas: var(--color-gray-900); /* Contrast with white text: 13.8:1 AAA */
+  --bg-surface: var(--color-gray-800); /* Contrast with white text: 12.6:1 AAA */
+  --bg-muted: var(--color-gray-700);
+  
+  --text-primary: var(--color-gray-50); /* Contrast on dark bg: 13.8:1 AAA */
+  --text-secondary: var(--color-gray-300); /* Contrast on dark bg: 5.5:1 AA */
+  --text-muted: var(--color-gray-400);
+  
+  --border-default: var(--color-gray-700);
+  --border-muted: var(--color-gray-600);
+  
+  /* Button adjustments for dark mode */
+  --button-ghost-bg: transparent;
+  --button-ghost-fg: var(--color-gray-300);
+  --button-ghost-hover-bg: var(--color-gray-800);
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: more) {
+  :root {
+    --focus-ring: var(--focus-ring-contrast);
+  }
+}
+
+/* Utility Classes for Common Token Usage */
+.text-title-3xl { font-size: var(--text-title-3xl-size); line-height: var(--text-title-3xl-line); font-weight: var(--text-title-3xl-weight); }
+.text-title-2xl { font-size: var(--text-title-2xl-size); line-height: var(--text-title-2xl-line); font-weight: var(--text-title-2xl-weight); }
+.text-title-xl { font-size: var(--text-title-xl-size); line-height: var(--text-title-xl-line); font-weight: var(--text-title-xl-weight); }
+.text-title-lg { font-size: var(--text-title-lg-size); line-height: var(--text-title-lg-line); font-weight: var(--text-title-lg-weight); }
+.text-title-md { font-size: var(--text-title-md-size); line-height: var(--text-title-md-line); font-weight: var(--text-title-md-weight); }
+.text-title-sm { font-size: var(--text-title-sm-size); line-height: var(--text-title-sm-line); font-weight: var(--text-title-sm-weight); }
+
+.text-body-lg { font-size: var(--text-body-lg-size); line-height: var(--text-body-lg-line); font-weight: var(--text-body-lg-weight); }
+.text-body-md { font-size: var(--text-body-md-size); line-height: var(--text-body-md-line); font-weight: var(--text-body-md-weight); }
+.text-body-sm { font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-line); font-weight: var(--text-body-sm-weight); }
+.text-body-xs { font-size: var(--text-body-xs-size); line-height: var(--text-body-xs-line); font-weight: var(--text-body-xs-weight); }
+
+.bg-canvas { background-color: var(--bg-canvas); }
+.bg-surface { background-color: var(--bg-surface); }
+.bg-muted { background-color: var(--bg-muted); }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-inverse { color: var(--text-inverse); }
+
+.border-default { border-color: var(--border-default); }
+.border-muted { border-color: var(--border-muted); }
+.border-emphasis { border-color: var(--border-emphasis); }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+.rounded-xs { border-radius: var(--radii-xs); }
+.rounded-sm { border-radius: var(--radii-sm); }
+.rounded-md { border-radius: var(--radii-md); }
+.rounded-lg { border-radius: var(--radii-lg); }
+.rounded-xl { border-radius: var(--radii-xl); }
+.rounded-full { border-radius: var(--radii-full); }
+
+/* Skip Link Pattern */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only.focusable:focus {
+  position: fixed;
+  z-index: var(--z-skip-link);
+  top: 16px;
+  left: 16px;
+  width: auto;
+  height: auto;
+  padding: 12px 24px;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: var(--radii-sm);
+  box-shadow: var(--shadow-lg);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* Motion Utilities */
+.motion-raise {
+  transition: transform var(--motion-raise-duration) var(--motion-raise-easing);
+}
+
+.motion-raise:hover {
+  transform: var(--motion-raise-transform);
+}
+
+.motion-tap {
+  transition: transform var(--motion-tap-duration) var(--motion-tap-easing);
+}
+
+.motion-tap:active {
+  transform: var(--motion-tap-transform);
+}
+
+/* Table Density Standard */
+.table-standard tr {
+  height: var(--table-row-height);
+}
+
+.table-zebra tbody tr:nth-child(odd) {
+  background-color: var(--table-zebra-odd);
+}
+
+.table-zebra tbody tr:nth-child(even) {
+  background-color: var(--table-zebra-even);
+}

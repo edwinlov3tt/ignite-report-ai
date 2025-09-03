@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Export Guide - Report.AI Documentation</title>
+    <link rel="stylesheet" href="../../../context/creative-docs/design-tokens.css">
+    <style>
+        /* Documentation Styles - Following Design System */
+        :root {
+            --doc-max-width: 1200px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .docs-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid var(--border-default);
+            padding: var(--space-8);
+        }
+
+        .header-content {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .docs-title {
+            font-size: var(--text-title-2xl-size);
+            font-weight: var(--text-title-2xl-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .docs-subtitle {
+            font-size: var(--text-body-lg-size);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .breadcrumb {
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb a {
+            color: #CF0E0F;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* Container */
+        .docs-container {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            padding: var(--space-8);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--space-8);
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            height: fit-content;
+            position: sticky;
+            top: var(--space-4);
+        }
+
+        .toc h3 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            padding-bottom: var(--space-2);
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc li {
+            margin-bottom: var(--space-2);
+        }
+
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            padding: var(--space-2);
+            display: block;
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .toc a:hover,
+        .toc a.active {
+            color: #CF0E0F;
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        .toc ul ul {
+            margin-left: var(--space-4);
+            margin-top: var(--space-2);
+        }
+
+        .toc ul ul a {
+            font-size: var(--text-body-xs-size);
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            min-width: 0;
+        }
+
+        .content-section {
+            margin-bottom: var(--space-12);
+        }
+
+        .content-section h2 {
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-6) 0;
+            padding-bottom: var(--space-3);
+            border-bottom: 2px solid #CF0E0F;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .content-section h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: var(--space-8) 0 var(--space-4) 0;
+        }
+
+        .content-section h4 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: var(--space-6) 0 var(--space-3) 0;
+        }
+
+        .content-section p {
+            margin-bottom: var(--space-4);
+            line-height: 1.7;
+        }
+
+        /* Access Panel */
+        .access-panel {
+            background: linear-gradient(135deg, #CF0E0F 0%, #A00B0C 100%);
+            color: white;
+            padding: var(--space-8);
+            border-radius: var(--radii-lg);
+            margin: var(--space-8) 0;
+            text-align: center;
+        }
+
+        .access-panel h3 {
+            margin: 0 0 var(--space-4) 0;
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+        }
+
+        .access-panel p {
+            margin: 0 0 var(--space-6) 0;
+            font-size: var(--text-body-lg-size);
+            opacity: 0.9;
+        }
+
+        .access-btn {
+            background: white;
+            color: #CF0E0F;
+            padding: var(--space-4) var(--space-8);
+            border: none;
+            border-radius: var(--radii-md);
+            font-size: var(--text-body-md-size);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all var(--duration-normal);
+            box-shadow: var(--shadow-md);
+        }
+
+        .access-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Export Format Grid */
+        .export-formats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .format-card {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+            position: relative;
+        }
+
+        .format-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .format-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-4);
+            display: block;
+        }
+
+        .format-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+        }
+
+        .format-card p {
+            margin: 0 0 var(--space-4) 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        .format-card .filename {
+            background: var(--bg-muted);
+            border-radius: var(--radii-sm);
+            padding: var(--space-2) var(--space-3);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: var(--text-body-xs-size);
+            color: var(--text-primary);
+            display: inline-block;
+            margin-top: var(--space-3);
+        }
+
+        .format-card .use-cases {
+            list-style: none;
+            padding: 0;
+            margin: var(--space-4) 0 0 0;
+        }
+
+        .format-card .use-cases li {
+            font-size: var(--text-body-xs-size);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-1);
+            padding-left: var(--space-4);
+            position: relative;
+        }
+
+        .format-card .use-cases li:before {
+            content: "•";
+            color: #CF0E0F;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .feature-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+        }
+
+        .feature-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .feature-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        /* Workflow Steps */
+        .workflow-steps {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+            padding-bottom: var(--space-6);
+            border-bottom: 1px solid var(--border-muted);
+        }
+
+        .workflow-step:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .step-number {
+            background: #CF0E0F;
+            color: white;
+            border-radius: var(--radii-full);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-body-sm-size);
+            font-weight: var(--text-body-xs-weight);
+            flex-shrink: 0;
+            margin-top: var(--space-1);
+        }
+
+        .step-content h4 {
+            margin: 0 0 var(--space-2) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .info-box.tip {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .info-box.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .info-box.danger {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.05);
+        }
+
+        .info-box h4 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .info-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #f8fafc;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-sm);
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: var(--text-body-sm-size);
+            color: var(--text-primary);
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+
+        /* Navigation */
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-8) 0;
+            border-top: 1px solid var(--border-default);
+            margin-top: var(--space-12);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: #CF0E0F;
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            font-weight: 500;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .nav-link:hover {
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .docs-container {
+                grid-template-columns: 1fr;
+                gap: var(--space-6);
+            }
+
+            .toc {
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: var(--space-4);
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+
+            .feature-grid,
+            .export-formats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hide scrollbars */
+        .toc,
+        .main-content,
+        .code-block {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .toc::-webkit-scrollbar,
+        .main-content::-webkit-scrollbar,
+        .code-block::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <div class="header-content">
+            <div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../../">Documentation</a> > <a href="../">Schema Admin</a> > <span>Schema Export</span>
+                </nav>
+                <h1 class="docs-title">Schema Export Guide</h1>
+                <p class="docs-subtitle">Export, import, and backup schema configurations</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="docs-container">
+        <!-- Table of Contents -->
+        <nav class="toc" aria-label="Table of Contents">
+            <h3>📋 Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#export-formats">Export Formats</a>
+                    <ul>
+                        <li><a href="#json-export">JSON Export</a></li>
+                        <li><a href="#csv-crosswalk">CSV Crosswalk</a></li>
+                        <li><a href="#xml-export">XML Export</a></li>
+                        <li><a href="#js-helpers">JavaScript Helpers</a></li>
+                    </ul>
+                </li>
+                <li><a href="#import-options">Import Options</a></li>
+                <li><a href="#backup-restore">Backup & Restore</a></li>
+                <li><a href="#version-management">Version Management</a></li>
+                <li><a href="#integration">Integration Guide</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Quick Access Panel -->
+            <div class="access-panel">
+                <h3>💾 Access Schema Export</h3>
+                <p>Ready to export, import, or backup your schema? Jump directly to the export interface.</p>
+                <a href="../../../schema-admin/schema-export/" class="access-btn" target="_blank">Open Schema Export →</a>
+            </div>
+
+            <section id="overview" class="content-section">
+                <h2>💾 Overview</h2>
+                <p>The Schema Export system provides comprehensive data management capabilities for your Report.AI schema configurations. Export, import, backup, and restore schema data in multiple formats for integration, collaboration, and disaster recovery.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📤</span>Multi-Format Export</h4>
+                        <p>Export schema data in JSON, CSV, XML, and JavaScript formats for various integration needs</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📥</span>Import & Merge</h4>
+                        <p>Import schema configurations with options to replace or merge with existing data</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Backup & Restore</h4>
+                        <p>Create automated backups and restore points for schema configuration management</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔗</span>Integration Helpers</h4>
+                        <p>Ready-to-use JavaScript functions and utilities for seamless main application integration</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="export-formats" class="content-section">
+                <h2>📤 Export Formats</h2>
+                <p>Choose from multiple export formats based on your specific integration and usage requirements:</p>
+
+                <div class="export-formats">
+                    <div class="format-card">
+                        <span class="icon">📄</span>
+                        <h4 id="json-export">Complete Schema (JSON)</h4>
+                        <p>Full schema structure including all products, subproducts, connections, tables, and configurations in JSON format.</p>
+                        <div class="filename">unified_tactic_schema.json</div>
+                        <ul class="use-cases">
+                            <li>Main application integration</li>
+                            <li>Complete system backups</li>
+                            <li>Schema version control</li>
+                            <li>Cross-environment deployment</li>
+                        </ul>
+                    </div>
+
+                    <div class="format-card">
+                        <span class="icon">📊</span>
+                        <h4 id="csv-crosswalk">CSV Crosswalk</h4>
+                        <p>Compatibility format matching GPT Tactic Reference structure for legacy system integration.</p>
+                        <div class="filename">tactic_crosswalk.csv</div>
+                        <ul class="use-cases">
+                            <li>Legacy system compatibility</li>
+                            <li>GPT training data format</li>
+                            <li>Spreadsheet analysis</li>
+                            <li>External tool integration</li>
+                        </ul>
+                    </div>
+
+                    <div class="format-card">
+                        <span class="icon">📋</span>
+                        <h4 id="xml-export">XML Structure</h4>
+                        <p>Structured XML export for enterprise system integration and API consumption.</p>
+                        <div class="filename">tactic_schema.xml</div>
+                        <ul class="use-cases">
+                            <li>Enterprise system integration</li>
+                            <li>SOAP API compatibility</li>
+                            <li>Structured data exchange</li>
+                            <li>System documentation</li>
+                        </ul>
+                    </div>
+
+                    <div class="format-card">
+                        <span class="icon">⚡</span>
+                        <h4 id="js-helpers">JavaScript Helpers</h4>
+                        <p>Ready-to-use JavaScript functions and utilities for seamless integration with web applications.</p>
+                        <div class="filename">tactic_schema_helpers.js</div>
+                        <ul class="use-cases">
+                            <li>Web application integration</li>
+                            <li>Frontend development</li>
+                            <li>API wrapper functions</li>
+                            <li>Schema validation utilities</li>
+                        </ul>
+                    </div>
+
+                    <div class="format-card">
+                        <span class="icon">📦</span>
+                        <h4>Products Only</h4>
+                        <p>Export only product configurations and table definitions without subproduct details.</p>
+                        <div class="filename">products_schema.json</div>
+                        <ul class="use-cases">
+                            <li>Simplified integrations</li>
+                            <li>Product-level analysis</li>
+                            <li>Configuration templates</li>
+                            <li>Reduced file size needs</li>
+                        </ul>
+                    </div>
+
+                    <div class="format-card">
+                        <span class="icon">🔄</span>
+                        <h4>Legacy Format</h4>
+                        <p>Export in the old csv-headers.json format for backward compatibility with existing systems.</p>
+                        <div class="filename">csv_headers.json</div>
+                        <ul class="use-cases">
+                            <li>Backward compatibility</li>
+                            <li>Migration support</li>
+                            <li>Legacy tool integration</li>
+                            <li>Transition planning</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="import-options" class="content-section">
+                <h2>📥 Import Options</h2>
+                <p>Import schema configurations with flexible options to suit your workflow needs:</p>
+
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Complete Schema Import</h4>
+                            <p>Replace the entire current schema with imported configuration. This completely overwrites existing data.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Merge Import</h4>
+                            <p>Intelligently merge imported schema with existing configuration, preserving local customizations where possible.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Legacy Format Import</h4>
+                            <p>Convert and import old csv-headers.json files, automatically upgrading them to the new schema format.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">✅</span>Validation</h4>
+                        <p>All imports are validated for structure, dependencies, and compatibility before application</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Backup Creation</h4>
+                        <p>Automatic backup creation before import operations for easy rollback if needed</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Conflict Resolution</h4>
+                        <p>Intelligent handling of conflicting data during merge operations with user control</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Import Logging</h4>
+                        <p>Detailed logging of import operations with success/failure reporting</p>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Import Safety</h4>
+                    <p>Always create a backup before importing schema data. Complete schema imports will overwrite all existing configuration. Test imports in a development environment first.</p>
+                </div>
+            </section>
+
+            <section id="backup-restore" class="content-section">
+                <h2>🔄 Backup & Restore</h2>
+                <p>Comprehensive backup and restore functionality to protect your schema configurations:</p>
+
+                <h3>Backup Features</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">💾</span>Manual Backups</h4>
+                        <p>Create on-demand backups before major changes or experiments</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">⏰</span>Scheduled Backups</h4>
+                        <p>Configure automatic backup schedules (daily, weekly, monthly)</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🏷️</span>Versioned Backups</h4>
+                        <p>Tagged backup versions with descriptions and timestamps</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔍</span>Backup Validation</h4>
+                        <p>Verify backup integrity and completeness for reliable restoration</p>
+                    </div>
+                </div>
+
+                <h3>Restore Process</h3>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Select Restore Point</h4>
+                            <p>Choose from available backups with timestamps and descriptions to identify the desired state.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Preview Changes</h4>
+                            <p>Review differences between current state and selected backup before restoration.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Create Safety Backup</h4>
+                            <p>Automatically create a backup of the current state before restoration begins.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Restore and Validate</h4>
+                            <p>Perform restoration and validate the restored schema for integrity and functionality.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Backup Best Practices</h4>
+                    <p>Schedule regular automated backups, create manual backups before major changes, and periodically verify backup integrity. Keep multiple restore points for different time periods.</p>
+                </div>
+            </section>
+
+            <section id="version-management" class="content-section">
+                <h2>🔖 Version Management</h2>
+                <p>Track schema changes and manage different versions of your configuration:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Change Tracking</h4>
+                        <p>Monitor schema modifications with detailed change logs and author information</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🏷️</span>Version Tagging</h4>
+                        <p>Create named versions for major releases or milestone configurations</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📈</span>Schema Evolution</h4>
+                        <p>Track schema structure evolution over time with migration paths</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🔄</span>Rollback Support</h4>
+                        <p>Easy rollback to previous versions with validation and conflict resolution</p>
+                    </div>
+                </div>
+
+                <h3>Version Control Integration</h3>
+                <div class="code-block">
+Git Integration Example:
+# Export current schema
+npm run export:schema
+
+# Commit schema changes  
+git add unified_tactic_schema.json
+git commit -m "feat: add new video campaign tactics"
+
+# Tag version
+git tag -a v2.1.0 -m "Schema v2.1.0: Video campaign support"
+
+# Push changes
+git push origin main --tags
+                </div>
+            </section>
+
+            <section id="integration" class="content-section">
+                <h2>🔗 Integration Guide</h2>
+                <p>Integrate exported schema data with your applications and systems:</p>
+
+                <h3>Main Application Integration</h3>
+                <div class="code-block">
+JavaScript Integration:
+// Import schema helpers
+import { 
+    matchCsvToTable, 
+    normalizeTacticLabel,
+    getEffectiveAnalysisContext,
+    generateReportLink 
+} from './tactic_schema_helpers.js';
+
+// Load schema
+const schema = await fetch('/unified_tactic_schema.json')
+    .then(response => response.json());
+
+// Use schema functions
+const tableMatch = matchCsvToTable(filename, headers);
+const normalizedTactic = normalizeTacticLabel(label, product, subproduct);
+const context = getEffectiveAnalysisContext(product, subproduct);
+                </div>
+
+                <h3>API Integration</h3>
+                <div class="code-block">
+REST API Usage:
+// Fetch schema data
+GET /api/schema/unified
+GET /api/schema/products
+GET /api/schema/crosswalk
+
+// Schema validation
+POST /api/schema/validate
+{
+    "schemaData": { ... },
+    "format": "json"
+}
+
+// Import operations  
+POST /api/schema/import
+{
+    "data": { ... },
+    "mode": "merge|replace",
+    "createBackup": true
+}
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Integration Tips</h4>
+                    <p>Use the JavaScript helpers for client-side integration, implement schema caching for better performance, and validate schema data after imports or updates.</p>
+                </div>
+            </section>
+
+            <section id="troubleshooting" class="content-section">
+                <h2>🔧 Troubleshooting</h2>
+                <p>Common issues and their solutions:</p>
+
+                <div class="info-box danger">
+                    <h4>🚫 Export Failures</h4>
+                    <p>Check schema validation, ensure sufficient disk space, and verify write permissions. Large schemas may require increased memory limits.</p>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Import Errors</h4>
+                    <p>Validate JSON syntax, check schema version compatibility, and ensure required fields are present. Use merge mode for partial imports.</p>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Backup Issues</h4>
+                    <p>Verify backup storage location accessibility, check available disk space, and ensure backup integrity with validation tools.</p>
+                </div>
+
+                <h3>Common Error Messages</h3>
+                <div class="code-block">
+Error: "Schema validation failed"
+Solution: Check required fields and data types
+
+Error: "Import file format not recognized"  
+Solution: Verify file extension and JSON structure
+
+Error: "Backup location not accessible"
+Solution: Check permissions and disk space
+
+Error: "Version conflict detected"
+Solution: Use merge import or resolve conflicts manually
+                </div>
+
+                <h3>Diagnostic Steps</h3>
+                <ol style="padding-left: var(--space-6);">
+                    <li>Verify file permissions and disk space availability</li>
+                    <li>Validate JSON syntax and schema structure</li>
+                    <li>Check for required fields and data type compliance</li>
+                    <li>Test with smaller dataset to isolate issues</li>
+                    <li>Review operation logs for detailed error information</li>
+                    <li>Ensure schema version compatibility between systems</li>
+                </ol>
+            </section>
+
+            <nav class="page-nav">
+                <a href="../sections-manager/" class="nav-link">← Report Sections Guide</a>
+                <a href="../../reporting/" class="nav-link">Campaign Analysis Guide →</a>
+            </nav>
+        </main>
+    </div>
+
+    <script>
+        // Table of Contents functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tocLinks = document.querySelectorAll('.toc a');
+            const sections = document.querySelectorAll('.content-section');
+
+            function updateActiveTocLink() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.getBoundingClientRect().top;
+                    if (sectionTop <= 100) {
+                        current = section.id;
+                    }
+                });
+
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // Smooth scrolling for TOC links
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            window.addEventListener('scroll', updateActiveTocLink);
+            updateActiveTocLink();
+        });
+    </script>
+</body>
+</html>

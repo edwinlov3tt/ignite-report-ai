@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Administration - Report.AI Documentation</title>
+    <link rel="stylesheet" href="../../context/creative-docs/design-tokens.css">
+    <style>
+        /* Documentation Styles - Following Design System */
+        :root {
+            --doc-max-width: 1200px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .docs-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid var(--border-default);
+            padding: var(--space-8);
+        }
+
+        .header-content {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .docs-title {
+            font-size: var(--text-title-2xl-size);
+            font-weight: var(--text-title-2xl-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .docs-subtitle {
+            font-size: var(--text-body-lg-size);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .breadcrumb {
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb a {
+            color: #CF0E0F;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* Container */
+        .docs-container {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            padding: var(--space-8);
+        }
+
+        /* Navigation Cards */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-8) 0;
+        }
+
+        .nav-card {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            text-decoration: none;
+            color: inherit;
+            transition: all var(--duration-normal);
+            display: block;
+        }
+
+        .nav-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-4);
+            display: block;
+        }
+
+        .nav-card h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .nav-card p {
+            color: var(--text-secondary);
+            margin: 0 0 var(--space-4) 0;
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        .nav-card .features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-card .features li {
+            font-size: var(--text-body-xs-size);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-1);
+            padding-left: var(--space-4);
+            position: relative;
+        }
+
+        .nav-card .features li:before {
+            content: "•";
+            color: #CF0E0F;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Content Sections */
+        .content-section {
+            margin: var(--space-12) 0;
+        }
+
+        .content-section h2 {
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-6) 0;
+            padding-bottom: var(--space-3);
+            border-bottom: 2px solid #CF0E0F;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .content-section h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: var(--space-8) 0 var(--space-4) 0;
+        }
+
+        .content-section p {
+            margin-bottom: var(--space-4);
+            line-height: 1.7;
+        }
+
+        /* Schema Hierarchy Diagram */
+        .hierarchy-diagram {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-8);
+            margin: var(--space-6) 0;
+            text-align: center;
+        }
+
+        .hierarchy-level {
+            margin: var(--space-6) 0;
+            position: relative;
+        }
+
+        .hierarchy-level:not(:last-child):after {
+            content: "↓";
+            font-size: 2rem;
+            color: #CF0E0F;
+            display: block;
+            margin-top: var(--space-3);
+        }
+
+        .hierarchy-box {
+            display: inline-block;
+            background: linear-gradient(135deg, #CF0E0F, #A00B0C);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radii-md);
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            box-shadow: var(--shadow-md);
+        }
+
+        .hierarchy-examples {
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+            margin-top: var(--space-2);
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .feature-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+        }
+
+        .feature-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .feature-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        /* Info Boxes */
+        .info-box {
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .info-box.tip {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .info-box.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .info-box h4 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .info-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #f8fafc;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-sm);
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: var(--text-body-sm-size);
+            color: var(--text-primary);
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+
+        /* Access Panel */
+        .access-panel {
+            background: linear-gradient(135deg, #CF0E0F 0%, #A00B0C 100%);
+            color: white;
+            padding: var(--space-8);
+            border-radius: var(--radii-lg);
+            margin: var(--space-8) 0;
+            text-align: center;
+        }
+
+        .access-panel h3 {
+            margin: 0 0 var(--space-4) 0;
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+        }
+
+        .access-panel p {
+            margin: 0 0 var(--space-6) 0;
+            font-size: var(--text-body-lg-size);
+            opacity: 0.9;
+        }
+
+        .access-btn {
+            background: white;
+            color: #CF0E0F;
+            padding: var(--space-4) var(--space-8);
+            border: none;
+            border-radius: var(--radii-md);
+            font-size: var(--text-body-md-size);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all var(--duration-normal);
+            box-shadow: var(--shadow-md);
+        }
+
+        .access-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Navigation */
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-8) 0;
+            border-top: 1px solid var(--border-default);
+            margin-top: var(--space-12);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: #CF0E0F;
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            font-weight: 500;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .nav-link:hover {
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: var(--space-4);
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hide scrollbars */
+        .code-block {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .code-block::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <div class="header-content">
+            <div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../">Documentation</a> > <span>Schema Administration</span>
+                </nav>
+                <h1 class="docs-title">Schema Administration</h1>
+                <p class="docs-subtitle">Manage campaign data structures and tactic hierarchies</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="docs-container">
+        <!-- Quick Access Panel -->
+        <div class="access-panel">
+            <h3>🚀 Access Schema Admin</h3>
+            <p>Ready to manage your campaign schema? Jump directly to the administration interface.</p>
+            <a href="../../schema-admin/" class="access-btn" target="_blank">Open Schema Admin →</a>
+        </div>
+
+        <!-- Tool Navigation -->
+        <div class="nav-grid">
+            <a href="../../schema-admin/" class="nav-card" target="_blank">
+                <span class="icon">⚙️</span>
+                <h3>Schema Admin Interface</h3>
+                <p>Main administration panel for managing products, subproducts, and tactic configurations.</p>
+                <ul class="features">
+                    <li>Product hierarchy management</li>
+                    <li>Tactic type configuration</li>
+                    <li>CSV table definitions</li>
+                    <li>Real-time validation</li>
+                </ul>
+            </a>
+
+            <a href="ai-testing/" class="nav-card">
+                <span class="icon">🧪</span>
+                <h3>AI Testing</h3>
+                <p>Test AI models, validate report sections, and ensure output quality and consistency.</p>
+                <ul class="features">
+                    <li>Model performance testing</li>
+                    <li>Output quality validation</li>
+                    <li>Section-specific testing</li>
+                    <li>Consistency verification</li>
+                </ul>
+            </a>
+
+            <a href="sections-manager/" class="nav-card">
+                <span class="icon">📑</span>
+                <h3>Report Sections</h3>
+                <p>Configure custom sections for AI-generated reports and customize output structure.</p>
+                <ul class="features">
+                    <li>Section configuration</li>
+                    <li>Template management</li>
+                    <li>Output customization</li>
+                    <li>Structure validation</li>
+                </ul>
+            </a>
+
+            <a href="schema-export/" class="nav-card">
+                <span class="icon">💾</span>
+                <h3>Schema Export</h3>
+                <p>Export, import, and backup schema configurations with comprehensive data management.</p>
+                <ul class="features">
+                    <li>Multi-format export</li>
+                    <li>Schema backup/restore</li>
+                    <li>Version management</li>
+                    <li>Integration helpers</li>
+                </ul>
+            </a>
+        </div>
+
+        <!-- Overview Section -->
+        <section class="content-section">
+            <h2>🏗️ Overview</h2>
+            <p>The Schema Administration System is the backbone of Report.AI's intelligent campaign analysis. It manages the hierarchical structure that enables automatic tactic detection, smart file routing, and enhanced AI context generation.</p>
+
+            <div class="hierarchy-diagram">
+                <div class="hierarchy-level">
+                    <div class="hierarchy-box">Product</div>
+                    <div class="hierarchy-examples">Facebook, YouTube, MadHive, etc.</div>
+                </div>
+                <div class="hierarchy-level">
+                    <div class="hierarchy-box">Subproduct</div>
+                    <div class="hierarchy-examples">Blended Tactics, Targeted Display, Video Campaigns</div>
+                </div>
+                <div class="hierarchy-level">
+                    <div class="hierarchy-box">Tactic Type</div>
+                    <div class="hierarchy-examples">Monthly Performance, Demographic Data, Creative Analysis</div>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <h4>💡 Schema Version 2</h4>
+                <p>The current schema system uses a hierarchical Product → Subproduct → Tactic Type structure with advanced features like context inheritance, alias resolution, and deterministic file routing.</p>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="content-section">
+            <h2>✨ Key Features</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="icon">🎯</span>Automatic Tactic Detection</h4>
+                    <p>Intelligently identifies campaign tactics from Lumina data using enhanced mapping algorithms with product variations and naming consistency handling.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4><span class="icon">📁</span>Smart File Routing</h4>
+                    <p>Multi-tier CSV matching system using filename patterns, exact matches, aliases, and header similarity with Jaccard coefficient scoring.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4><span class="icon">🤖</span>AI Context Enhancement</h4>
+                    <p>Hierarchical context inheritance with platform clusters, benchmarks, and guidelines merged across product hierarchy levels.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4><span class="icon">🔗</span>Platform Integration</h4>
+                    <p>Dynamic link generation for Lumina platform with product slugification, time period mapping, and Wide Orbit integration.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4><span class="icon">🏷️</span>Alias Management</h4>
+                    <p>Multi-level alias resolution with product-level glossary and subproduct-specific tactic types for consistent normalization.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4><span class="icon">📊</span>Table Definitions</h4>
+                    <p>Complete CSV structure definitions with headers, validation rules, and data-table-slug attributes for deterministic routing.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="content-section">
+            <h2>⚙️ How It Works</h2>
+            
+            <h3>Product-Level Management</h3>
+            <p>Products represent major advertising platforms or campaign types. Each product includes:</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="icon">🏢</span>Platform Clusters</h4>
+                    <p>Supported advertising platforms (Facebook, YouTube, MadHive, etc.)</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">📺</span>Supported Mediums</h4>
+                    <p>Display, Video, Audio, CTV, OTT campaign types</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">📈</span>Key Performance Indicators</h4>
+                    <p>CPM, CTR, Conversions, Completion Rate metrics</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">🏷️</span>Tactic Aliases</h4>
+                    <p>Glossary for normalizing tactic names (RON → Run of Network)</p>
+                </div>
+            </div>
+
+            <h3>Subproduct-Level Management</h3>
+            <p>Subproducts define specific campaign strategies within products:</p>
+
+            <div class="code-block">
+Subproduct Structure:
+├── Data value mapping (for report links)
+├── Filename stem (for CSV routing)
+├── Platform inheritance (from parent product)
+├── Tactic type definitions
+├── Table structure definitions
+└── Lumina extractor configurations
+            </div>
+
+            <h3>File Routing Algorithm</h3>
+            <p>The system uses a sophisticated multi-tier matching system:</p>
+
+            <ol style="padding-left: var(--space-6);">
+                <li><strong>Exact Filename Match (Score: 100)</strong> - Files listed in schema table definitions</li>
+                <li><strong>Alias Match (Score: 90)</strong> - Known filename variations</li>
+                <li><strong>Pattern Match (Score: 85)</strong> - <code>report-{stem}-{table-slug}.csv</code> format</li>
+                <li><strong>Header Similarity (Score: 60-80)</strong> - Jaccard coefficient ≥ 0.6 for CSV headers</li>
+            </ol>
+
+            <div class="info-box warning">
+                <h4>⚠️ File Naming Best Practices</h4>
+                <p>For optimal routing, use descriptive filenames that include the product type and data category. Example: <code>report-targeted-display-monthly-performance.csv</code></p>
+            </div>
+        </section>
+
+        <!-- Integration -->
+        <section class="content-section">
+            <h2>🔗 Integration & Export</h2>
+            <p>The schema system provides multiple export formats and integration helpers:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="icon">📄</span>JSON Export</h4>
+                    <p><code>unified_tactic_schema.json</code> - Complete v2 schema structure for main application</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">📊</span>CSV Crosswalk</h4>
+                    <p><code>tactic_crosswalk.csv</code> - Compatibility format matching GPT Tactic Reference</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">📋</span>XML Export</h4>
+                    <p><code>tactic_schema.xml</code> - Structured XML for system integration</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">⚡</span>JavaScript Helpers</h4>
+                    <p><code>tactic_schema_helpers.js</code> - Ready-to-use integration functions</p>
+                </div>
+            </div>
+
+            <h3>Main Application Functions</h3>
+            <div class="code-block">
+// File Routing
+matchCsvToTable(filename, csvHeaders)
+
+// Tactic Normalization  
+normalizeTacticLabel(label, product, subproduct)
+
+// Context Enhancement
+getEffectiveAnalysisContext(product, subproduct)
+
+// Link Generation
+generateReportLink(product, subproduct, orderId, timePeriod, format)
+generateLineItemLink(product, lineItemId)
+            </div>
+        </section>
+
+        <!-- Getting Started -->
+        <section class="content-section">
+            <h2>🚀 Getting Started</h2>
+            <p>Follow these steps to effectively use the Schema Administration System:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="icon">1️⃣</span>Start with Products</h4>
+                    <p>Define your major advertising platforms and campaign types first</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">2️⃣</span>Add Subproducts</h4>
+                    <p>Create specific campaign strategies and tactics under each product</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">3️⃣</span>Configure Tables</h4>
+                    <p>Define CSV structures and validation rules for data import</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">4️⃣</span>Test Integration</h4>
+                    <p>Use the testing tools to validate your schema configuration</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">5️⃣</span>Export Schema</h4>
+                    <p>Generate the unified schema file for the main application</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="icon">6️⃣</span>Monitor Performance</h4>
+                    <p>Use AI testing to validate analysis quality and consistency</p>
+                </div>
+            </div>
+        </section>
+
+        <nav class="page-nav">
+            <a href="../reporting/" class="nav-link">← Campaign Analysis Guide</a>
+            <a href="ai-testing/" class="nav-link">AI Testing Guide →</a>
+        </nav>
+    </div>
+
+    <script>
+        // Add some interactivity for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add hover effects for better feedback
+            const cards = document.querySelectorAll('.nav-card, .feature-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-4px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

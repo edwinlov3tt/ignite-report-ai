@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report.AI Documentation</title>
+    <link rel="stylesheet" href="../context/creative-docs/design-tokens.css">
+    <style>
+        /* Documentation Styles - Following Design System */
+        :root {
+            --doc-max-width: 1200px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .docs-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid var(--border-default);
+            padding: var(--space-8);
+            text-align: center;
+        }
+
+        .docs-title {
+            font-size: var(--text-title-3xl-size);
+            font-weight: var(--text-title-3xl-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-3) 0;
+        }
+
+        .docs-subtitle {
+            font-size: var(--text-body-lg-size);
+            color: var(--text-secondary);
+            margin: 0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Container */
+        .docs-container {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            padding: var(--space-8);
+        }
+
+        /* Navigation */
+        .docs-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .docs-nav-card {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            text-decoration: none;
+            color: inherit;
+            transition: all var(--duration-normal);
+            display: block;
+        }
+
+        .docs-nav-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .docs-nav-card .icon {
+            font-size: 2rem;
+            margin-bottom: var(--space-3);
+            display: block;
+        }
+
+        .docs-nav-card h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .docs-nav-card p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: var(--text-body-sm-size);
+        }
+
+        /* Quick Start Section */
+        .quick-start {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .quick-start h2 {
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+        }
+
+        .quick-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .quick-steps li {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-3);
+            padding: var(--space-3);
+            background: var(--bg-muted);
+            border-radius: var(--radii-sm);
+        }
+
+        .step-number {
+            background: #CF0E0F;
+            color: white;
+            border-radius: var(--radii-full);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-body-xs-size);
+            font-weight: var(--text-body-xs-weight);
+            flex-shrink: 0;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .feature-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+        }
+
+        .feature-card h3 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .feature-card .icon {
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: var(--text-body-sm-size);
+        }
+
+        /* Footer */
+        .docs-footer {
+            background: var(--bg-muted);
+            border-top: 1px solid var(--border-default);
+            padding: var(--space-6);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: var(--space-4);
+            }
+
+            .docs-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <h1 class="docs-title">Report.AI Documentation</h1>
+        <p class="docs-subtitle">Complete guide to AI-powered marketing campaign analysis and schema management</p>
+    </header>
+
+    <div class="docs-container">
+        <!-- Main Navigation -->
+        <nav class="docs-nav">
+            <a href="reporting/" class="docs-nav-card">
+                <span class="icon">📊</span>
+                <h3>Campaign Analysis</h3>
+                <p>Learn how to analyze marketing campaigns, upload data files, and generate AI-powered insights</p>
+            </a>
+
+            <a href="schema-admin/" class="docs-nav-card">
+                <span class="icon">⚙️</span>
+                <h3>Schema Administration</h3>
+                <p>Manage product hierarchies, configure tactic mappings, and maintain campaign data structures</p>
+            </a>
+
+            <a href="schema-admin/ai-testing/" class="docs-nav-card">
+                <span class="icon">🧪</span>
+                <h3>AI Testing</h3>
+                <p>Test AI models, validate report sections, and ensure output quality and consistency</p>
+            </a>
+
+            <a href="schema-admin/sections-manager/" class="docs-nav-card">
+                <span class="icon">📑</span>
+                <h3>Report Sections</h3>
+                <p>Configure custom sections for AI-generated reports and customize output structure</p>
+            </a>
+
+            <a href="schema-admin/schema-export/" class="docs-nav-card">
+                <span class="icon">💾</span>
+                <h3>Schema Export</h3>
+                <p>Export, import, and backup schema configurations with comprehensive data management</p>
+            </a>
+        </nav>
+
+        <!-- Quick Start Guide -->
+        <section class="quick-start">
+            <h2>🚀 Quick Start Guide</h2>
+            <ol class="quick-steps">
+                <li>
+                    <span class="step-number">1</span>
+                    <span>Get your campaign URL from Lumina platform</span>
+                </li>
+                <li>
+                    <span class="step-number">2</span>
+                    <span>Paste URL into Report.AI main application</span>
+                </li>
+                <li>
+                    <span class="step-number">3</span>
+                    <span>Upload CSV performance data files</span>
+                </li>
+                <li>
+                    <span class="step-number">4</span>
+                    <span>Configure company information and analysis settings</span>
+                </li>
+                <li>
+                    <span class="step-number">5</span>
+                    <span>Generate comprehensive AI analysis report</span>
+                </li>
+            </ol>
+        </section>
+
+        <!-- Key Features -->
+        <section class="features-grid">
+            <div class="feature-card">
+                <h3><span class="icon">🎯</span>Automatic Tactic Detection</h3>
+                <p>Intelligently identifies campaign tactics from Lumina data using advanced mapping algorithms</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="icon">📁</span>Smart File Routing</h3>
+                <p>Automatically sorts CSV files to correct tables using filename patterns and header analysis</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="icon">🤖</span>AI-Powered Analysis</h3>
+                <p>Generates comprehensive reports using Claude AI with schema-enhanced context</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="icon">🏗️</span>Hierarchical Schema</h3>
+                <p>Manage complex Product → Subproduct → Tactic Type relationships with inheritance</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="icon">📊</span>Performance Tracking</h3>
+                <p>Monitor campaign metrics with color-coded status indicators and progress tracking</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="icon">🔗</span>Platform Integration</h3>
+                <p>Direct links to Lumina platform for line items and reports with time range integration</p>
+            </div>
+        </section>
+
+        <!-- System Requirements -->
+        <section class="quick-start">
+            <h2>📋 System Requirements</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3><span class="icon">💻</span>Browser Support</h3>
+                    <p>Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">📊</span>Data Formats</h3>
+                    <p>CSV files up to 10MB, Lumina platform URLs, JSON schema exports</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">🔐</span>Access Requirements</h3>
+                    <p>Lumina platform access, campaign URL permissions, CSV export capabilities</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="docs-footer">
+        <p>Report.AI Documentation | Last Updated: August 2025 | <a href="../" style="color: #CF0E0F;">← Back to App</a></p>
+    </footer>
+
+    <script>
+        // Add some interactivity for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Add hover effects for better feedback
+            const cards = document.querySelectorAll('.docs-nav-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-4px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

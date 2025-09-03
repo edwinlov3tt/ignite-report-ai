@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Connection Test - Report.AI</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            line-height: 1.6; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .success { 
+            background: #d4edda; 
+            border-left-color: #28a745; 
+            color: #155724; 
+        }
+        .error { 
+            background: #f8d7da; 
+            border-left-color: #dc3545; 
+            color: #721c24; 
+        }
+        .info { 
+            background: #d1ecf1; 
+            border-left-color: #17a2b8; 
+            color: #0c5460; 
+        }
+        .loading {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        button { 
+            padding: 12px 24px; 
+            margin: 10px 5px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        pre { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow-x: auto;
+            border: 1px solid #e9ecef;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .value {
+            color: #6c757d;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Database Connection Test</h1>
+        <p>Test the connection to your SiteGround MySQL database for Report.AI.</p>
+        
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="label">Database Host:</div>
+                <div class="value">localhost (SiteGround)</div>
+            </div>
+            <div class="info-item">
+                <div class="label">Database Name:</div>
+                <div class="value">dbdcmag11ounlw</div>
+            </div>
+            <div class="info-item">
+                <div class="label">Test Endpoint:</div>
+                <div class="value">/api/test-database.php</div>
+            </div>
+            <div class="info-item">
+                <div class="label">PHP Environment:</div>
+                <div class="value">Local Development Server</div>
+            </div>
+        </div>
+        
+        <button onclick="testDatabaseConnection()" id="testBtn">Test Database Connection</button>
+        <button onclick="clearResults()" id="clearBtn">Clear Results</button>
+        
+        <div id="results"></div>
+
+        <h2>Connection Requirements</h2>
+        <div class="test-result info">
+            <strong>📋 Prerequisites for Database Connection:</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li>MySQL database must be accessible from your current IP</li>
+                <li>SiteGround database credentials must be correct</li>
+                <li>PHP PDO MySQL extension must be enabled</li>
+                <li>Network connectivity to SiteGround servers</li>
+            </ul>
+        </div>
+        
+        <div class="test-result info">
+            <strong>🔧 If connection fails:</strong>
+            <ol style="margin: 10px 0 0 20px;">
+                <li>Check if your IP is whitelisted in SiteGround cPanel → Remote MySQL</li>
+                <li>Verify database credentials in .env file</li>
+                <li>Ensure SiteGround MySQL service is running</li>
+                <li>Check PHP error logs for detailed error messages</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testDatabaseConnection() {
+            const resultsDiv = document.getElementById('results');
+            const testBtn = document.getElementById('testBtn');
+            
+            // Show loading state
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            
+            resultsDiv.innerHTML = '<div class="test-result loading">🔄 Testing database connection...</div>';
+            
+            try {
+                const response = await fetch('/api/test-database.php', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                let resultHtml = '';
+                
+                if (result.success) {
+                    resultHtml = `
+                        <div class="test-result success">
+                            <h3>✅ Database Connection Successful!</h3>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="label">Host:</div>
+                                    <div class="value">${result.host}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="label">Database:</div>
+                                    <div class="value">${result.database}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="label">MySQL Version:</div>
+                                    <div class="value">${result.mysql_version || 'N/A'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="label">Table Count:</div>
+                                    <div class="value">${result.table_count || 0}</div>
+                                </div>
+                            </div>
+                            
+                            <p><strong>Connection Time:</strong> ${result.connection_time}</p>
+                        </div>
+                    `;
+                } else {
+                    resultHtml = `
+                        <div class="test-result error">
+                            <h3>❌ Database Connection Failed</h3>
+                            <p><strong>Error:</strong> ${result.message}</p>
+                            <p><strong>Host:</strong> ${result.host}</p>
+                            <p><strong>Database:</strong> ${result.database}</p>
+                            
+                            <h4>Troubleshooting Steps:</h4>
+                            <ol>
+                                <li>Check your SiteGround Remote MySQL settings</li>
+                                <li>Verify your IP address is whitelisted</li>
+                                <li>Confirm database credentials in .env file</li>
+                                <li>Check network connectivity</li>
+                            </ol>
+                        </div>
+                    `;
+                }
+                
+                // Show raw response for debugging
+                resultHtml += `
+                    <details style="margin-top: 15px;">
+                        <summary style="cursor: pointer; color: #007bff;">🔍 View Raw Response</summary>
+                        <pre style="margin-top: 10px;">${JSON.stringify(result, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultsDiv.innerHTML = resultHtml;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-result error">
+                        <h3>❌ Connection Test Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>This could indicate a network issue, server configuration problem, or that the API endpoint is not accessible.</p>
+                        
+                        <h4>Check:</h4>
+                        <ul>
+                            <li>Is the PHP development server running?</li>
+                            <li>Is the API endpoint accessible at /api/test-database.php?</li>
+                            <li>Are there any PHP errors in the server logs?</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test Database Connection';
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Test on page load
+        window.addEventListener('load', () => {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="test-result info">📋 Ready to test database connection. Click the button above.</div>';
+        });
+    </script>
+</body>
+</html>

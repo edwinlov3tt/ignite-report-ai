@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Channel Campaign Analytics Platform — AI-Powered Performance Insights</title>
+  <style>
+    /* -----------------------------
+       shadcn-like design tokens
+       ----------------------------- */
+    :root {
+      --bg: 255 255 255;
+      --fg: 15 23 42;           /* slate-900 */
+      --muted-fg: 71 85 105;    /* slate-600 */
+      --border: 226 232 240;    /* slate-200 */
+      --header: 248 250 252;    /* slate-50 (very light gray) */
+      --card: 255 255 255;
+      --card-foreground: 15 23 42;
+      --input: 241 245 249;     /* slate-100 */
+      --ring: 203 213 225;      /* slate-300 */
+      --primary: 207 14 15;     /* red for titles */
+      --primary-foreground: 255 255 255;
+      --accent: 248 250 252;    /* slate-50 */
+      --accent-foreground: 15 23 42;
+      --destructive: 239 68 68; /* red-500 */
+      --success: 16 185 129;    /* emerald-500 */
+      --warning: 234 179 8;     /* yellow-500 */
+      --info: 59 130 246;       /* blue-500 */
+      --radius: 14px;
+      --shadow: 0 10px 20px rgba(2, 6, 23, .06), 0 2px 6px rgba(2, 6, 23, .06);
+    }
+    [data-theme="dark"]{
+      --bg: 2 6 23;             /* slate-950 */
+      --fg: 241 245 249;        /* slate-100 */
+      --muted-fg: 148 163 184;  /* slate-400 */
+      --border: 30 41 59;       /* slate-800 */
+      --header: 15 23 42;       /* slate-900 (dark header) */
+      --card: 3 7 18;           /* slightly lighter than bg */
+      --card-foreground: 241 245 249;
+      --input: 15 23 42;
+      --ring: 51 65 85;         /* slate-700 */
+      --primary: 207 14 15;     /* red for buttons and titles */
+      --primary-foreground: 255 255 255;
+      --accent: 10 15 28;
+      --accent-foreground: 226 232 240;
+      --destructive: 248 113 113;
+      --success: 52 211 153;
+      --warning: 234 179 8;
+      --info: 59 130 246;
+      --shadow: 0 14px 28px rgba(0,0,0,.45), 0 10px 10px rgba(0,0,0,.35);
+    }
+    /* -----------------------------
+       base + layout
+       ----------------------------- */
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color: rgb(var(--fg));
+      background: rgb(var(--bg));
+      line-height: 1.6;
+    }
+    .container{max-width:1200px;margin:0 auto;padding:24px}
+    .header{
+      position:sticky;top:0;z-index:40;
+      backdrop-filter: saturate(180%) blur(8px);
+      background: color-mix(in oklab, rgb(var(--bg)) 92%, transparent);
+      border-bottom:1px solid rgb(var(--border));
+    }
+    .header-inner{display:flex;align-items:center;gap:12px;justify-content:space-between;max-width:1200px;margin:0 auto;padding:14px 24px}
+    .title{display:flex;align-items:center;gap:10px;font-weight:700}
+    .title .dot{width:10px;height:10px;border-radius:999px;background:rgb(var(--primary))}
+    .subtle{color:rgb(var(--muted-fg))}
+    .stack{display:flex;flex-direction:column;gap:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .center{display:flex;justify-content:center;align-items:center;gap:12px}
+    .spacer{height:10px}
+    .thin-divider{height:.5px;background: rgb(var(--border));margin:4px 0 8px}
+    /* -----------------------------
+       components
+       ----------------------------- */
+    .card{
+      background: rgb(var(--card));
+      color: rgb(var(--card-foreground));
+      border:1px solid rgb(var(--border));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-header{
+      display:flex;align-items:center;justify-content:space-between;
+      background: rgb(var(--header)); /* very light gray, no gradient */
+      border-bottom:1px solid rgb(var(--border));
+      padding:16px 18px;
+      cursor:pointer;
+      transition: background-color 0.2s ease;
+    }
+    .card-header:hover{
+      background: color-mix(in oklab, rgb(var(--header)) 95%, rgb(var(--border)));
+    }
+    .card-title{font-weight:800;color: rgb(var(--primary));} /* red title only */
+    .card-sub{color:rgb(var(--muted-fg));font-size:13px;margin-top:4px}
+    .card-body{padding:18px}
+    .muted{color:rgb(var(--muted-fg))}
+    .grid{display:grid;gap:16px}
+    .grid.cols-2{grid-template-columns: repeat(2, minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns: repeat(3, minmax(0,1fr))}
+    .grid.cols-4{grid-template-columns: repeat(4, minmax(0,1fr))}
+    @media (max-width:1024px){.grid.cols-3,.grid.cols-4{grid-template-columns: repeat(2, minmax(0,1fr))}}
+    @media (max-width:720px){.grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns: 1fr}}
+    .btn{
+      appearance:none;
+      border:1px solid rgb(var(--border));
+      border-radius: 12px;
+      height:40px;
+      padding:0 14px;
+      font-weight:700;
+      background: rgb(var(--card));
+      cursor:pointer;
+      transition: all .18s ease;
+      color: rgb(var(--fg));
+    }
+    .btn:hover{transform: translateY(-1px);box-shadow: 0 8px 18px rgba(2,6,23,.08)}
+    .btn:active{transform: translateY(0)}
+    .btn-primary{
+      background: rgb(var(--primary));
+      color: rgb(var(--primary-foreground));
+      border-color: color-mix(in oklab, rgb(var(--primary)) 70%, rgb(var(--border)));
+    }
+    .btn-primary.analyze{background: rgb(var(--primary));color: rgb(var(--primary-foreground))}
+    .btn-primary.view{background: rgb(var(--success));color:white}
+    .btn-primary.reanalyze{background: rgb(var(--warning));color:white}
+    .btn-ghost{background:transparent}
+    .btn-outline{background:transparent;border-color: rgb(var(--ring))}
+    .btn-danger{background: rgb(var(--destructive));color:white;border-color: rgb(var(--destructive))}
+    .btn-small{height:34px;padding:0 10px;border-radius:10px;font-weight:600}
+    .btn-pill{border-radius:999px}
+    .btn-accent{
+      background: rgb(207, 14, 15);
+      color: white;
+      border-color: rgb(207, 14, 15);
+    }
+    .btn-accent:hover{
+      background: rgb(185, 28, 28);
+      border-color: rgb(185, 28, 28);
+    }
+    [data-theme="dark"] .btn-accent{
+      background: rgb(220, 38, 38);
+      border-color: rgb(220, 38, 38);
+    }
+    [data-theme="dark"] .btn-accent:hover{
+      background: rgb(239, 68, 68);
+      border-color: rgb(239, 68, 68);
+    }
+    
+    /* Lumina buttons styling */
+    .lumina-buttons {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .lumina-buttons .btn {
+      min-width: 70px;
+      font-size: 12px;
+      padding: 4px 8px;
+      height: 32px;
+    }
+    
+    .lumina-buttons .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:2px 8px;height:24px;border-radius:999px;font-size:12px;border:1px solid rgb(var(--border));background: rgb(var(--accent));color: rgb(var(--accent-foreground));
+    }
+    .badge.success{border-color: rgba(var(--success), .2); background: color-mix(in oklab, rgb(var(--success)) 18%, rgb(var(--accent)));}
+    .badge.warn{border-color: rgba(var(--warning), .25); background: color-mix(in oklab, rgb(var(--warning)) 18%, rgb(var(--accent)));}
+    .badge.info{border-color: rgba(var(--info), .25); background: color-mix(in oklab, rgb(var(--info)) 18%, rgb(var(--accent)));}
+    
+    /* Status badges with specific colors */
+    .badge.status-complete{background: rgb(21, 128, 61); color: white; border-color: rgb(21, 128, 61);}
+    .badge.status-live{background: rgb(34, 197, 94); color: white; border-color: rgb(34, 197, 94);}
+    .badge.status-live-revision{background: rgb(134, 239, 172); color: rgb(21, 128, 61); border-color: rgb(134, 239, 172);}
+    .badge.status-pending-details{background: rgb(254, 240, 138); color: rgb(133, 77, 14); border-color: rgb(254, 240, 138);}
+    .badge.status-draft{background: rgb(252, 165, 165); color: rgb(153, 27, 27); border-color: rgb(252, 165, 165);}
+    .badge.status-cancelled{background: rgb(220, 38, 38); color: white; border-color: rgb(220, 38, 38);}
+    .badge.status-unknown{background: rgb(156, 163, 175); color: rgb(55, 65, 81); border-color: rgb(156, 163, 175);}
+    .input, .select, .textarea{
+      width:100%;border:1px solid rgb(var(--border));
+      border-radius:12px;background: rgb(var(--input));
+      padding:10px 12px;color: rgb(var(--fg));
+      outline:none; transition: border-color .15s, box-shadow .15s;
+      font-family:inherit;
+    }
+    .input:focus, .select:focus, .textarea:focus{
+      border-color: rgb(var(--ring));
+      box-shadow: 0 0 0 6px color-mix(in oklab, rgb(var(--ring)) 20%, transparent);
+    }
+    .textarea{min-height:120px;resize:vertical}
+    .label{font-size:13px;color:rgb(var(--muted-fg));margin-bottom:6px;font-weight:600}
+    .helper{font-size:12px;color:rgb(var(--muted-fg));margin-top:6px}
+    .divider{height:1px;background: rgb(var(--border));margin:8px 0 16px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;background: rgb(var(--accent));
+      border:1px solid rgb(var(--border));font-size:13px
+    }
+    .chip .x{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:18px;height:18px;border-radius:999px;
+      border:1px solid rgb(var(--ring));cursor:pointer;line-height:0;
+      font-weight:800;
+    }
+    .switch{position:relative;width:44px;height:26px;display:inline-flex;align-items:center;cursor:pointer}
+    .switch input{appearance:none;width:44px;height:26px;border-radius:999px;background: rgb(var(--input));border:1px solid rgb(var(--border));outline:none;transition: all .2s}
+    .switch input:checked{background: color-mix(in oklab, rgb(var(--primary)) 18%, rgb(var(--input)));border-color: rgb(var(--primary))}
+    .switch span{position:absolute;left:4px;width:18px;height:18px;border-radius:999px;background:white;box-shadow: var(--shadow);transition:transform .2s}
+    .switch input:checked + span{transform: translateX(18px)}
+    .accordion-item{border:1px solid rgb(var(--border));border-radius:12px;overflow:hidden}
+    .accordion-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background: rgb(var(--accent));cursor:pointer}
+    .accordion-content{padding:14px 16px;display:none}
+    .dropzone{
+      border:1px dashed rgb(var(--ring));border-radius:12px;padding:14px;background: rgb(var(--accent));
+      display:flex;justify-content:space-between;align-items:center;gap:10px
+    }
+    .dropzone.drag{background: color-mix(in oklab, rgb(var(--ring)) 9%, rgb(var(--accent)))}
+    .progress{
+      height:8px;border-radius:999px;background: rgb(var(--input));overflow:hidden;border:1px solid rgb(var(--border))
+    }
+    .progress > i{display:block;height:100%;width:0;background: rgb(var(--primary));transition: width .3s ease}
+    .footer-note{font-size:12px;color:rgb(var(--muted-fg));text-align:center;margin:20px 0}
+    /* Chart placeholders */
+    .chart{
+      height:260px;border:1px dashed rgb(var(--ring));
+      border-radius:12px;background: repeating-linear-gradient( -45deg, rgba(148,163,184,.12) 0 8px, transparent 8px 16px);
+      display:flex;align-items:center;justify-content:center;color:rgb(var(--muted-fg));font-weight:700
+    }
+    .sticky-actions{position:sticky;bottom:0;background: color-mix(in oklab, rgb(var(--bg)) 85%, transparent);backdrop-filter: blur(8px);border-top:1px solid rgb(var(--border));padding:14px}
+    .hidden {
+      display: none !important;
+      visibility: hidden;
+      position: absolute;
+      left: -9999px;
+    }
+    .hidden-for-results {
+      display: none !important;
+    }
+    body.showing-results {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    /* Time range cards */
+    .time-card{
+      padding:16px;border:1px solid rgb(var(--border));border-radius:12px;background: rgb(var(--card));
+      cursor:pointer;text-align:center;transition: all .2s ease;
+    }
+    .time-card:hover{border-color: rgb(var(--ring));transform: translateY(-2px);box-shadow: 0 4px 12px rgba(0,0,0,.08)}
+    .time-card.active{border-color: rgb(var(--primary));background: color-mix(in oklab, rgb(var(--primary)) 8%, rgb(var(--card)));box-shadow: 0 0 0 3px color-mix(in oklab, rgb(var(--primary)) 15%, transparent)}
+    .time-card .days{font-size:24px;font-weight:700;color: rgb(var(--fg))}
+    .time-card .label{font-size:12px;color:rgb(var(--muted-fg));margin-top:4px}
+    .date-display{font-size:11px;color:rgb(var(--muted-fg));position:absolute;top:16px;right:18px}
+    .duration-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background: rgb(var(--accent));border:1px solid rgb(var(--border));border-radius:999px;font-size:13px;color:rgb(var(--fg))}
+    /* AI Configuration styles */
+    .slider-container{display:flex;align-items:center;gap:16px}
+    .slider{
+      -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;
+      background: rgb(var(--input));outline:none;border:1px solid rgb(var(--border));
+    }
+    .slider::-webkit-slider-thumb{
+      -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:999px;
+      background: rgb(var(--primary));cursor:pointer;border:2px solid rgb(var(--card));
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .slider::-moz-range-thumb{
+      width:20px;height:20px;border-radius:999px;background: rgb(var(--primary));
+      cursor:pointer;border:2px solid rgb(var(--card));box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .temp-label{font-weight:700;padding:4px 10px;border-radius:8px;font-size:14px}
+    .temp-label.focused{color: rgb(var(--info));background: color-mix(in oklab, rgb(var(--info)) 10%, rgb(var(--accent)))}
+    .temp-label.balanced{color: rgb(var(--success));background: color-mix(in oklab, rgb(var(--success)) 10%, rgb(var(--accent)))}
+    .temp-label.creative{color: rgb(var(--warning));background: color-mix(in oklab, rgb(var(--warning)) 10%, rgb(var(--accent)))}
+    .temp-label.diverse{color: rgb(234 88 12);background: color-mix(in oklab, rgb(234 88 12) 10%, rgb(var(--accent)))}
+    .temp-label.maximum{color: rgb(var(--destructive));background: color-mix(in oklab, rgb(var(--destructive)) 10%, rgb(var(--accent)))}
+    .tone-card{
+      padding:12px 16px;border:1px solid rgb(var(--border));border-radius:10px;
+      background: rgb(var(--card));cursor:pointer;transition: all .2s ease;text-align:center;
+      font-size:13px;font-weight:600;
+    }
+    .tone-card:hover{border-color: rgb(var(--ring));transform: translateY(-1px)}
+    .tone-card.active{
+      border-color: rgb(var(--primary));background: color-mix(in oklab, rgb(var(--primary)) 8%, rgb(var(--card)));
+      box-shadow: 0 0 0 3px color-mix(in oklab, rgb(var(--primary)) 15%, transparent)
+    }
+    .char-counter{font-size:11px;color:rgb(var(--muted-fg));text-align:right;margin-top:4px}
+    .config-summary{
+      background: rgb(var(--accent));border:1px solid rgb(var(--border));
+      border-radius:12px;padding:14px;font-size:13px;
+    }
+    .config-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+    .config-label{color:rgb(var(--muted-fg))}
+    .config-value{font-weight:600;color:rgb(var(--fg))}
+    /* Results page styles */
+    .results-page {
+      background: rgb(var(--bg));
+      min-height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: flex;
+    }
+    .results-sidebar {
+      width: 320px; /* Increased from 280px */
+      min-width: 320px; /* Prevent shrinking */
+      background: rgb(var(--card));
+      border-right: 1px solid rgb(var(--border));
+      height: 100vh;
+      padding: 20px;
+      overflow-y: auto;
+      flex-shrink: 0; /* Prevent sidebar from shrinking */
+    }
+    .results-main {
+      flex: 1;
+      padding: 20px 40px; /* Better padding */
+      overflow-y: auto;
+      max-width: none; /* Remove max-width restriction */
+      margin-left: 0; /* Remove fixed margin */
+      min-width: 0; /* Allows flex shrinking */
+    }
+    .results-main .content-section {
+      max-width: 900px; /* Optimal reading width */
+      margin: 0 auto; /* Center the content */
+      padding: 60px 0;
+      scroll-margin-top: 80px;
+    }
+    /* Better card spacing in results */
+    .results-main .card {
+      margin-bottom: 24px;
+    }
+    .results-main .metric-grid {
+      max-width: none; /* Allow full width for metrics */
+      margin: 20px auto;
+    }
+    .analysis-header{margin-bottom:30px}
+    .analysis-title{font-size:32px;font-weight:800;color:rgb(var(--fg));margin:0 0 8px 0}
+    .analysis-subtitle{color:rgb(var(--muted-fg));font-size:16px;margin:0}
+    .sidebar-header{margin-bottom:30px}
+    .sidebar-title{font-size:18px;font-weight:700;color:rgb(var(--fg));margin:0 0 8px 0}
+    .sidebar-subtitle{font-size:13px;color:rgb(var(--muted-fg));margin:0 0 20px 0}
+    .sidebar-nav{list-style:none;padding:0;margin:0 0 30px 0}
+    .sidebar-nav li{margin-bottom:4px}
+    .sidebar-nav-item{
+      display:block;padding:14px 18px; /* Increased padding */
+      border-radius:12px;text-decoration:none;
+      color:rgb(var(--fg));font-weight:600;transition:all .2s ease;
+      border:1px solid transparent;position:relative;
+      margin-bottom: 6px; /* Better spacing */
+    }
+    .sidebar-nav-item:hover{
+      background: rgb(var(--accent));
+      border-color: rgb(var(--border));
+    }
+    .sidebar-nav-item.active{
+      background: rgb(var(--primary));
+      color:rgb(var(--primary-foreground));
+      border-color: rgb(var(--primary));
+    }
+    .sidebar-nav-item.active::after{
+      content:'';position:absolute;right:-21px;top:50%;transform:translateY(-50%);
+      width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;
+      border-left:8px solid rgb(var(--primary));
+    }
+    .nav-item-content{display:flex;flex-direction:column}
+    .nav-item-title{font-size:14px;margin:0 0 4px 0;font-weight:600}
+    .nav-item-desc{font-size:11px;color:rgb(var(--muted-fg));margin:0;line-height:1.3}
+    .sidebar-nav-item.active .nav-item-desc{color:rgba(255,255,255,0.8)}
+    .sidebar-actions{border-top:1px solid rgb(var(--border));padding-top:20px}
+    .action-group{margin-bottom:16px}
+    .action-label{font-size:12px;color:rgb(var(--muted-fg));margin-bottom:8px;font-weight:600}
+    .mobile-menu-toggle{
+      display:none;position:fixed;top:20px;left:20px;z-index:1001;
+      background: rgb(var(--primary));color:rgb(var(--primary-foreground));
+      border:none;padding:12px;border-radius:8px;cursor:pointer;
+    }
+    /* Better responsive design */
+    @media (max-width: 1200px) {
+      .results-main {
+        padding: 20px 30px;
+      }
+    }
+    @media (max-width: 768px) {
+      .results-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1001;
+        width: 280px; /* Smaller on mobile */
+      }
+      
+      .results-sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .results-main {
+        margin-left: 0;
+        padding: 80px 20px 20px 20px;
+      }
+      .mobile-menu-toggle{display:block}
+    }
+    .sidebar-nav{list-style:none;padding:0;margin:0}
+    .sidebar-nav li{margin-bottom:8px}
+    .sidebar-nav a{
+      display:flex;align-items:center;gap:10px;padding:12px 16px;
+      border-radius:10px;text-decoration:none;color:rgb(var(--fg));
+      font-weight:600;transition:all .2s ease;
+    }
+    .sidebar-nav a:hover{background: rgb(var(--accent))}
+    .sidebar-nav a.active{background: rgb(var(--primary));color:rgb(var(--primary-foreground))}
+    .content-section{
+      padding:60px 0;scroll-margin-top:80px;
+    }
+    .section-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:20px;
+    }
+    .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:20px 0}
+    .metric-card{
+      background: rgb(var(--card));border:1px solid rgb(var(--border));
+      border-radius:12px;padding:16px;text-align:center;
+    }
+    .metric-value{font-size:28px;font-weight:800;color:rgb(var(--fg));margin-bottom:4px}
+    .metric-label{font-size:13px;color:rgb(var(--muted-fg));margin-bottom:8px}
+    .metric-change{font-size:12px;font-weight:600}
+    .metric-change.positive{color:rgb(var(--success))}
+    .metric-change.negative{color:rgb(var(--destructive))}
+    .tactic-card-analysis{
+      border:1px solid rgb(var(--border));border-radius:12px;margin-bottom:20px;
+      background: rgb(var(--card));overflow:hidden;
+    }
+    .tactic-header{
+      padding:16px 20px;background: rgb(var(--accent));border-bottom:1px solid rgb(var(--border));
+      display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+    }
+    .tactic-content{padding:20px;display:none}
+    .tactic-content.expanded{display:block}
+    .findings-list{list-style:none;padding:0;margin:20px 0}
+    .findings-list li{
+      display:flex;align-items:flex-start;gap:10px;padding:8px 0;
+      border-bottom:1px solid rgb(var(--border));
+    }
+    .findings-list li:last-child{border-bottom:none}
+    .finding-dot{
+      width:6px;height:6px;border-radius:999px;background: rgb(var(--primary));
+      margin-top:8px;flex-shrink:0;
+    }
+    .priority-badge{
+      display:inline-flex;align-items:center;gap:4px;padding:4px 8px;
+      border-radius:6px;font-size:11px;font-weight:600;
+    }
+    .priority-badge.high{background: color-mix(in oklab, rgb(var(--destructive)) 15%, rgb(var(--accent)));color:rgb(var(--destructive))}
+    .priority-badge.medium{background: color-mix(in oklab, rgb(var(--warning)) 15%, rgb(var(--accent)));color:rgb(var(--warning))}
+    .priority-badge.low{background: color-mix(in oklab, rgb(var(--success)) 15%, rgb(var(--accent)));color:rgb(var(--success))}
+    .export-buttons{display:flex;gap:12px;margin-top:20px}
+    .chart-placeholder{
+      height:300px;border:1px dashed rgb(var(--border));border-radius:12px;
+      display:flex;align-items:center;justify-content:center;color:rgb(var(--muted-fg));
+      background: rgb(var(--accent));margin:20px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="title">
+        <span class="dot"></span>
+        <div>
+          <div>Multi-Channel Campaign Analytics</div>
+          <div class="subtle" style="font-size:12px">AI-Powered Performance Insights & Tactic-Specific Optimization</div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn btn-outline btn-small" id="toggleTheme" aria-label="Toggle theme">Dark</button>
+        <button class="btn btn-outline btn-small" id="clearAll">Clear & Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container stack" id="app">
+    <!-- Campaign Data -->
+    <section class="card" id="section-campaign">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Campaign Data (Lumina Link)</div>
+          <div class="card-sub">Paste a Lumina order URL. We'll extract the <code>orderId</code>, detect relevant tactics, and build upload sections.</div>
+        </div>
+      </div>
+      <div class="card-body stack">
+        <!-- Full-width Load Campaign controls -->
+        <div class="row" style="width:100%">
+          <input id="luminaLink" class="input" style="flex:1" placeholder="https://townsquarelumina.com/lumina/view/order/68658945b56fd46a60c1372e" />
+          <button class="btn btn-primary" id="loadCampaign" style="min-width:180px">Load Campaign</button>
+        </div>
+
+        <div>
+          <div class="label">Detected Tactics</div>
+          <div id="detectedTactics" class="row"></div>
+          <div class="helper">Remove unneeded tactics with the X on each chip. Add more via “+ Add Tactic”.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Company Info -->
+    <section class="card" id="section-company">
+      <div class="card-header">
+        <div class="card-title">Company Information</div>
+      </div>
+      <div class="card-body stack">
+        <div class="grid cols-2">
+          <div>
+            <label class="label" for="companyName">Company / Client</label>
+            <input id="companyName" class="input" placeholder="Acme Home Services" />
+          </div>
+          <div>
+            <label class="label" for="industry">Industry</label>
+            <select id="industry" class="select">
+              <option value="">Select industry…</option>
+              <option>Home Services</option>
+              <option>Auto</option>
+              <option>Healthcare</option>
+              <option>Education</option>
+              <option>Retail & eComm</option>
+              <option>Real Estate</option>
+              <option>Financial</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="label" for="marketingObjective">Overall Marketing Objective</label>
+          <textarea id="marketingObjective" class="textarea" style="min-height:80px" placeholder="Drive brand awareness and customer acquisition in target demographics"></textarea>
+        </div>
+        <div>
+          <label class="label" for="campaignObjective">Campaign Objectives</label>
+          <textarea id="campaignObjective" class="textarea" style="min-height:100px" placeholder="Increase qualified leads at &lt; $150 CPL. Expand reach in high-intent ZIPs."></textarea>
+        </div>
+        <div>
+          <label class="label" for="notes">Additional Notes</label>
+          <textarea id="notes" class="textarea" style="min-height:80px" placeholder="Constraints, approvals, exclusions, special audiences, etc."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analysis Time Range -->
+    <section class="card" id="section-timerange" style="position:relative">
+      <div class="card-header">
+        <div class="card-title">Analysis Time Range</div>
+      </div>
+      <span class="date-display" id="currentDateTime"></span>
+      <div class="card-body stack">
+        <div class="grid cols-4" id="timeRangeGrid">
+          <div class="time-card" data-days="30">
+            <div class="days">30</div>
+            <div class="label">Days</div>
+          </div>
+          <div class="time-card" data-days="60">
+            <div class="days">60</div>
+            <div class="label">Days</div>
+          </div>
+          <div class="time-card" data-days="90">
+            <div class="days">90</div>
+            <div class="label">Days</div>
+          </div>
+          <div class="time-card" data-days="120">
+            <div class="days">120</div>
+            <div class="label">Days</div>
+          </div>
+          <div class="time-card" data-days="150">
+            <div class="days">150</div>
+            <div class="label">Days</div>
+          </div>
+          <div class="time-card" data-days="180">
+            <div class="days">180</div>
+            <div class="label">Days</div>
+          </div>
+          <div class="time-card" data-days="custom">
+            <div class="days">📅</div>
+            <div class="label">Custom Range</div>
+          </div>
+        </div>
+        
+        <div id="customDateRange" class="hidden stack">
+          <div class="divider"></div>
+          <div class="grid cols-3">
+            <div>
+              <label class="label" for="startDate">Start Date</label>
+              <input id="startDate" type="date" class="input">
+            </div>
+            <div>
+              <label class="label" for="endDate">End Date</label>
+              <input id="endDate" type="date" class="input">
+            </div>
+            <div class="center">
+              <span class="duration-badge" id="durationDisplay">Select dates</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Performance Tables by Tactic -->
+    <section class="card" id="section-uploads">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Performance Tables by Tactic</div>
+          <div class="card-sub">Upload CSVs (multiple per table OK). Track progress per tactic. Use bulk upload to autosort files.</div>
+        </div>
+        <div class="row">
+          <div class="toolbar">
+            <button class="btn btn-outline btn-small" id="addTacticBtn">+ Add Tactic</button>
+            <button class="btn btn-outline btn-small" id="resetTactics">Reset</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body stack">
+        <!-- Bulk uploader for all tactics -->
+        <div class="stack">
+          <div class="label">Bulk Upload — Smart Auto-Sort by Filename</div>
+          <div class="dropzone" id="bulkAllDrop">
+            <div class="row">
+              <span class="badge">CSV</span>
+              <span class="muted" id="bulkAllName">Drop CSVs or choose files</span>
+            </div>
+            <div class="row">
+              <input type="file" accept=".csv" multiple style="display:none" id="bulkAllInput" />
+              <button class="btn btn-small btn-accent" id="bulkAllChoose">Choose Files</button>
+            </div>
+          </div>
+          <div class="helper">
+            Auto-detects by filename: <code>report-{product}-{table}-{anything}.csv</code>. Files are routed to the matching tactic/table.
+          </div>
+        </div>
+
+        <div id="tacticGrid" class="stack"></div>
+      </div>
+    </section>
+
+    <!-- AI Analysis Configuration -->
+    <section class="card" id="section-ai-config">
+      <div class="card-header">
+        <div>
+          <div class="card-title">AI Analysis Configuration</div>
+          <div class="card-sub">Customize how the AI analyzes your campaign data</div>
+        </div>
+      </div>
+      <div class="card-body stack">
+        <!-- AI Model Badge -->
+        <div class="row" style="justify-content:flex-end">
+          <span class="badge info">Claude-3.5-Sonnet</span>
+        </div>
+        
+        <!-- Temperature Slider -->
+        <div>
+          <label class="label">Analysis Creativity (Temperature)</label>
+          <div class="slider-container">
+            <input type="range" id="tempSlider" class="slider" min="0" max="1" step="0.1" value="0.5">
+            <span id="tempValue" style="min-width:35px;text-align:center;font-weight:600">0.5</span>
+            <span id="tempLabel" class="temp-label balanced">Balanced</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:8px;font-size:11px;color:rgb(var(--muted-fg))">
+            <span>0.0 - Deterministic</span>
+            <span>0.5 - Balanced</span>
+            <span>1.0 - Creative</span>
+          </div>
+          <div class="helper" id="tempDescription">Balanced approach with consistent insights</div>
+        </div>
+        
+        <!-- Tone & Style Selection -->
+        <div>
+          <label class="label">Analysis Tone & Style</label>
+          <div class="stack" style="gap:12px">
+            <div class="grid cols-3" style="gap:10px">
+              <div class="tone-card" data-tone="concise" style="padding:10px;height:auto">
+                <div style="font-weight:700;margin-bottom:4px">🎯 Concise</div>
+                <div style="font-size:11px;color:rgb(var(--muted-fg));font-weight:400;line-height:1.3">Brief, to-the-point analysis with key insights only</div>
+              </div>
+              <div class="tone-card active" data-tone="professional" style="padding:10px;height:auto">
+                <div style="font-weight:700;margin-bottom:4px">💼 Professional</div>
+                <div style="font-size:11px;color:rgb(var(--muted-fg));font-weight:400;line-height:1.3">Formal business language suitable for executive reports</div>
+              </div>
+              <div class="tone-card" data-tone="conversational" style="padding:10px;height:auto">
+                <div style="font-weight:700;margin-bottom:4px">💬 Conversational</div>
+                <div style="font-size:11px;color:rgb(var(--muted-fg));font-weight:400;line-height:1.3">Friendly, approachable tone for team discussions</div>
+              </div>
+            </div>
+            <div class="grid cols-2" style="gap:10px">
+              <div class="tone-card" data-tone="encouraging" style="padding:10px;height:auto">
+                <div style="font-weight:700;margin-bottom:4px">📈 Encouraging</div>
+                <div style="font-size:11px;color:rgb(var(--muted-fg));font-weight:400;line-height:1.3">Positive, motivational language highlighting opportunities</div>
+              </div>
+              <div class="tone-card" data-tone="casual" style="padding:10px;height:auto">
+                <div style="font-weight:700;margin-bottom:4px">👤 Casual</div>
+                <div style="font-size:11px;color:rgb(var(--muted-fg));font-weight:400;line-height:1.3">Relaxed, informal tone for internal team use</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Additional AI Instructions -->
+        <div>
+          <label class="label">Additional AI Instructions</label>
+          <textarea id="aiInstructions" class="textarea" style="min-height:100px" 
+            placeholder="Add specific instructions for the AI analysis. For example: Focus on conversion metrics, compare against Q3 benchmarks, highlight mobile performance..."></textarea>
+          <div class="char-counter" id="charCounter">0 / 500 characters</div>
+        </div>
+        
+        <!-- Configuration Summary -->
+        <div class="config-summary">
+          <div style="font-weight:700;margin-bottom:8px;color:rgb(var(--fg))">Current Configuration</div>
+          <div class="config-row">
+            <span class="config-label">Temperature:</span>
+            <span class="config-value" id="summaryTemp">0.5 - Balanced</span>
+          </div>
+          <div class="config-row">
+            <span class="config-label">Tone:</span>
+            <span class="config-value" id="summaryTone">Professional</span>
+          </div>
+          <div class="config-row">
+            <span class="config-label">Custom Instructions:</span>
+            <span class="config-value" id="summaryInstructions">None</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Thin divider to separate context from outputs -->
+    <div class="thin-divider"></div>
+
+    <!-- Presentation Script (moved above Executive Summary; hidden by default) -->
+    <section class="card hidden" id="section-script">
+      <div class="card-header">
+        <div class="card-title">Presentation Script</div>
+      </div>
+      <div class="card-body">
+        <textarea id="presentationScript" class="textarea" placeholder="Generate a friendly, confident walkthrough script tailored to this client. Summarize key wins, explain optimizations, and close on next steps."></textarea>
+      </div>
+    </section>
+
+    <!-- Executive Summary (hidden) -->
+    <section class="card hidden" id="section-exec">
+      <div class="card-header">
+        <div class="card-title">Executive Summary</div>
+        <div class="row">
+          <div class="toolbar">
+            <button class="btn btn-outline btn-small" data-copy="#execSummary">Copy</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <textarea id="execSummary" class="textarea" placeholder="Concise campaign-level performance vs. objectives. Highlights, risks, top drivers, and 2–3 decisive next steps."></textarea>
+      </div>
+    </section>
+
+    <!-- Performance Analysis by Tactic (hidden) -->
+    <section class="card hidden" id="section-analysis">
+      <div class="card-header">
+        <div class="card-title">Performance Analysis by Tactic</div>
+        <div class="row">
+          <span class="badge">One section per tactic</span>
+        </div>
+      </div>
+      <div class="card-body stack" id="analysisAccordion">
+        <!-- items injected -->
+      </div>
+    </section>
+
+    <!-- Visualizations (full width, collapsible, hidden) -->
+    <section class="card hidden" id="section-viz">
+      <div class="card-header">
+        <div class="card-title">Performance Insights & Data Visualizations</div>
+        <div class="row">
+          <button class="btn btn-outline btn-small" id="toggleViz">Collapse</button>
+        </div>
+      </div>
+      <div class="card-body" id="vizBody">
+        <div class="grid cols-2">
+          <div class="chart">Bar Chart — CTR by Theme</div>
+          <div class="chart">Pie — Device Distribution</div>
+          <div class="chart">Line — Monthly CTR Trend</div>
+          <div class="chart">Bar — Top Converting Cities</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sticky actions -->
+    <div class="sticky-actions center">
+      <button class="btn btn-primary btn-pill" id="reanalyze" data-state="analyze">
+        <span id="analyzeButtonText">Analyze Performance Data</span>
+      </button>
+      <button class="btn btn-outline btn-pill" id="collapseAbove">Collapse Above Sections</button>
+      <span id="reanalyzeStatus" class="badge" style="display:none">Processing…</span>
+    </div>
+
+    <p class="footer-note">Prototype v3 — headers simplified, red titles, deletable tactic chips, outputs hidden by default.</p>
+  </main>
+
+  <!-- Results Page (hidden by default) -->
+  <div id="resultsPage" class="hidden results-page">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+    
+    <!-- Left Sidebar -->
+    <aside class="results-sidebar" id="resultsSidebar">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Analysis Sections</h2>
+        <p class="sidebar-subtitle">Navigate through your campaign insights</p>
+      </div>
+
+      <nav>
+        <ul class="sidebar-nav">
+          <li>
+            <a href="#executive" class="sidebar-nav-item active" data-section="executive">
+              <div class="nav-item-content">
+                <div class="nav-item-title">Executive Summary</div>
+                <div class="nav-item-desc">Key findings and overview</div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="#tactic" class="sidebar-nav-item" data-section="tactic">
+              <div class="nav-item-content">
+                <div class="nav-item-title">Tactic Analysis</div>
+                <div class="nav-item-desc">Platform-specific performance</div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="#trend" class="sidebar-nav-item" data-section="trend">
+              <div class="nav-item-content">
+                <div class="nav-item-title">Trend Analysis</div>
+                <div class="nav-item-desc">Performance patterns</div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="#recommendations" class="sidebar-nav-item" data-section="recommendations">
+              <div class="nav-item-content">
+                <div class="nav-item-title">Recommendations</div>
+                <div class="nav-item-desc">Strategic insights</div>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-actions">
+        <div class="action-group">
+          <div class="action-label">Analysis Generated</div>
+          <div style="font-size:12px;color:rgb(var(--success))">✓ Complete</div>
+          <div class="analysis-timestamp" style="font-size:11px;color:rgb(var(--muted-fg))">Aug 18, 2025, 02:19 AM</div>
+        </div>
+        <div class="action-group">
+          <button class="btn btn-outline btn-small" id="backToInput" style="width:100%;margin-bottom:8px">← Back to Data Input</button>
+          <button class="btn btn-outline btn-small" id="reAnalyzeBtn" style="width:100%;margin-bottom:8px">Re-analyze</button>
+          <button class="btn btn-primary btn-small" id="exportPDF" style="width:100%">Export PDF</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="results-main">
+      <header class="analysis-header">
+        <h1 class="analysis-title">AI-Powered Campaign Analysis</h1>
+        <p class="analysis-subtitle">Tactic-specific performance insights, geo analysis, and strategic recommendations</p>
+      </header>
+
+      <div class="results-content">
+        <!-- Executive Summary Section -->
+        <div class="content-section" id="executive">
+          <div class="section-header">
+            <h2 style="margin:0;font-size:24px">Executive Summary</h2>
+            <button class="btn btn-outline btn-small" data-copy="executive">Copy Section</button>
+          </div>
+          <div style="color:rgb(var(--muted-fg));margin-bottom:30px">High-level campaign performance overview and key insights</div>
+
+          <!-- Campaign Overview -->
+          <div class="card" style="margin-bottom:30px">
+            <div class="card-body">
+              <h3 style="margin:0 0 15px 0">Campaign Overview</h3>
+              <p>This comprehensive analysis covers a 90-day digital marketing campaign across Meta, YouTube, TikTok, and LinkedIn platforms. The campaign achieved strong performance with a total reach of 2.4M users and generated 45,200 conversions at an average cost per acquisition of $12.50.</p>
+              <p>Key highlights include exceptional performance on Meta platforms with a 3.2% CTR, while YouTube video campaigns showed the highest engagement rates at 8.5%. TikTok campaigns demonstrated strong brand awareness metrics with 1.2M impressions, and LinkedIn generated the highest quality leads with a 15% conversion rate.</p>
+            </div>
+          </div>
+
+          <!-- Key Performance Indicators -->
+          <h3>Key Performance Indicators</h3>
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div class="metric-value">2.4M</div>
+              <div class="metric-label">Total Reach</div>
+              <div class="metric-change positive">↗ +18%</div>
+              <div style="font-size:11px;color:rgb(var(--muted-fg))">vs. benchmark: 2.1M</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">45,200</div>
+              <div class="metric-label">Conversions</div>
+              <div class="metric-change positive">↗ +22%</div>
+              <div style="font-size:11px;color:rgb(var(--muted-fg))">vs. benchmark: 38,500</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">$12.50</div>
+              <div class="metric-label">Cost per Acquisition</div>
+              <div class="metric-change positive">↗ -8%</div>
+              <div style="font-size:11px;color:rgb(var(--muted-fg))">vs. benchmark: $14.20</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">2.8%</div>
+              <div class="metric-label">Click-Through Rate</div>
+              <div class="metric-change positive">↗ +12%</div>
+              <div style="font-size:11px;color:rgb(var(--muted-fg))">vs. benchmark: 2.4%</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">4.2x</div>
+              <div class="metric-label">Return on Ad Spend</div>
+              <div class="metric-change positive">↗ +15%</div>
+              <div style="font-size:11px;color:rgb(var(--muted-fg))">vs. benchmark: 3.8x</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">6.5%</div>
+              <div class="metric-label">Engagement Rate</div>
+              <div class="metric-change positive">↗ +5%</div>
+              <div style="font-size:11px;color:rgb(var(--muted-fg))">vs. benchmark: 5.9%</div>
+            </div>
+          </div>
+
+          <!-- High-Level Findings -->
+          <h3>High-Level Findings</h3>
+          <ul class="findings-list">
+            <li>
+              <div class="finding-dot"></div>
+              <div>Meta campaigns consistently outperformed benchmarks with 28% higher conversion rates, particularly in the 25-34 age demographic.</div>
+            </li>
+            <li>
+              <div class="finding-dot"></div>
+              <div>YouTube video campaigns achieved the highest engagement rates but showed higher cost per conversion compared to other platforms.</div>
+            </li>
+            <li>
+              <div class="finding-dot"></div>
+              <div>TikTok campaigns excelled in brand awareness metrics with 40% higher reach than expected, especially among Gen Z audiences.</div>
+            </li>
+            <li>
+              <div class="finding-dot"></div>
+              <div>LinkedIn campaigns generated the most qualified leads with 15% conversion rate, ideal for B2B targeting strategies.</div>
+            </li>
+            <li>
+              <div class="finding-dot"></div>
+              <div>Cross-platform retargeting campaigns showed 35% better performance than single-platform approaches.</div>
+            </li>
+          </ul>
+
+          <!-- Performance Timeline Chart -->
+          <h3>Performance Timeline</h3>
+          <div class="chart-placeholder">
+            📊 Performance visualization would appear here<br>
+            Chart integration pending
+          </div>
+        </div>
+
+        <!-- Tactic Analysis Section -->
+        <div class="content-section" id="tactic">
+          <div class="section-header">
+            <h2 style="margin:0;font-size:24px">Tactic Analysis</h2>
+            <button class="btn btn-outline btn-small" data-copy="tactic">Copy All</button>
+          </div>
+          <div style="color:rgb(var(--muted-fg));margin-bottom:30px">Platform-specific performance breakdown and insights</div>
+
+          <!-- Meta Campaign Analysis -->
+          <div class="tactic-card-analysis">
+            <div class="tactic-header" onclick="toggleTacticContent(this)">
+              <div>
+                <h3 style="margin:0">📘 Conversion Campaign - Purchase</h3>
+                <div style="font-size:13px;color:rgb(var(--muted-fg))">Meta • Driving online purchases</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="btn btn-outline btn-small" onclick="event.stopPropagation()">Copy</button>
+                    </div>
+            </div>
+            <div class="tactic-content expanded">
+              <!-- Performance Metrics -->
+              <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr)">
+                <div class="metric-card" style="padding:12px">
+                  <div class="metric-value" style="font-size:24px">850K</div>
+                  <div class="metric-label">Reach</div>
+                  <div class="metric-change positive">↗ +16%</div>
+                </div>
+                <div class="metric-card" style="padding:12px">
+                  <div class="metric-value" style="font-size:24px">27,200</div>
+                  <div class="metric-label">Conversions</div>
+                  <div class="metric-change positive">↗ +28%</div>
+                </div>
+                <div class="metric-card" style="padding:12px">
+                  <div class="metric-value" style="font-size:24px">18,500</div>
+                  <div class="metric-label">Clicks</div>
+                  <div class="metric-change positive">↗ +24%</div>
+                </div>
+                <div class="metric-card" style="padding:12px">
+                  <div class="metric-value" style="font-size:24px">$11.20</div>
+                  <div class="metric-label">CPA</div>
+                  <div class="metric-change positive">↗ -12%</div>
+                </div>
+              </div>
+
+              <p>Meta conversion campaigns delivered exceptional results with a 3.2% click-through rate, well above the industry benchmark of 2.6%. The campaign benefited from strong audience targeting using lookalike audiences based on existing customer data.</p>
+
+              <p><strong>Creative performance analysis</strong> shows that video assets outperformed static images by 35%, with carousel ads achieving the highest engagement rates. The 25-34 age group showed the strongest response with 40% of total conversions.</p>
+
+              <p><strong>Budget allocation</strong> was optimized throughout the campaign, with automatic bidding strategies delivering 18% lower costs compared to manual targeting approaches.</p>
+            </div>
+          </div>
+
+          <!-- Additional Tactic Cards would go here -->
+          
+        </div>
+
+        <!-- Trend Analysis Section -->
+        <div class="content-section" id="trend">
+          <div class="section-header">
+            <h2 style="margin:0;font-size:24px">Trend Analysis</h2>
+            <button class="btn btn-outline btn-small" data-copy="trend">Copy Section</button>
+          </div>
+          <div style="color:rgb(var(--muted-fg));margin-bottom:30px">Performance patterns and temporal insights</div>
+
+          <div class="card" style="margin-bottom:30px">
+            <div class="card-body">
+              <h3>Trend Overview</h3>
+              <p>Performance trend analysis reveals several key patterns across the 90-day campaign period. Overall performance showed consistent growth with notable acceleration during weeks 6-8, coinciding with seasonal shopping patterns and optimized creative rotation.</p>
+              <p>Cross-platform analysis indicates that integrated campaigns performed 35% better than isolated platform strategies. Mobile traffic dominated across all platforms, accounting for 82% of total interactions, with peak performance occurring during evening hours (6-9 PM) and weekends.</p>
+            </div>
+          </div>
+
+          <!-- Performance Patterns -->
+          <h3>Performance Patterns</h3>
+          <div class="grid cols-2" style="gap:20px;margin:20px 0">
+            <div class="card">
+              <div class="card-body">
+                <h4 style="margin:0 0 10px 0">📅 Weekly Performance Cycles</h4>
+                <div style="font-size:13px;color:rgb(var(--muted-fg));margin-bottom:10px">7-day rolling periods</div>
+                <p style="margin:0;font-size:14px">Consistent weekly patterns with peak performance on Thursdays and Fridays, 25% higher than Monday-Tuesday baseline metrics. Geographic analysis reveals stronger performance in urban markets.</p>
+                <div class="priority-badge high" style="margin-top:10px">●●●● Impact Level</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <h4 style="margin:0 0 10px 0">📱 Mobile Traffic Dominance</h4>
+                <div style="font-size:13px;color:rgb(var(--muted-fg));margin-bottom:10px">Multi-week campaigns</div>
+                <p style="margin:0;font-size:14px">Mobile traffic increased from 75% to 82% of total interactions, with mobile conversions showing 15% better rates during the campaign period, demonstrating successful mobile optimization.</p>
+                <div class="priority-badge high" style="margin-top:10px">●●●●● Impact Level</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-placeholder">
+            📈 Trend visualization would appear here<br>
+            Chart integration pending
+          </div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div class="content-section" id="recommendations">
+          <div class="section-header">
+            <h2 style="margin:0;font-size:24px">Strategic Recommendations</h2>
+            <button class="btn btn-outline btn-small" data-copy="recommendations">Copy All</button>
+          </div>
+          <div style="color:rgb(var(--muted-fg));margin-bottom:30px">Actionable insights to optimize campaign performance</div>
+
+          <!-- Campaign Optimization -->
+          <div class="card" style="margin-bottom:30px">
+            <div class="card-header" style="background:color-mix(in oklab, rgb(var(--destructive)) 8%, rgb(var(--accent)))">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:18px">🎯</span>
+                  <h3 style="margin:0">Campaign Optimization</h3>
+                </div>
+                <div style="font-size:13px;color:rgb(var(--muted-fg))">Immediate improvements to enhance current campaign performance</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="priority-badge high">High</span>
+                <span style="font-size:12px;color:rgb(var(--muted-fg))">4 recommendations</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="stack" style="gap:16px">
+                <div style="border-left:3px solid rgb(var(--destructive));padding-left:12px">
+                  <h4 style="margin:0 0 8px 0">Implement Dynamic Creative Optimization</h4>
+                  <p style="margin:0 0 8px 0;font-size:14px">Deploy automated creative testing across all platforms to identify top-performing combinations of headlines, images, and calls-to-action. This will reduce manual testing time and improve performance by 15-25%.</p>
+                  <div class="priority-badge high">High Priority</div>
+                </div>
+                <div style="border-left:3px solid rgb(var(--warning));padding-left:12px">
+                  <h4 style="margin:0 0 8px 0">Advanced Audience Segmentation</h4>
+                  <p style="margin:0 0 8px 0;font-size:14px">Create more granular audience segments based on behavior, engagement level, and conversion probability to improve targeting precision and reduce wasted spend.</p>
+                  <div class="priority-badge medium">Medium Priority</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Implementation Priority Summary -->
+          <h3>Implementation Priority Summary</h3>
+          <div class="grid cols-3" style="gap:20px;margin:20px 0">
+            <div class="card">
+              <div class="card-body" style="text-align:center">
+                <div style="font-size:48px;font-weight:800;color:rgb(var(--destructive))">4</div>
+                <div style="font-weight:600;margin-bottom:4px">High Priority</div>
+                <div style="font-size:13px;color:rgb(var(--muted-fg))">Immediate action required</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body" style="text-align:center">
+                <div style="font-size:48px;font-weight:800;color:rgb(var(--warning))">3</div>
+                <div style="font-weight:600;margin-bottom:4px">Medium Priority</div>
+                <div style="font-size:13px;color:rgb(var(--muted-fg))">Plan for next quarter</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body" style="text-align:center">
+                <div style="font-size:48px;font-weight:800;color:rgb(var(--success))">0</div>
+                <div style="font-weight:600;margin-bottom:4px">Low Priority</div>
+                <div style="font-size:13px;color:rgb(var(--muted-fg))">Long-term considerations</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Templates -->
+  <template id="tpl-tactic-card">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><span data-role="tacticName"></span></div>
+          <div class="card-sub"><span data-role="subtext"></span></div>
+        </div>
+        <div class="row">
+          <span class="badge" data-role="statusBadge"><span data-role="progressText">0/0</span> uploaded</span>
+          <span class="badge" data-role="tacticStatus">Unknown</span>
+          <button class="btn btn-outline btn-small" data-role="collapseBtn">Collapse</button>
+        </div>
+      </div>
+      <div class="card-body stack">
+        <!-- LineItem Details -->
+        <div class="stack" data-role="lineItemDetails" style="display:none;">
+          <div class="label">Line Item Details</div>
+          <div class="grid cols-2 gap-2" data-role="detailsGrid">
+            <!-- Details will be populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- tactic-level bulk uploader -->
+        <div class="stack">
+          <div class="label">Bulk Upload — This Tactic Only</div>
+          <div class="dropzone" data-role="bulkTacticDrop">
+            <div class="row">
+              <span class="badge">CSV</span>
+              <span class="muted" data-role="bulkTacticName">Drop CSVs or choose files</span>
+            </div>
+            <div class="row">
+              <input type="file" accept=".csv" multiple style="display:none" data-role="bulkTacticInput" />
+              <button class="btn btn-small btn-accent" data-role="bulkTacticChoose">Choose Files</button>
+            </div>
+          </div>
+          <div class="helper">Files are routed to tables for this tactic.</div>
+        </div>
+
+        <div class="grid cols-3" data-role="tableWrap"></div>
+        
+        <!-- JSON Response Viewer -->
+        <div class="stack" data-role="jsonViewer" style="display:none;">
+          <details>
+            <summary style="cursor:pointer; padding:8px 0; font-weight:600; color:rgb(var(--muted-foreground));">
+              JSON Response <span data-role="jsonLabel"></span>
+            </summary>
+            <pre data-role="jsonContent" style="background:rgb(var(--accent)); padding:12px; border-radius:8px; font-size:11px; overflow:auto; max-height:300px;"></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-table-upload">
+    <div class="stack">
+      <div class="label" data-role="tableName">Table Name</div>
+      <div class="dropzone" data-role="dropzone">
+        <div class="row">
+          <span class="badge">CSV</span>
+          <span class="muted" data-role="fileList">No files</span>
+        </div>
+        <div class="row">
+          <input type="file" accept=".csv" multiple style="display:none" data-role="fileInput" />
+          <button class="btn btn-small btn-accent" data-role="chooseBtn">Choose Files</button>
+        </div>
+      </div>
+      <div class="progress"><i data-role="progressBar"></i></div>
+    </div>
+  </template>
+
+  <script>
+    // -----------------------------
+    // PRD data (subset, extend as needed)
+    // -----------------------------
+    // Product to Reporting Mapping for Lumina URLs
+    const PRODUCT_TO_REPORTING_MAP = {
+      'Addressable Solutions': 'addressableDisplay',
+      'Addressable Display': 'addressableDisplay', 
+      'Addressable STV': 'addressableStv',
+      'Addressable Video': 'addressableVideo',
+      'Blended Tactics': 'targetedDisplay',
+      'Targeted Display': 'targetedDisplay',
+      'Meta': 'meta',
+      'SEM': 'sem',
+      'YouTube': 'youtube',
+      'Programmatic Audio': 'programmaticAudio',
+      'SSM': 'socialMention',
+      'Call Performance': 'callPerformance',
+      'CPM Display': 'localDisplay',
+      'Geofencing': 'geofence',
+      'Email Marketing': 'emailMarketing',
+      'LinkedIn': 'linkedin',
+      'TikTok': 'tiktok',
+      'Snapchat': 'snapchat'
+    };
+
+    const TIME_RANGE_TO_LUMINA_MAP = {
+      30: 'last30Days',
+      60: 'last60Days', 
+      90: 'last90Days',
+      120: 'last120Days',
+      150: 'last150Days',
+      180: 'last180Days'
+    };
+
+    const TACTIC_TABLES = {
+      "Targeted Display": [
+        "Monthly Performance","Campaign Performance","Tactic Performance","Creative By Name","Creative By Size","Creative Previews","Performance by City","Performance by Zip","Device Performance","Tracked Pixel Events by Day"
+      ],
+      "AAT": [
+        "Monthly Performance","Campaign Performance","Tactic Performance","Creative Performance","Performance by City","Performance by Zip","Device Performance"
+      ],
+      "Meta": [
+        "Monthly Performance","Performance by Platform","Campaign Performance","Ad Set Performance","Facebook Ads Performance","Instagram Ads Performance","Conversion Events Total","Conversion Events by Campaign","Conversion Events by Creative","Performance by Gender Clicks","Region Performance","DMA Performance","Post Interactions by Campaign"
+      ],
+      "SEM": [
+        "Monthly Performance","Search Terms","Campaign Performance","Geo Performance","Device Performance","Call Extensions","Conversions by Type"
+      ]
+    };
+
+    // -----------------------------
+    // State & helpers
+    // -----------------------------
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const el = (tag, props={}) => Object.assign(document.createElement(tag), props);
+
+    let currentTactics = [];
+    
+    function getTacticTables(tacticName) {
+      const tacticData = window.currentTacticsData && window.currentTacticsData.find(t => t.displayName === tacticName);
+      return tacticData ? tacticData.tables : (TACTIC_TABLES[tacticName] || []);
+    }
+    
+    function findTacticByTable(tableName) {
+      // First try to find in API data
+      if (window.currentTacticsData) {
+        for (const tacticData of window.currentTacticsData) {
+          if (tacticData.tables && tacticData.tables.some(tbl => tbl.toLowerCase() === tableName.toLowerCase())) {
+            return tacticData.displayName;
+          }
+        }
+      }
+      
+      // Fallback to hardcoded data
+      return Object.keys(TACTIC_TABLES).find(t => 
+        TACTIC_TABLES[t].some(tbl => tbl.toLowerCase() === tableName.toLowerCase())
+      );
+    }
+
+    function extractOrderId(url){
+      if(!url) return "";
+      try{
+        const u = new URL(url);
+        // Extract the path and remove query parameters
+        let path = u.pathname;
+        // Split by '/' and find the part after 'order'
+        const parts = path.split("/").filter(Boolean);
+        const orderIndex = parts.findIndex(part => part === 'order');
+        if (orderIndex >= 0 && orderIndex + 1 < parts.length) {
+          const id = parts[orderIndex + 1];
+          // Validate that it's a 24-character hex ID (MongoDB ObjectId format)
+          if (/^[a-f0-9]{24}$/i.test(id)) {
+            return id;
+          }
+        }
+        return "";
+      }catch{
+        // Fallback regex for cases where URL parsing fails
+        const rx = /\/order\/([a-f0-9]{24})/i;
+        const m = url.match(rx);
+        return m ? m[1] : "";
+      }
+    }
+    
+    function getStatusClass(status) {
+      const statusMap = {
+        'Complete': 'status-complete',
+        'Live': 'status-live',
+        'Live - Revision': 'status-live-revision',
+        'Pending Details': 'status-pending-details',
+        'Draft': 'status-draft',
+        'Cancelled': 'status-cancelled'
+      };
+      
+      return statusMap[status] || 'status-unknown';
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return 'Not specified';
+      try {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      } catch {
+        return dateStr;
+      }
+    }
+    
+    function toast(msg, type="info"){
+      const t = el("div",{textContent: msg});
+      Object.assign(t.style,{
+        position:"fixed",bottom:"18px",right:"18px",padding:"10px 14px",
+        background: type==="error" ? "rgb(239, 68, 68)" : (type==="success" ? "rgb(16,185,129)" : "rgb(51,65,85)"),
+        color:"#fff",borderRadius:"12px",boxShadow:"var(--shadow)",zIndex:99,opacity:0,transform:"translateY(10px)",
+        transition:"all .25s ease"
+      });
+      document.body.appendChild(t);
+      requestAnimationFrame(()=>{t.style.opacity=1;t.style.transform="translateY(0)"});
+      setTimeout(()=>{t.style.opacity=0;t.style.transform="translateY(10px)";setTimeout(()=>t.remove(),250)},2500);
+    }
+
+    // Dynamic Lumina Button Generation
+    let selectedTimeRange = 30; // Default time range
+    
+    function slugifyProductName(productName) {
+      return productName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .trim();
+    }
+    
+    function getCurrentTimePeriod() {
+      if (selectedTimeRange === 'custom') {
+        const startDate = $('#startDate').value;
+        const endDate = $('#endDate').value;
+        
+        if (startDate && endDate) {
+          // Convert to ISO format with timezone
+          const startISO = new Date(startDate + 'T00:00:00.000Z').toISOString();
+          const endISO = new Date(endDate + 'T23:59:59.000Z').toISOString();
+          
+          return {
+            type: 'custom',
+            startDate: encodeURIComponent(startISO),
+            endDate: encodeURIComponent(endISO)
+          };
+        }
+        return { type: 'last30Days' }; // fallback
+      }
+      
+      return { 
+        type: TIME_RANGE_TO_LUMINA_MAP[selectedTimeRange] || 'last30Days' 
+      };
+    }
+    
+    function generateLuminaUrls(tacticData) {
+      console.log('🔗 Generating Lumina URLs for tactic:', tacticData.displayName);
+      console.log('📊 Tactic data:', tacticData);
+      
+      const urls = {
+        lineItem: null,
+        reporting: null
+      };
+      
+      // Generate Line Item URL
+      if (tacticData.lineItems && tacticData.lineItems.length > 0) {
+        const firstLineItem = tacticData.lineItems[0];
+        console.log('📄 First lineItem:', firstLineItem);
+        
+        if (firstLineItem.lineitemId && firstLineItem.product) {
+          const slugifiedProduct = slugifyProductName(firstLineItem.product);
+          urls.lineItem = `https://townsquarelumina.com/lumina/view/lineitem/${slugifiedProduct}/${firstLineItem.lineitemId}`;
+          console.log('✅ Line Item URL created:', urls.lineItem);
+        } else if (firstLineItem.rawData && firstLineItem.rawData._id && firstLineItem.product) {
+          // Use rawData._id as fallback for lineitemId
+          const slugifiedProduct = slugifyProductName(firstLineItem.product);
+          urls.lineItem = `https://townsquarelumina.com/lumina/view/lineitem/${slugifiedProduct}/${firstLineItem.rawData._id}`;
+          console.log('✅ Line Item URL created (fallback):', urls.lineItem);
+        } else {
+          console.log('❌ Missing lineitemId or product for Line Item URL');
+          console.log('   lineitemId:', firstLineItem.lineitemId);
+          console.log('   product:', firstLineItem.product);
+          console.log('   rawData._id:', firstLineItem.rawData?._id);
+        }
+      } else {
+        console.log('❌ No lineItems found for tactic');
+      }
+      
+      // Generate Reporting URL
+      const reportingType = PRODUCT_TO_REPORTING_MAP[tacticData.displayName] || PRODUCT_TO_REPORTING_MAP[tacticData.name];
+      const wideOrbitNumber = tacticData.wideOrbitNumber || (tacticData.lineItems && tacticData.lineItems[0] && tacticData.lineItems[0].woOrderNumber);
+      
+      console.log('📈 Reporting mapping:', reportingType, 'for', tacticData.displayName);
+      console.log('🔢 Wide Orbit Number:', wideOrbitNumber);
+      
+      if (reportingType && wideOrbitNumber) {
+        const timePeriod = getCurrentTimePeriod();
+        
+        let reportingUrl = `https://townsquarelumina.com/lumina/view/reports/max?reportType=${reportingType}&woOrderNumber=${wideOrbitNumber}&reportFormat=web`;
+        
+        if (timePeriod.type === 'custom') {
+          reportingUrl += `&timePeriod=custom&startDate=${timePeriod.startDate}&endDate=${timePeriod.endDate}`;
+        } else {
+          reportingUrl += `&timePeriod=${timePeriod.type}`;
+        }
+        
+        urls.reporting = reportingUrl;
+        console.log('✅ Reporting URL created:', urls.reporting);
+      } else {
+        console.log('❌ Missing reportingType or wideOrbitNumber for Reporting URL');
+        console.log('   reportingType:', reportingType);
+        console.log('   wideOrbitNumber:', wideOrbitNumber);
+      }
+      
+      console.log('🎯 Final URLs:', urls);
+      return urls;
+    }
+    
+    function createLuminaButtons(tacticData) {
+      console.log('🚀 Creating Lumina buttons for:', tacticData.displayName);
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'row lumina-buttons';
+      buttonContainer.style.gap = '8px';
+      
+      const urls = generateLuminaUrls(tacticData);
+      
+      // Line Item Button
+      if (urls.lineItem) {
+        const lineItemBtn = document.createElement('button');
+        lineItemBtn.className = 'btn btn-outline btn-small';
+        lineItemBtn.textContent = 'Line Item';
+        lineItemBtn.style.background = '#3b82f6'; // Blue
+        lineItemBtn.style.color = 'white';
+        lineItemBtn.style.borderColor = '#3b82f6';
+        lineItemBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.open(urls.lineItem, '_blank');
+        });
+        buttonContainer.appendChild(lineItemBtn);
+      }
+      
+      // Reporting Button  
+      if (urls.reporting) {
+        const reportingBtn = document.createElement('button');
+        reportingBtn.className = 'btn btn-outline btn-small';
+        reportingBtn.textContent = 'Reports';
+        reportingBtn.style.background = '#10b981'; // Green
+        reportingBtn.style.color = 'white';
+        reportingBtn.style.borderColor = '#10b981';
+        reportingBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.open(urls.reporting, '_blank');
+        });
+        buttonContainer.appendChild(reportingBtn);
+      }
+      
+      return buttonContainer;
+    }
+    
+    function updateAllLuminaButtons() {
+      if (!window.currentTacticsData) return;
+      
+      // Find all tactic cards and update their Lumina buttons
+      const tacticCards = $$('#tacticGrid .card');
+      tacticCards.forEach((card, index) => {
+        const tacticData = window.currentTacticsData[index];
+        if (!tacticData) return;
+        
+        // Remove existing Lumina buttons
+        const existingButtons = card.querySelector('.lumina-buttons');
+        if (existingButtons) {
+          existingButtons.remove();
+        }
+        
+        // Create new buttons with updated URLs
+        const newButtons = createLuminaButtons(tacticData);
+        
+        // Insert before the collapse button
+        const headerRow = card.querySelector('.card-header .row');
+        const collapseBtn = headerRow.querySelector('[data-role="collapseBtn"]');
+        headerRow.insertBefore(newButtons, collapseBtn);
+      });
+    }
+
+    // Theme toggle
+    $("#toggleTheme").addEventListener("click", ()=>{
+      const root = document.documentElement;
+      const isDark = root.getAttribute("data-theme")==="dark";
+      root.setAttribute("data-theme", isDark ? "light":"dark");
+      $("#toggleTheme").textContent = isDark ? "Dark" : "Light";
+    });
+
+    // Collapsible headers functionality
+    function initCollapsibleHeaders() {
+      // Load saved states from localStorage
+      const savedStates = JSON.parse(localStorage.getItem('collapsedSections') || '{}');
+      
+      // Apply saved states
+      Object.keys(savedStates).forEach(sectionId => {
+        if (savedStates[sectionId]) {
+          const section = document.getElementById(sectionId);
+          if (section) {
+            const header = section.querySelector('.card-header');
+            const body = section.querySelector('.card-body');
+            const chevron = header?.querySelector('.chevron');
+            
+            if (header && body && chevron) {
+              header.classList.add('collapsed');
+              body.style.display = 'none';
+              chevron.textContent = '▲';
+            }
+          }
+        }
+      });
+
+      // Add click listeners to all card headers
+      $$('.card-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+          // Don't trigger collapse if clicking on buttons or inputs
+          if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) {
+            return;
+          }
+
+          const card = header.closest('.card');
+          const section = header.closest('section');
+          const body = card.querySelector('.card-body');
+          const chevron = header.querySelector('.chevron');
+          
+          if (body && chevron) {
+            const isCollapsed = body.style.display === 'none';
+            
+            // Toggle display
+            body.style.display = isCollapsed ? '' : 'none';
+            chevron.textContent = isCollapsed ? '▼' : '▲';
+            header.classList.toggle('collapsed', !isCollapsed);
+            
+            // Save state to localStorage
+            if (section && section.id) {
+              const savedStates = JSON.parse(localStorage.getItem('collapsedSections') || '{}');
+              savedStates[section.id] = !isCollapsed;
+              localStorage.setItem('collapsedSections', JSON.stringify(savedStates));
+            }
+          }
+        });
+      });
+    }
+
+    // Initialize collapsible headers when DOM is loaded
+
+    // Detected tactics chips
+    const detectedTacticsBox = $("#detectedTactics");
+    function setDetectedTactics(list){
+      detectedTacticsBox.innerHTML = "";
+      list.forEach((name, idx) => {
+        const chip = el("span",{className:"chip"});
+        const label = el("span",{textContent:name});
+        const close = el("button",{className:"x", title:"Remove tactic", innerHTML:"&times;"});
+        close.addEventListener("click", ()=>{
+          currentTactics.splice(idx,1);
+          setDetectedTactics(currentTactics);
+          buildTacticCards();
+          buildAnalysisSections();
+        });
+        chip.appendChild(label);
+        chip.appendChild(close);
+        detectedTacticsBox.appendChild(chip);
+      });
+    }
+    
+    function setDetectedTacticsWithStatus(tacticsData){
+      detectedTacticsBox.innerHTML = "";
+      tacticsData.forEach((tactic, idx) => {
+        const chip = el("span",{className:"chip"});
+        const label = el("span",{textContent: tactic.displayName});
+        const statusBadge = el("span",{
+          className: `badge ${getStatusClass(tactic.status)}`,
+          textContent: tactic.status
+        });
+        const close = el("button",{className:"x", title:"Remove tactic", innerHTML:"&times;"});
+        close.addEventListener("click", ()=>{
+          window.currentTacticsData.splice(idx,1);
+          currentTactics.splice(idx,1);
+          setDetectedTacticsWithStatus(window.currentTacticsData);
+          buildTacticCards();
+          buildAnalysisSections();
+        });
+        chip.appendChild(label);
+        chip.appendChild(statusBadge);
+        chip.appendChild(close);
+        detectedTacticsBox.appendChild(chip);
+      });
+    }
+
+    // Tactic card rendering
+    const tacticGrid = $("#tacticGrid");
+    function buildTacticCards(){
+      tacticGrid.innerHTML = "";
+      currentTactics.forEach((name, index) => {
+        // Get tactic data with status information
+        const tacticData = window.currentTacticsData && window.currentTacticsData.find(t => t.displayName === name);
+        const tables = getTacticTables(name);
+        
+        const card = $("#tpl-tactic-card").content.firstElementChild.cloneNode(true);
+        card.querySelector('[data-role="tacticName"]').textContent = name;
+        card.querySelector('[data-role="subtext"]').textContent = tables.length ? `${tables.length} suggested table${tables.length>1?"s":""}` : "Upload any available performance data";
+        
+        // Set status badge
+        const statusBadge = card.querySelector('[data-role="tacticStatus"]');
+        if (tacticData && tacticData.status) {
+          statusBadge.textContent = tacticData.status;
+          statusBadge.className = `badge ${getStatusClass(tacticData.status)}`;
+        }
+        
+        // Add Lumina buttons if we have tactic data
+        if (tacticData) {
+          console.log('🎯 Adding Lumina buttons for tactic:', name, tacticData);
+          const luminaButtons = createLuminaButtons(tacticData);
+          
+          // Insert the buttons before the collapse button
+          const headerRow = card.querySelector('.card-header .row');
+          const collapseBtn = headerRow.querySelector('[data-role="collapseBtn"]');
+          if (headerRow && collapseBtn) {
+            headerRow.insertBefore(luminaButtons, collapseBtn);
+            console.log('✅ Lumina buttons inserted for:', name);
+          } else {
+            console.log('❌ Could not find header row or collapse button for:', name);
+          }
+        } else {
+          console.log('❌ No tactic data found for:', name);
+        }
+        
+        // Populate lineItem details if available
+        if (tacticData && tacticData.lineItems && tacticData.lineItems.length > 0) {
+          const detailsSection = card.querySelector('[data-role="lineItemDetails"]');
+          const detailsGrid = card.querySelector('[data-role="detailsGrid"]');
+          
+          detailsSection.style.display = '';
+          
+          tacticData.lineItems.forEach((lineItem, idx) => {
+            const detailCard = document.createElement('div');
+            detailCard.className = 'stack';
+            detailCard.innerHTML = `
+              <div class="label">Line Item ${idx + 1}</div>
+              <div class="helper">
+                <strong>Product:</strong> ${lineItem.product || 'N/A'}<br>
+                <strong>Sub-Product:</strong> ${Array.isArray(lineItem.subProduct) ? lineItem.subProduct.join(', ') : lineItem.subProduct || 'N/A'}<br>
+                <strong>Tactic Type:</strong> ${lineItem.tacticTypeSpecial || 'N/A'}<br>
+                <strong>Date Range:</strong> ${formatDate(lineItem.startDate)} - ${formatDate(lineItem.endDate)}<br>
+                <strong>Status:</strong> <span class="badge ${getStatusClass(lineItem.status)}">${lineItem.status}</span>
+              </div>
+            `;
+            detailsGrid.appendChild(detailCard);
+          });
+          
+          // Add JSON viewer
+          const jsonSection = card.querySelector('[data-role="jsonViewer"]');
+          const jsonLabel = card.querySelector('[data-role="jsonLabel"]');
+          const jsonContent = card.querySelector('[data-role="jsonContent"]');
+          
+          jsonSection.style.display = '';
+          jsonLabel.textContent = `(${tacticData.lineItems.length} Line Item${tacticData.lineItems.length > 1 ? 's' : ''})`;
+          jsonContent.textContent = JSON.stringify(tacticData.lineItems.map(li => li.rawData), null, 2);
+        }
+        
+        const tableWrap = card.querySelector('[data-role="tableWrap"]');
+
+        let uploadedCount = 0;
+        const progressText = card.querySelector('[data-role="progressText"]');
+        const collapseBtn = card.querySelector('[data-role="collapseBtn"]');
+        const body = card.querySelector('.card-body');
+        const header = card.querySelector('.card-header');
+        
+        // Add collapsible functionality to the header
+        if (header) {
+          header.addEventListener('click', (e) => {
+            // Don't trigger collapse if clicking on buttons or inputs
+            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) {
+              return;
+            }
+
+            const chevron = header.querySelector('.chevron');
+            if (body && chevron) {
+              const isCollapsed = body.style.display === 'none';
+              body.style.display = isCollapsed ? '' : 'none';
+              chevron.textContent = isCollapsed ? '▼' : '▲';
+              header.classList.toggle('collapsed', !isCollapsed);
+            }
+          });
+        }
+        
+        // Keep the old collapse button for backwards compatibility
+        collapseBtn.addEventListener("click",(e)=>{
+          e.stopPropagation(); // Prevent header click
+          body.style.display = body.style.display==="none" ? "" : "none";
+          collapseBtn.textContent = body.style.display==="none" ? "Expand" : "Collapse";
+          const chevron = header.querySelector('.chevron');
+          if (chevron) {
+            chevron.textContent = body.style.display==="none" ? "▲" : "▼";
+          }
+        });
+
+        // tactic bulk upload
+        const bulkInput = card.querySelector('[data-role="bulkTacticInput"]');
+        const bulkFolderInput = card.querySelector('[data-role="bulkTacticFolderInput"]');
+        const bulkName = card.querySelector('[data-role="bulkTacticName"]');
+        const bulkChoose = card.querySelector('[data-role="bulkTacticChoose"]');
+        const bulkChooseFolder = card.querySelector('[data-role="bulkTacticChooseFolder"]');
+        
+        bulkChoose.addEventListener("click", ()=> bulkInput.click());
+        bulkChooseFolder?.addEventListener("click", ()=> bulkFolderInput?.click());
+        
+        const handleTacticFiles = (files) => {
+          bulkName.textContent = files.length ? `${files.length} files selected` : "Drop CSVs/folder or choose files";
+          toast(`Queued ${files.length} CSV for "${name}"`, "success");
+        };
+        
+        bulkInput.addEventListener("change", ()=>{
+          const files = Array.from(bulkInput.files||[]);
+          handleTacticFiles(files);
+        });
+        
+        bulkFolderInput?.addEventListener("change", ()=>{
+          const files = Array.from(bulkFolderInput.files||[]);
+          handleTacticFiles(files);
+        });
+
+        tables.forEach(tbl => {
+          const row = $("#tpl-table-upload").content.firstElementChild.cloneNode(true);
+          row.querySelector('[data-role="tableName"]').textContent = tbl;
+          const dz = row.querySelector('[data-role="dropzone"]');
+          const fi = row.querySelector('[data-role="fileInput"]');
+          const choose = row.querySelector('[data-role="chooseBtn"]');
+          const fileList = row.querySelector('[data-role="fileList"]');
+          const bar = row.querySelector('[data-role="progressBar"]');
+
+          choose.addEventListener("click", ()=> fi.click());
+          fi.addEventListener("change", ()=>{
+            const files = Array.from(fi.files||[]);
+            fileList.textContent = files.length ? files.map(f=>f.name).join(", ") : "No files";
+            if(files.length){
+              uploadedCount += 1;
+              const pct = Math.min(100, (uploadedCount / tables.length) * 100);
+              bar.style.width = pct + "%";
+              progressText.textContent = `${uploadedCount}/${tables.length}`;
+            }else{
+              uploadedCount = Math.max(0, uploadedCount-1);
+              const pct = Math.min(100, (uploadedCount / tables.length) * 100);
+              bar.style.width = pct + "%";
+              progressText.textContent = `${uploadedCount}/${tables.length}`;
+            }
+          });
+          dz.addEventListener("dragover", e=>{e.preventDefault();dz.classList.add("drag")});
+          dz.addEventListener("dragleave", ()=>dz.classList.remove("drag"));
+          dz.addEventListener("drop", e=>{
+            e.preventDefault();dz.classList.remove("drag");
+            fi.files = e.dataTransfer.files;
+            fi.dispatchEvent(new Event("change"));
+          });
+
+          tableWrap.appendChild(row);
+        });
+
+        tacticGrid.appendChild(card);
+      });
+    }
+
+    // Build analysis accordion (hidden section content)
+    function buildAnalysisSections(){
+      const acc = $("#analysisAccordion");
+      if(!acc) return;
+      acc.innerHTML = "";
+      currentTactics.forEach(name=>{
+        const item = el("div",{className:"accordion-item"});
+        const head = el("div",{className:"accordion-header"});
+        head.innerHTML = `<div><strong>${name}</strong></div>`;
+        const content = el("div",{className:"accordion-content"});
+        content.innerHTML = `
+          <div class="grid cols-3">
+            <div>
+              <div class="label">Detailed Performance Analysis</div>
+              <textarea class="textarea" placeholder="Summarize KPI performance, efficiency (CPM/CPC/CPV), pacing vs. plan, drivers by geo/device/audience, and creative learnings. Include concrete next steps."></textarea>
+            </div>
+            <div>
+              <div class="label">Highlights</div>
+              <ul class="stack" style="gap:8px;margin:0;padding-left:18px">
+                <li>Top creative/theme</li>
+                <li>Strong geo/audience segment</li>
+                <li>Device/platform insight</li>
+                <li>Budget reallocation opportunity</li>
+              </ul>
+            </div>
+            <div>
+              <div class="label">KPIs</div>
+              <div class="grid cols-2">
+                <input class="input" placeholder="CTR %" />
+                <input class="input" placeholder="Conversions" />
+                <input class="input" placeholder="Spend ($)" />
+                <input class="input" placeholder="CPM / CPC / CPV" />
+              </div>
+            </div>
+          </div>
+        `;
+        head.addEventListener("click", ()=>{
+          const open = content.style.display === "block";
+          $$(".accordion-content", acc).forEach(c=>c.style.display="none");
+          content.style.display = open ? "none" : "block";
+        });
+        item.appendChild(head); item.appendChild(content);
+        acc.appendChild(item);
+      });
+      const first = $(".accordion-content", acc); if(first) first.style.display="block";
+    }
+
+    // Bulk All uploader (autosort by filename pattern)
+    const bulkAllInput = $("#bulkAllInput");
+    $("#bulkAllChoose").addEventListener("click", ()=> bulkAllInput.click());
+    $("#bulkAllDrop").addEventListener("dragover", e=>{e.preventDefault();$("#bulkAllDrop").classList.add("drag")});
+    $("#bulkAllDrop").addEventListener("dragleave", ()=>$("#bulkAllDrop").classList.remove("drag"));
+    $("#bulkAllDrop").addEventListener("drop", e=>{
+      e.preventDefault();$("#bulkAllDrop").classList.remove("drag");
+      const files = Array.from(e.dataTransfer.files||[]);
+      handleBulkAll(files);
+    });
+    bulkAllInput.addEventListener("change", ()=>{
+      handleBulkAll(Array.from(bulkAllInput.files||[]));
+    });
+    function handleBulkAll(files){
+      $("#bulkAllName").textContent = files.length ? `${files.length} files selected` : "Drop CSVs/folder or choose files";
+      
+      // Enhanced tactic mapping with more keywords
+      const tacticKeywords = {
+        'meta': ['meta', 'facebook', 'instagram', 'fb'],
+        'sem': ['sem', 'search', 'google', 'bing', 'adwords'],
+        'youtube': ['youtube', 'video', 'yt'],
+        'display': ['display', 'banner', 'addressable', 'programmatic'],
+        'addressable': ['addressable', 'stv', 'ctv', 'geofence'],
+        'audio': ['audio', 'spotify', 'pandora', 'radio'],
+        'social': ['social', 'ssm', 'mention'],
+        'call': ['call', 'performance']
+      };
+      
+      // More flexible filename patterns
+      const patterns = [
+        /report-([\w]+)-([\w\s\-]+)\.csv/i,    // report-{product}-{table}.csv
+        /([\w]+)-([\w\s\-]+)-performance\.csv/i,  // {product}-{table}-performance.csv
+        /([\w]+)[_-]([\w\s\-]+)\.csv/i,        // {product}_{table}.csv or {product}-{table}.csv
+        /([\w]+)\.csv/i                        // {product}.csv
+      ];
+      
+      let sortedCount = 0;
+      let unsortedFiles = [];
+      
+      files.forEach(f=>{
+        let matched = false;
+        let product = '';
+        let tablePart = '';
+        
+        // Try each pattern
+        for (const pattern of patterns) {
+          const m = f.name.match(pattern);
+          if (m) {
+            product = m[1]?.toLowerCase() || '';
+            tablePart = m[2]?.toLowerCase() || 'performance';
+            break;
+          }
+        }
+        
+        if (!product) {
+          // Try to extract product from any part of filename
+          const fileName = f.name.toLowerCase();
+          for (const [tacticType, keywords] of Object.entries(tacticKeywords)) {
+            if (keywords.some(keyword => fileName.includes(keyword))) {
+              product = tacticType;
+              tablePart = 'performance';
+              break;
+            }
+          }
+        }
+        
+        if (!product) {
+          unsortedFiles.push(f.name);
+          return;
+        }
+        
+        // Find matching tactic cards
+        const cards = $$("#tacticGrid .card");
+        let fileMatched = false;
+        
+        cards.forEach(card=>{
+          const tacticName = card.querySelector('[data-role="tacticName"]')?.textContent || '';
+          const tacticNameLower = tacticName.toLowerCase();
+          
+          // Enhanced flexible matching using keywords
+          let matchesTactic = false;
+          const keywords = tacticKeywords[product] || [product];
+          
+          matchesTactic = keywords.some(keyword => {
+            return tacticNameLower.includes(keyword) || 
+                   keyword.includes(tacticNameLower) ||
+                   tacticNameLower.replace(/[^a-z0-9]/g, '').includes(keyword.replace(/[^a-z0-9]/g, '')) ||
+                   keyword.replace(/[^a-z0-9]/g, '').includes(tacticNameLower.replace(/[^a-z0-9]/g, ''));
+          });
+          
+          if(matchesTactic){
+            // Find matching table within this tactic
+            const tableRows = $$('[data-role="tableName"]', card);
+            const fileInputs = $$('[data-role="fileInput"]', card);
+            const fileLists = $$('[data-role="fileList"]', card);
+            
+            // Clean up table name for comparison
+            const cleanTableName = tablePart.replace(/-/g, ' ').toLowerCase();
+            
+            tableRows.forEach((tn, i)=>{
+              const tableText = tn.textContent.toLowerCase();
+              const tableTextClean = tableText.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+              const cleanTableNameCompare = cleanTableName.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+              
+              // More precise table matching - reduce auto-assignment to first table
+              let matchScore = 0;
+              
+              // Exact match gets highest score
+              if (tableTextClean === cleanTableNameCompare) {
+                matchScore = 100;
+              }
+              // Partial matches get medium score
+              else if (tableTextClean.includes(cleanTableNameCompare) || cleanTableNameCompare.includes(tableTextClean)) {
+                matchScore = 80;
+              }
+              // Keyword matching for common table types
+              else if (cleanTableNameCompare.includes('performance') && tableTextClean.includes('performance')) {
+                matchScore = 60;
+              }
+              // Only auto-assign to first table for very generic files
+              else if (i === 0 && !fileMatched && tablePart === 'performance' && tableTextClean.includes('performance')) {
+                matchScore = 20; // Lower threshold
+              }
+              
+              const shouldMatch = matchScore >= 60; // Raised threshold to reduce false positives
+              
+              if(shouldMatch){
+                // Update the file display
+                if(fileLists[i]){
+                  const currentFiles = fileLists[i].textContent;
+                  if(currentFiles === 'No files' || !currentFiles){
+                    fileLists[i].textContent = f.name;
+                  } else {
+                    fileLists[i].textContent = currentFiles + ', ' + f.name;
+                  }
+                  fileMatched = true;
+                  sortedCount++;
+                }
+                // Store the file reference for actual upload
+                if(fileInputs[i]){
+                  // Create a DataTransfer to programmatically set files
+                  const dt = new DataTransfer();
+                  // Add existing files if any
+                  for(let j = 0; j < fileInputs[i].files.length; j++){
+                    dt.items.add(fileInputs[i].files[j]);
+                  }
+                  dt.items.add(f);
+                  fileInputs[i].files = dt.files;
+                }
+              }
+            });
+          }
+        });
+        
+        if(!fileMatched){
+          unsortedFiles.push(f.name);
+        }
+      });
+      
+      // Show detailed results
+      if (sortedCount > 0 && unsortedFiles.length === 0) {
+        toast(`Successfully sorted all ${sortedCount} files across tactics.`, "success");
+      } else if (sortedCount > 0 && unsortedFiles.length > 0) {
+        toast(`Sorted ${sortedCount}/${files.length} files. ${unsortedFiles.length} couldn't be matched to tactics.`, "warning");
+      } else if (unsortedFiles.length > 0) {
+        toast(`Could not sort ${unsortedFiles.length} files. Try renaming with tactic keywords (meta, sem, youtube, etc.).`, "error");
+      }
+      
+      console.log(`Bulk upload summary:`, { sorted: sortedCount, unsorted: unsortedFiles.length, unmatched: unsortedFiles });
+    }
+
+    // Load campaign → seed default tactics and render
+    $("#loadCampaign").addEventListener("click", async ()=>{
+      const link = $("#luminaLink").value.trim();
+      const orderId = extractOrderId(link);
+      
+      if (!orderId) {
+        toast("Please enter a valid Lumina URL", "error");
+        return;
+      }
+      
+      // Show loading state
+      const loadBtn = $("#loadCampaign");
+      const originalText = loadBtn.textContent;
+      loadBtn.textContent = "Loading...";
+      loadBtn.disabled = true;
+      
+      try {
+        // Step 1: Fetch campaign data from Lumina API
+        const campaignResponse = await fetch('api/lumina.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: orderId })
+        });
+        
+        const campaignResult = await campaignResponse.json();
+        
+        if (!campaignResult.success) {
+          throw new Error(campaignResult.message || 'Failed to fetch campaign data');
+        }
+        
+        // Store campaign data globally
+        window.currentCampaignData = campaignResult.data;
+        
+        // Step 2: Detect tactics from campaign data
+        const tacticsResponse = await fetch('api/tactics.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaignData: campaignResult.data })
+        });
+        
+        const tacticsResult = await tacticsResponse.json();
+        
+        if (!tacticsResult.success) {
+          throw new Error(tacticsResult.message || 'Failed to detect tactics');
+        }
+        
+        // Update UI with detected tactics
+        window.currentTacticsData = tacticsResult.data.tactics;
+        const tacticNames = tacticsResult.data.tactics.map(t => t.displayName);
+        currentTactics = tacticNames;
+        setDetectedTacticsWithStatus(window.currentTacticsData);
+        buildTacticCards();
+        buildAnalysisSections();
+        
+        // Auto-populate company name if available
+        if (campaignResult.data.companyName) {
+          const companyNameField = $("#companyName");
+          if (companyNameField && !companyNameField.value) {
+            companyNameField.value = campaignResult.data.companyName;
+          }
+        }
+        
+        // Show campaign info
+        const campaignName = campaignResult.data.name || 'Unknown Campaign';
+        toast(`Campaign "${campaignName}" loaded with ${tacticNames.length} tactics detected.`, "success");
+        
+        // Auto-expand all sections after successful campaign load
+        expandAllSections();
+        
+      } catch (error) {
+        console.error('Error loading campaign:', error);
+        toast(`Error: ${error.message}`, "error");
+        
+        // Clear any existing tactics on error
+        currentTactics = [];
+        window.currentTacticsData = null;
+        setDetectedTactics(currentTactics);
+        buildTacticCards();
+        buildAnalysisSections();
+      } finally {
+        // Restore button state
+        loadBtn.textContent = originalText;
+        loadBtn.disabled = false;
+      }
+    });
+
+    // Function to expand all collapsible sections
+    function expandAllSections() {
+      const sectionsToExpand = ["section-company","section-uploads","section-timerange","section-ai-config"];
+      
+      sectionsToExpand.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+          const body = section.querySelector('.card-body');
+          if (body && body.style.display === 'none') {
+            // Show the body
+            body.style.display = '';
+            
+            // Update chevron rotation
+            const chevron = section.querySelector('.chevron');
+            if (chevron) {
+              chevron.style.transform = 'rotate(180deg)';
+            }
+            
+            // Save expanded state
+            const savedStates = JSON.parse(localStorage.getItem('collapsedSections') || '{}');
+            delete savedStates[sectionId]; // Remove from collapsed list
+            localStorage.setItem('collapsedSections', JSON.stringify(savedStates));
+          }
+        }
+      });
+      
+      console.log('All sections expanded after campaign load');
+    }
+
+    // Add / reset tactics
+    $("#addTacticBtn").addEventListener("click", ()=>{
+      const name = prompt("New tactic name (must match a key in TACTIC_TABLES):","Targeted Video");
+      if(!name) return;
+      currentTactics.push(name);
+      setDetectedTactics(currentTactics);
+      buildTacticCards();
+      buildAnalysisSections();
+    });
+    $("#resetTactics").addEventListener("click", ()=>{
+      currentTactics = [];
+      setDetectedTactics(currentTactics);
+      buildTacticCards();
+      const acc = $("#analysisAccordion"); if(acc) acc.innerHTML = "";
+    });
+
+    // Time range selection
+    // selectedTimeRange is already declared above
+    
+    // Initialize time range cards
+    function initTimeRange() {
+      const timeCards = $$('.time-card');
+      const customDateRange = $('#customDateRange');
+      const startDate = $('#startDate');
+      const endDate = $('#endDate');
+      const durationDisplay = $('#durationDisplay');
+      
+      // Set default active card (30 days)
+      const defaultCard = $('.time-card[data-days="30"]');
+      if (defaultCard) defaultCard.classList.add('active');
+      
+      // Add click handlers to time cards
+      timeCards.forEach(card => {
+        card.addEventListener('click', () => {
+          // Remove active from all cards
+          timeCards.forEach(c => c.classList.remove('active'));
+          // Add active to clicked card
+          card.classList.add('active');
+          
+          const days = card.getAttribute('data-days');
+          
+          if (days === 'custom') {
+            customDateRange.classList.remove('hidden');
+            selectedTimeRange = 'custom';
+          } else {
+            customDateRange.classList.add('hidden');
+            selectedTimeRange = parseInt(days);
+            // Auto-fill dates based on selection
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - selectedTimeRange);
+            startDate.value = start.toISOString().split('T')[0];
+            endDate.value = end.toISOString().split('T')[0];
+            
+            // Update Lumina buttons when time range changes
+            setTimeout(updateAllLuminaButtons, 100);
+          }
+        });
+      });
+      
+      // Calculate duration when dates change
+      function updateDuration() {
+        if (startDate.value && endDate.value) {
+          const start = new Date(startDate.value);
+          const end = new Date(endDate.value);
+          const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+          
+          if (diff > 0) {
+            durationDisplay.textContent = `${diff} days`;
+            durationDisplay.style.background = 'color-mix(in oklab, rgb(var(--success)) 15%, rgb(var(--accent)))';
+          } else {
+            durationDisplay.textContent = 'Invalid range';
+            durationDisplay.style.background = 'color-mix(in oklab, rgb(var(--destructive)) 15%, rgb(var(--accent)))';
+          }
+        } else {
+          durationDisplay.textContent = 'Select dates';
+          durationDisplay.style.background = '';
+        }
+      }
+      
+      startDate.addEventListener('change', () => {
+        updateDuration();
+        updateAllLuminaButtons();
+      });
+      
+      endDate.addEventListener('change', () => {
+        updateDuration(); 
+        updateAllLuminaButtons();
+      });
+      
+      // Update current date/time display
+      function updateDateTime() {
+        const now = new Date();
+        const options = { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        };
+        const dateTimeStr = now.toLocaleDateString('en-US', options);
+        const dateDisplay = $('#currentDateTime');
+        if (dateDisplay) {
+          dateDisplay.textContent = `As of ${dateTimeStr}`;
+        }
+      }
+      
+      updateDateTime();
+      setInterval(updateDateTime, 60000); // Update every minute
+    }
+    
+    // Initialize time range on DOM load
+
+    // AI Configuration functionality
+    function initAIConfig() {
+      const tempSlider = $('#tempSlider');
+      const tempValue = $('#tempValue');
+      const tempLabel = $('#tempLabel');
+      const toneCards = $$('.tone-card');
+      const aiInstructions = $('#aiInstructions');
+      const charCounter = $('#charCounter');
+      const summaryTemp = $('#summaryTemp');
+      const summaryTone = $('#summaryTone');
+      const summaryInstructions = $('#summaryInstructions');
+      
+      // Temperature slider handling
+      function updateTemperature() {
+        const value = parseFloat(tempSlider.value);
+        tempValue.textContent = value.toFixed(1);
+        
+        // Remove all temp classes
+        tempLabel.classList.remove('focused', 'balanced', 'creative', 'diverse', 'maximum');
+        
+        // Update label and description based on value
+        let label = '';
+        let className = '';
+        let description = '';
+        
+        if (value <= 0.3) {
+          label = 'Focused';
+          className = 'focused';
+          description = 'Very focused and deterministic analysis';
+        } else if (value <= 0.5) {
+          label = 'Balanced';
+          className = 'balanced';
+          description = 'Balanced approach with consistent insights';
+        } else if (value <= 0.7) {
+          label = 'Creative';
+          className = 'creative';
+          description = 'Creative analysis with varied perspectives';
+        } else if (value <= 0.9) {
+          label = 'Diverse';
+          className = 'diverse';
+          description = 'Highly creative with diverse interpretations';
+        } else {
+          label = 'Maximum';
+          className = 'maximum';
+          description = 'Maximum creativity and varied analysis approaches';
+        }
+        
+        tempLabel.textContent = label;
+        tempLabel.classList.add(className);
+        
+        // Update description
+        const tempDescription = $('#tempDescription');
+        if (tempDescription) {
+          tempDescription.textContent = description;
+        }
+        
+        // Update summary
+        summaryTemp.textContent = `${value.toFixed(1)} - ${label}`;
+      }
+      
+      tempSlider.addEventListener('input', updateTemperature);
+      updateTemperature(); // Initialize
+      
+      // Tone selection handling
+      let selectedTone = 'professional';
+      
+      toneCards.forEach(card => {
+        card.addEventListener('click', () => {
+          // Remove active from all
+          toneCards.forEach(c => c.classList.remove('active'));
+          // Add active to clicked
+          card.classList.add('active');
+          selectedTone = card.getAttribute('data-tone');
+          
+          // Update summary - get just the tone name without emoji
+          const toneName = card.querySelector('div').textContent.replace(/[^\w\s]/g, '').trim();
+          summaryTone.textContent = toneName;
+        });
+      });
+      
+      // Character counter and instructions handling
+      function updateCharCounter() {
+        const length = aiInstructions.value.length;
+        const maxLength = 500;
+        charCounter.textContent = `${length} / ${maxLength} characters`;
+        
+        // Update summary
+        if (length > 0) {
+          summaryInstructions.textContent = `${length} characters`;
+        } else {
+          summaryInstructions.textContent = 'None';
+        }
+        
+        // Warn if approaching limit
+        if (length > maxLength * 0.9) {
+          charCounter.style.color = 'rgb(var(--destructive))';
+        } else {
+          charCounter.style.color = 'rgb(var(--muted-fg))';
+        }
+      }
+      
+      aiInstructions.addEventListener('input', () => {
+        // Limit to 500 characters
+        if (aiInstructions.value.length > 500) {
+          aiInstructions.value = aiInstructions.value.substring(0, 500);
+        }
+        updateCharCounter();
+      });
+      
+      updateCharCounter(); // Initialize
+      
+      // Store configuration for use in analysis
+      window.aiConfig = {
+        getConfig: () => ({
+          temperature: parseFloat(tempSlider.value),
+          tone: selectedTone,
+          instructions: aiInstructions.value
+        })
+      };
+    }
+    
+    // Initialize AI config on DOM load
+
+    // Analysis functionality is handled by updateAnalyzeButton() function below
+
+    // Collapse above sections
+    $("#collapseAbove").addEventListener("click", ()=>{
+      ["section-campaign","section-company","section-uploads","section-timerange","section-ai-config"].forEach(id=>{
+        const elx = document.getElementById(id);
+        if(!elx) return;
+        const body = elx.querySelector(".card-body");
+        if(body){ body.style.display = (body.style.display==="none") ? "" : "none"; }
+      });
+    });
+
+    // Viz collapse
+    $("#toggleViz")?.addEventListener("click", ()=>{
+      const body = $("#vizBody");
+      const isOpen = body.style.display !== "none";
+      body.style.display = isOpen ? "none" : "block";
+      $("#toggleViz").textContent = isOpen ? "Expand" : "Collapse";
+    });
+
+    // Clear
+    $("#clearAll").addEventListener("click", ()=>{
+      localStorage.clear();
+      document.querySelectorAll("input, textarea").forEach(i=>{ if(i.type!=="date") i.value = "" });
+      currentTactics=[]; setDetectedTactics(currentTactics); tacticGrid.innerHTML="";
+      const acc = $("#analysisAccordion"); if(acc) acc.innerHTML="";
+      toast("Cleared.", "success");
+    });
+
+    // Results page functionality
+    function showResultsPage() {
+      // Store current scroll position
+      const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      localStorage.setItem('mainPageScrollPosition', scrollPosition);
+      
+      // Hide main content by adding a class instead of changing display
+      document.body.classList.add('showing-results');
+      $("#app").classList.add('hidden-for-results');
+      $(".header").classList.add('hidden-for-results');
+      
+      // Show results page
+      const resultsPage = $("#resultsPage");
+      resultsPage.classList.remove("hidden");
+      resultsPage.style.display = "flex";
+      
+      // Update timestamp
+      updateAnalysisTimestamp();
+      
+      // Prevent body scroll when results are showing
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideResultsPage() {
+      // Restore main content
+      document.body.classList.remove('showing-results');
+      $("#app").classList.remove('hidden-for-results');
+      $(".header").classList.remove('hidden-for-results');
+      
+      // Hide results page properly
+      const resultsPage = $("#resultsPage");
+      resultsPage.classList.add("hidden");
+      resultsPage.style.display = "none";
+      
+      // Restore body scroll
+      document.body.style.overflow = '';
+      
+      // Restore scroll position
+      const scrollPosition = localStorage.getItem('mainPageScrollPosition');
+      if (scrollPosition) {
+        window.scrollTo(0, parseInt(scrollPosition));
+      }
+      
+      // Preserve analysis state
+      if (typeof hasAnalyzedOnce !== 'undefined' && hasAnalyzedOnce) {
+        if (typeof analysisState !== 'undefined') {
+          analysisState = 'view';
+        }
+        if (typeof updateAnalyzeButton === 'function') {
+          updateAnalyzeButton();
+        }
+      }
+    }
+
+    function updateAnalysisTimestamp() {
+      const now = new Date();
+      const timestamp = now.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      const timestampEls = $$('.analysis-timestamp');
+      timestampEls.forEach(el => {
+        if (el) el.textContent = timestamp;
+      });
+    }
+
+    function initResultsNavigation() {
+      // Mobile menu toggle
+      $('#mobileMenuToggle')?.addEventListener('click', () => {
+        $('#resultsSidebar').classList.toggle('open');
+      });
+
+      // Smooth scroll navigation
+      $$('.sidebar-nav-item').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          
+          // Close mobile menu
+          $('#resultsSidebar').classList.remove('open');
+          
+          // Remove active from all nav links
+          $$('.sidebar-nav-item').forEach(l => l.classList.remove('active'));
+          // Add active to clicked link
+          link.classList.add('active');
+          
+          // Smooth scroll to section
+          const targetId = link.getAttribute('data-section');
+          const targetSection = $('#' + targetId);
+          if (targetSection) {
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      // Update active nav link based on scroll position
+      const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -80% 0px',
+        threshold: 0
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            $$('.sidebar-nav-item').forEach(l => l.classList.remove('active'));
+            const activeLink = $(`.sidebar-nav-item[data-section="${id}"]`);
+            if (activeLink) activeLink.classList.add('active');
+          }
+        });
+      }, observerOptions);
+
+      // Observe all content sections
+      $$('.content-section').forEach(section => {
+        observer.observe(section);
+      });
+
+      // Copy functionality
+      $$('[data-copy]').forEach(button => {
+        button.addEventListener('click', () => {
+          const sectionName = button.getAttribute('data-copy');
+          toast(`${sectionName} section copied to clipboard`, "success");
+        });
+      });
+
+      // Export functionality
+      $('#exportPDF')?.addEventListener('click', () => {
+        toast('PDF export feature coming soon', "info");
+      });
+
+      $('#shareResults')?.addEventListener('click', () => {
+        toast('Share feature coming soon', "info");
+      });
+
+      // Back to input
+      $('#backToInput')?.addEventListener('click', hideResultsPage);
+
+      // Re-analyze
+      $('#reAnalyze')?.addEventListener('click', () => {
+        hideResultsPage();
+        toast('Re-analysis initiated', "info");
+      });
+    }
+
+    function toggleTacticContent(header) {
+      const content = header.nextElementSibling;
+      const chevron = header.querySelector('.chevron');
+      
+      if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        chevron.textContent = '▲';
+      } else {
+        content.classList.add('expanded');
+        chevron.textContent = '▼';
+      }
+    }
+
+    // Make toggle function global
+    window.toggleTacticContent = toggleTacticContent;
+
+    // Track analysis state
+    let analysisState = 'analyze'; // analyze, view, reanalyze
+    let hasAnalyzedOnce = false;
+
+    // Update analyze button appearance and functionality
+    function updateAnalyzeButton() {
+      const analyzeBtn = $("#reanalyze");
+      const buttonText = $("#analyzeButtonText");
+      
+      if (!analyzeBtn || !buttonText) return;
+
+      // Update button appearance based on state
+      analyzeBtn.classList.remove('analyze', 'view', 'reanalyze');
+      analyzeBtn.classList.add(analysisState);
+
+      switch(analysisState) {
+        case 'analyze':
+          buttonText.textContent = 'Analyze Performance Data';
+          break;
+        case 'view':
+          buttonText.textContent = 'View Report';
+          break;
+        case 'reanalyze':
+          buttonText.textContent = 'Re-Analyze Performance Data';
+          break;
+      }
+
+      // Handle click events
+      analyzeBtn.onclick = async (e) => {
+        if (analysisState === 'analyze' || analysisState === 'reanalyze') {
+          // Start real analysis
+          $("#reanalyzeStatus").style.display = "inline-flex";
+          
+          try {
+            // Gather all necessary data
+            const campaignData = window.currentCampaignData || {
+              name: "Demo Campaign",
+              status: "completed"
+            };
+            
+            // Collect actual uploaded CSV data from all tactics
+            const uploadedFiles = {};
+            const allTacticCards = $$("#tacticGrid .card");
+            
+            // Helper function to read CSV file content
+            const readCSVFile = (file) => {
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  try {
+                    const csvText = e.target.result;
+                    const lines = csvText.split('\n').filter(line => line.trim());
+                    const headers = lines[0] ? lines[0].split(',').map(h => h.trim().replace(/"/g, '')) : [];
+                    const data = lines.slice(1).map(line => {
+                      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                      const row = {};
+                      headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                      });
+                      return row;
+                    }).filter(row => Object.values(row).some(val => val)); // Remove empty rows
+                    
+                    resolve({ headers, data });
+                  } catch (error) {
+                    reject(error);
+                  }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+              });
+            };
+            
+            // Process all uploaded files
+            for (const card of allTacticCards) {
+              const tacticName = card.querySelector('[data-role="tacticName"]')?.textContent || '';
+              const fileInputs = $$('[data-role="fileInput"]', card);
+              const tableNames = $$('[data-role="tableName"]', card);
+              
+              if (fileInputs.length > 0) {
+                const tacticFiles = [];
+                
+                for (let index = 0; index < fileInputs.length; index++) {
+                  const input = fileInputs[index];
+                  if (input.files && input.files.length > 0) {
+                    const tableName = tableNames[index]?.textContent || `Table ${index + 1}`;
+                    
+                    for (const file of input.files) {
+                      try {
+                        const csvContent = await readCSVFile(file);
+                        tacticFiles.push({
+                          filename: file.name,
+                          tableName: tableName,
+                          data: csvContent.data.slice(0, 100), // Limit to 100 rows for token efficiency
+                          headers: csvContent.headers
+                        });
+                        console.log(`Processed ${file.name}: ${csvContent.data.length} rows, ${csvContent.headers.length} columns`);
+                      } catch (error) {
+                        console.error(`Error processing file ${file.name}:`, error);
+                        // Still include file info even if processing fails
+                        tacticFiles.push({
+                          filename: file.name,
+                          tableName: tableName,
+                          data: [],
+                          headers: [],
+                          error: error.message
+                        });
+                      }
+                    }
+                  }
+                }
+                
+                if (tacticFiles.length > 0) {
+                  uploadedFiles[tacticName] = tacticFiles;
+                }
+              }
+            }
+            
+            // Check if we have any uploaded files
+            if (Object.keys(uploadedFiles).length === 0) {
+              // For demo purposes, allow analysis without files but warn user
+              console.warn('No files uploaded - running analysis with mock data');
+              toast('No files uploaded. Running demo analysis...', 'warning');
+              // Don't throw error, let it proceed with empty uploadedFiles
+            } else {
+              console.log(`Collected data from ${Object.keys(uploadedFiles).length} tactics:`, Object.keys(uploadedFiles));
+            }
+            
+            const companyInfo = {
+              name: $("#companyName")?.value || "Demo Company",
+              industry: $("#industry")?.value || "Unknown",
+              objectives: $("#objectives")?.value || "Generate leads",
+              notes: $("#notes")?.value || ""
+            };
+            
+            // Call analysis API
+            const analysisResponse = await fetch('api/analyze.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                campaignData: campaignData,
+                uploadedFiles: uploadedFiles,
+                companyInfo: companyInfo,
+                tactics: window.currentTacticsData || currentTactics
+              })
+            });
+            
+            const analysisResult = await analysisResponse.json();
+            
+            if (!analysisResult.success) {
+              throw new Error(analysisResult.message || 'Analysis failed');
+            }
+            
+            // Store analysis results globally for results page
+            window.currentAnalysisResults = analysisResult.data;
+            
+            $("#reanalyzeStatus").style.display = "none";
+            hasAnalyzedOnce = true;
+            analysisState = 'view';
+            updateAnalyzeButton();
+            showResultsPage();
+            toast("Analysis complete. Sections updated.", "success");
+            
+          } catch (error) {
+            console.error('Analysis error:', error);
+            $("#reanalyzeStatus").style.display = "none";
+            toast(`Analysis failed: ${error.message}`, "error");
+          }
+        } else if (analysisState === 'view') {
+          // Show existing report
+          showResultsPage();
+        }
+      };
+    }
+
+    // Listen for form changes to trigger reanalyze state
+    function initFormChangeTracking() {
+      const formElements = $$('input, textarea, select');
+      formElements.forEach(element => {
+        element.addEventListener('change', () => {
+          if (hasAnalyzedOnce && analysisState === 'view') {
+            analysisState = 'reanalyze';
+            updateAnalyzeButton();
+          }
+        });
+      });
+    }
+
+
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. First, ensure results page is hidden
+      const resultsPage = $("#resultsPage");
+      if (resultsPage) {
+        resultsPage.classList.add("hidden");
+        resultsPage.style.display = "none";
+      }
+      
+      // 2. Initialize other components
+      initCollapsibleHeaders();
+      initTimeRange();
+      initAIConfig();
+      initResultsNavigation();
+      updateAnalyzeButton();
+      initFormChangeTracking();
+      
+      // 3. Set default collapsed sections
+      ["section-company","section-uploads","section-timerange","section-ai-config"].forEach(id => {
+        const section = document.getElementById(id);
+        if(section) {
+          const body = section.querySelector('.card-body');
+          if(body) body.style.display = 'none';
+        }
+      });
+    });
+
+    // Seed demo
+    window.addEventListener("DOMContentLoaded", ()=>{
+      $("#luminaLink").value = "https://townsquarelumina.com/lumina/view/order/68658945b56fd46a60c1372e?tab=line_items";
+    });
+  </script>
+</body>
+</html>

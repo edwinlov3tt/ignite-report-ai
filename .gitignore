@@ -1,0 +1,90 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# API Keys and Secrets
+*.key
+*.pem
+config/secrets.php
+config/api-keys.php
+
+# Database
+*.sql
+*.sqlite
+*.db
+database.php
+
+# Uploads and User Generated Content
+uploads/*
+!uploads/.gitkeep
+temp/*
+!temp/.gitkeep
+cache/*
+!cache/.gitkeep
+
+# Logs
+*.log
+logs/*
+!logs/.gitkeep
+error_log
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Dependencies (if using package managers in future)
+vendor/
+node_modules/
+bower_components/
+
+# Build Files
+dist/
+build/
+*.min.js
+*.min.css
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*~
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Test Files
+test-*.php
+*.test.js
+coverage/
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+
+# Temporary Files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Schema Exports (may contain sensitive structure info)
+schema/exports/*
+!schema/exports/.gitkeep
+
+# Session Files
+sessions/*
+!sessions/.gitkeep
+
+# Configuration Overrides
+config.local.php
+settings.local.php

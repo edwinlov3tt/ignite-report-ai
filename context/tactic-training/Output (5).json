@@ -1,0 +1,528 @@
+[
+  {
+    "status": 200,
+    "headers": {
+      "date": "Fri, 25 Jul 2025 01:56:18 GMT",
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "9624",
+      "connection": "close",
+      "x-powered-by": "Express",
+      "access-control-allow-origin": "*",
+      "etag": "W/\"2598-JCEMwZw+/SctL5hbnFEEyCqpycw\"",
+      "strict-transport-security": "max-age=31536000; includeSubDomains"
+    },
+    "body": {
+      "response": "get order by id",
+      "item": {
+        "orderId": "677180aa77ff89a87ff80722",
+        "advertiserId": "6764e41777ff89a87fab56fe",
+        "aeUsername": "bill.schmid@townsquaremedia.com",
+        "companyName": "Keller Hearth N Home Products",
+        "companySlug": "keller-hearth-n-home-products",
+        "dcmUsername": "edwin.lovett@townsquareignite.com",
+        "dslUsername": "steven.horinka@townsquareignite.com",
+        "endDate": "2026-02-28T00:00:00.000Z",
+        "enteredOrderName": "4549947_Keller Hearth N Home Products_Mar 2024 - Feb 2026_Edwin Lovett",
+        "includesAmped": false,
+        "includesIgnite": true,
+        "market": "Bismarck",
+        "monthlyBudget": 2750,
+        "orderName": "Mar 2024 - Feb 2026",
+        "salesTasksAssigneeUsername": "bill.schmid@townsquaremedia.com",
+        "startDate": "2024-03-01T00:00:00.000Z",
+        "status": "Live",
+        "statusHistory": [
+          "Live"
+        ],
+        "teamsUsernames": [
+          "bill.schmid@townsquaremedia.com",
+          "steven.horinka@townsquareignite.com",
+          "edwin.lovett@townsquareignite.com"
+        ],
+        "totalAmpedProducts": 0,
+        "totalBudget": 66000,
+        "totalIgniteProducts": 6,
+        "totalMonth": 24,
+        "woOrderNumber": "4549947",
+        "workflowStepName": "Live",
+        "firstLuminaEditDate": "2025-04-04T19:55:07.148Z",
+        "uploadProposal": [
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b84e",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.336Z",
+            "originalFileName": "v1_bismarck_Keller HHP_133427 Mar 2025",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          },
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b851",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.398Z",
+            "originalFileName": "v1_Bismarck_KellerHearthNHome_135264 Home Show",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          },
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b854",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.416Z",
+            "originalFileName": "keller HHP 2025 Ignite agreement signed",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          },
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b857",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.440Z",
+            "originalFileName": "Keller HHP Fall 2024",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          },
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b85a",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.457Z",
+            "originalFileName": "V9_2326776_ND_Bismarck_KellerHearthNHome_24286450",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          },
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b85d",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.516Z",
+            "originalFileName": "v1_Bismarck_KellerHearthHP_93642",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          },
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b860",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.725Z",
+            "originalFileName": "Keller Hearth N Home - Digital Campaign 2024 Ignite Annual 122823 signed",
+            "type": "Campaign Proposal",
+            "path": "uploadProposal",
+            "isConnected": true
+          }
+        ],
+        "woContractUpload": [
+          {
+            "creativeAssetId": "67f6c28ca6c72f57b981b863",
+            "createdBy": "chirag.mohanty@townsquareignite.com",
+            "createdDate": "2025-04-09T18:55:08.755Z",
+            "originalFileName": "4549947-2",
+            "type": "WO Contract",
+            "path": "woContractUpload",
+            "isConnected": true
+          }
+        ],
+        "advertiserRegion": "ND",
+        "wideorbitId": "814D292B-A242-49FC-A991-E4479C1CE033",
+        "lineitems": [
+          {
+            "lineitemId": "677180ac77ff89a87ff80813",
+            "advertiserId": "6764e41777ff89a87fab56fe",
+            "campaignInitiative": "Annual",
+            "companyName": "Keller Hearth N Home Products",
+            "createdDate": "2024-01-02T16:17:56.000Z",
+            "displayName": "Addressable Solutions - Addressable Display",
+            "endDate": "2025-02-28T00:00:00.000Z",
+            "market": "Bismarck",
+            "orderId": "677180aa77ff89a87ff80722",
+            "orderName": "Mar 2024 - Feb 2026",
+            "product": "Addressable Solutions",
+            "startDate": "2024-03-01T00:00:00.000Z",
+            "status": "Complete",
+            "subProduct": [
+              "Addressable Display"
+            ],
+            "totalBudget": 6000,
+            "workflowStepName": "Complete",
+            "aeUsername": "bill.schmid@townsquaremedia.com",
+            "dcmUsername": "edwin.lovett@townsquareignite.com",
+            "aeUsernameDisplay": {
+              "username": "bill.schmid@townsquaremedia.com",
+              "fullName": "Bill Schmid",
+              "accountName": "Bill Schmid"
+            },
+            "dcmUsernameDisplay": {
+              "username": "edwin.lovett@townsquareignite.com",
+              "fullName": "Edwin Lovett",
+              "accountName": "Edwin Lovett"
+            },
+            "companySlug": "keller-hearth-n-home-products"
+          },
+          {
+            "lineitemId": "677180ae77ff89a87ff80885",
+            "advertiserId": "6764e41777ff89a87fab56fe",
+            "campaignInitiative": "Primary",
+            "companyName": "Keller Hearth N Home Products",
+            "createdDate": "2024-01-02T16:19:52.000Z",
+            "displayName": "Blended Tactics - Targeted Display - Xandr",
+            "endDate": "2025-02-28T00:00:00.000Z",
+            "market": "Bismarck",
+            "orderId": "677180aa77ff89a87ff80722",
+            "orderName": "Mar 2024 - Feb 2026",
+            "product": "Blended Tactics",
+            "startDate": "2024-03-01T00:00:00.000Z",
+            "status": "Complete",
+            "subProduct": [
+              "Targeted Display"
+            ],
+            "totalBudget": 6000,
+            "workflowStepName": "Complete",
+            "aeUsername": "bill.schmid@townsquaremedia.com",
+            "dcmUsername": "edwin.lovett@townsquareignite.com",
+            "aeUsernameDisplay": {
+              "username": "bill.schmid@townsquaremedia.com",
+              "fullName": "Bill Schmid",
+              "accountName": "Bill Schmid"
+            },
+            "dcmUsernameDisplay": {
+              "username": "edwin.lovett@townsquareignite.com",
+              "fullName": "Edwin Lovett",
+              "accountName": "Edwin Lovett"
+            },
+            "companySlug": "keller-hearth-n-home-products"
+          },
+          {
+            "lineitemId": "677180af77ff89a87ff808ac",
+            "advertiserId": "6764e41777ff89a87fab56fe",
+            "campaignInitiative": "Primary",
+            "companyName": "Keller Hearth N Home Products",
+            "createdDate": "2024-01-02T16:14:00.000Z",
+            "displayName": "Blended Tactics - Targeted Display - Xandr",
+            "endDate": "2026-02-28T00:00:00.000Z",
+            "market": "Bismarck",
+            "orderId": "677180aa77ff89a87ff80722",
+            "orderName": "Mar 2024 - Feb 2026",
+            "product": "Blended Tactics",
+            "startDate": "2024-03-01T00:00:00.000Z",
+            "status": "Live",
+            "subProduct": [
+              "Targeted Display"
+            ],
+            "totalBudget": 12000,
+            "workflowStepName": "Live",
+            "aeUsername": "bill.schmid@townsquaremedia.com",
+            "dcmUsername": "edwin.lovett@townsquareignite.com",
+            "aeUsernameDisplay": {
+              "username": "bill.schmid@townsquaremedia.com",
+              "fullName": "Bill Schmid",
+              "accountName": "Bill Schmid"
+            },
+            "dcmUsernameDisplay": {
+              "username": "edwin.lovett@townsquareignite.com",
+              "fullName": "Edwin Lovett",
+              "accountName": "Edwin Lovett"
+            },
+            "companySlug": "keller-hearth-n-home-products"
+          },
+          {
+            "lineitemId": "677180af77ff89a87ff8091d",
+            "advertiserId": "6764e41777ff89a87fab56fe",
+            "campaignInitiative": "Primary",
+            "companyName": "Keller Hearth N Home Products",
+            "createdDate": "2024-01-02T21:04:40.000Z",
+            "displayName": "Addressable Solutions - Geofencing with Foot Traffic",
+            "endDate": "2026-02-28T00:00:00.000Z",
+            "market": "Bismarck",
+            "orderId": "677180aa77ff89a87ff80722",
+            "orderName": "Mar 2024 - Feb 2026",
+            "product": "Addressable Solutions",
+            "startDate": "2024-03-01T00:00:00.000Z",
+            "status": "Live",
+            "subProduct": [
+              "Geofencing with Foot Traffic"
+            ],
+            "totalBudget": 12000,
+            "workflowStepName": "Live",
+            "aeUsername": "bill.schmid@townsquaremedia.com",
+            "dcmUsername": "edwin.lovett@townsquareignite.com",
+            "aeUsernameDisplay": {
+              "username": "bill.schmid@townsquaremedia.com",
+              "fullName": "Bill Schmid",
+              "accountName": "Bill Schmid"
+            },
+            "dcmUsernameDisplay": {
+              "username": "edwin.lovett@townsquareignite.com",
+              "fullName": "Edwin Lovett",
+              "accountName": "Edwin Lovett"
+            },
+            "companySlug": "keller-hearth-n-home-products"
+          },
+          {
+            "lineitemId": "677180b077ff89a87ff809b4",
+            "advertiserId": "6764e41777ff89a87fab56fe",
+            "companyName": "Keller Hearth N Home Products",
+            "createdDate": "2024-01-02T16:15:50.000Z",
+            "displayName": "Meta - FB - Link Click",
+            "endDate": "2026-02-28T00:00:00.000Z",
+            "market": "Bismarck",
+            "orderId": "677180aa77ff89a87ff80722",
+            "orderName": "Mar 2024 - Feb 2026",
+            "product": "Meta",
+            "startDate": "2024-03-01T00:00:00.000Z",
+            "status": "Live",
+            "totalBudget": 12000,
+            "workflowStepName": "Live",
+            "aeUsername": "bill.schmid@townsquaremedia.com",
+            "campaignInitiative": "Primary",
+            "subProduct": [
+              "Link Click"
+            ],
+            "dcmUsername": "edwin.lovett@townsquareignite.com",
+            "aeUsernameDisplay": {
+              "username": "bill.schmid@townsquaremedia.com",
+              "fullName": "Bill Schmid",
+              "accountName": "Bill Schmid"
+            },
+            "dcmUsernameDisplay": {
+              "username": "edwin.lovett@townsquareignite.com",
+              "fullName": "Edwin Lovett",
+              "accountName": "Edwin Lovett"
+            },
+            "companySlug": "keller-hearth-n-home-products"
+          },
+          {
+            "lineitemId": "67b9aa8fb56fd46a60f26b78",
+            "advertiserId": "6764e41777ff89a87fab56fe",
+            "aeUsername": "bill.schmid@townsquaremedia.com",
+            "campaignInitiative": "Primary",
+            "companyName": "Keller Hearth N Home Products",
+            "createdDate": "2025-02-21T18:24:54.000Z",
+            "displayName": "SEM - SEM",
+            "endDate": "2026-02-28T00:00:00.000Z",
+            "market": "Bismarck",
+            "orderId": "677180aa77ff89a87ff80722",
+            "orderName": "Mar 2024 - Feb 2026",
+            "product": "SEM",
+            "startDate": "2025-03-13T00:00:00.000Z",
+            "status": "Live",
+            "subProduct": [
+              "Google Search"
+            ],
+            "totalBudget": 18000,
+            "workflowStepName": "Live",
+            "dcmUsername": "edwin.lovett@townsquareignite.com",
+            "aeUsernameDisplay": {
+              "username": "bill.schmid@townsquaremedia.com",
+              "fullName": "Bill Schmid",
+              "accountName": "Bill Schmid"
+            },
+            "dcmUsernameDisplay": {
+              "username": "edwin.lovett@townsquareignite.com",
+              "fullName": "Edwin Lovett",
+              "accountName": "Edwin Lovett"
+            },
+            "companySlug": "keller-hearth-n-home-products"
+          }
+        ],
+        "aeUsernameDisplay": {
+          "username": "bill.schmid@townsquaremedia.com",
+          "fullName": "Bill Schmid",
+          "accountName": "Bill Schmid"
+        },
+        "salesTasksAssigneeUsernameDisplay": {
+          "username": "bill.schmid@townsquaremedia.com",
+          "fullName": "Bill Schmid",
+          "accountName": "Bill Schmid"
+        },
+        "dcmUsernameDisplay": {
+          "username": "edwin.lovett@townsquareignite.com",
+          "fullName": "Edwin Lovett",
+          "accountName": "Edwin Lovett"
+        },
+        "dslUsernameDisplay": {
+          "username": "steven.horinka@townsquareignite.com",
+          "fullName": "Steven Horinka",
+          "accountName": "Steven Horinka"
+        },
+        "tasksSummary": {
+          "activeWorkflow": "Revision Request",
+          "totalTasks": 8,
+          "totalCompletedTasks": 7,
+          "userIncompleteTasks": 0,
+          "activePrimaryTasksCount": 0,
+          "activeRevisionTasksCount": 0
+        }
+      }
+    }
+  },
+  {
+    "status": 200,
+    "headers": {
+      "date": "Fri, 25 Jul 2025 01:56:23 GMT",
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "5342",
+      "connection": "close",
+      "x-powered-by": "Express",
+      "access-control-allow-origin": "*",
+      "etag": "W/\"14de-k4WfCySJ/4NMayxSB04WgyL/+cs\"",
+      "strict-transport-security": "max-age=31536000; includeSubDomains"
+    },
+    "body": {
+      "response": "Get Line item by id",
+      "item": {
+        "lineitemId": "67b9aa8fb56fd46a60f26b78",
+        "adjustedTotalBudget": 18000,
+        "advertiserId": "6764e41777ff89a87fab56fe",
+        "aeUsername": "bill.schmid@townsquaremedia.com",
+        "budgetFlightingDetails": true,
+        "buyerSearchUsername": "bailey.fusco@townsquareignite.com",
+        "campaignInitiative": "Primary",
+        "campaignName": "4549947_ND_Bismarck_Keller Hearth N Home Products_Primary_SEM",
+        "companyName": "Keller Hearth N Home Products",
+        "createdBy": "batch conversion",
+        "createdDate": "2025-02-21T18:24:54.000Z",
+        "displayName": "SEM - SEM",
+        "dslUsername": "steven.horinka@townsquareignite.com",
+        "endDate": "2026-02-28T00:00:00.000Z",
+        "includeMakeGood": false,
+        "includeRateException": false,
+        "kpi": [
+          "Clicks",
+          "Form Submissions",
+          "Phone Calls"
+        ],
+        "market": "Bismarck",
+        "modifiedBy": "batch",
+        "modifiedDate": "2025-06-20T17:19:35.857Z",
+        "orderId": "677180aa77ff89a87ff80722",
+        "platforms": [
+          "Google Ads"
+        ],
+        "product": "SEM",
+        "sensitiveCatCampaign": false,
+        "startDate": "2025-03-13T00:00:00.000Z",
+        "status": "Live",
+        "statusHistory": [
+          "Live"
+        ],
+        "stepHistory": [
+          "Live"
+        ],
+        "subProduct": [
+          "Google Search"
+        ],
+        "tapLineitemId": "133971",
+        "totalBudget": 18000,
+        "woOrderNumber": "4549947",
+        "workflowStepName": "Live",
+        "geoTargetingType": "City",
+        "additionalDetails": "CO-OP Requirements:• Claim must be submitted within 90 days of invoice date.\n• Dealer/Distributor web site must prominently display link to HHT brand web sites (for all brands carried).\n• HHT branded products must be visually displayed (image, copy, product details) on web site OR site must have syndicated version of HHT product catalog.\n• PPC campaign/ad must contain HHT brand in ad, and\nExample:\nHeat &amp; Glo at Fireside\nFireplaces, Stoves &amp; Inserts\n$200 off install - 80 display units\nwww.fireside.com/WebOffer\n• Landing page(s) for campaign/ad must contain HHT branded products, link to HHT branded web site, or syndicated product catalog. Landing page for campaign cannot contain competitive product or link to competitive products.\n• Results of campaign must be provided to HHT",
+        "recruitmentCampaign": false,
+        "emailGBP": "bill.schmid631@gmail.com",
+        "firstLuminaEditDate": "2025-04-04T19:55:07.138Z",
+        "googleAdsAcc": "No",
+        "gtmAccount": "ignitetagmanager12@gmail.com",
+        "gtmContainerId": "GTM-MFRGWHR3",
+        "linkToGBP": "Yes",
+        "type": "Renewal",
+        "woLineItemNumbers": "85-96",
+        "dcmUsername": "edwin.lovett@townsquareignite.com",
+        "linkedGBP": "Yes",
+        "trackCallComplGBP": "Yes",
+        "aeUsernameDisplay": {
+          "username": "bill.schmid@townsquaremedia.com",
+          "fullName": "Bill Schmid",
+          "accountName": "Bill Schmid"
+        },
+        "dcmUsernameDisplay": {
+          "username": "edwin.lovett@townsquareignite.com",
+          "fullName": "Edwin Lovett",
+          "accountName": "Edwin Lovett"
+        },
+        "dslUsernameDisplay": {
+          "username": "steven.horinka@townsquareignite.com",
+          "fullName": "Steven Horinka",
+          "accountName": "Steven Horinka"
+        },
+        "buyerSearchUsernameDisplay": {
+          "username": "bailey.fusco@townsquareignite.com",
+          "fullName": "Bailey Fusco",
+          "accountName": "Bailey Fusco"
+        },
+        "cities": "Mandan ND\nDickinson ND",
+        "isExclusion": false,
+        "buildDetails": {
+          "campaignObjective": "Years in business (since 1977). They install and service what they sell. Great reputation. The depth of products; more fireplaces (wood, gas, electric) , more hot tubs than any one in area (and the accessories and cleaning supplies), plus Keller offers grills, saunas, fire tables, outdoor furniture, fireplace mantels, brick and masonry rock",
+          "semEstimateServices": "<p>Fireplaces Outdoor (Gas / Electric / Wood)\nFireplace Services (Repair / Installation)\nFireplace Indoor (Gas / Electric / Wood)\nOutdoor Furniture\nHot Tubs &amp; Saunas\nBranded</p>",
+          "servicesNotToAdvertise": false,
+          "semEstimateBranded": true,
+          "existingEstimate": true,
+          "estimateUpload": [
+            {
+              "creativeAssetId": "67f0391a32f379e26f40d3bc",
+              "createdBy": "edwin.lovett@townsquareignite.com",
+              "createdDate": "2025-04-04T19:55:06.955Z",
+              "originalFileName": "SEM-Estimate-Keller-Hearth-N-Home---Bismarck-20250211-080208 (1)",
+              "type": "Existing Estimate",
+              "path": "buildDetails.estimateUpload",
+              "isConnected": true
+            }
+          ]
+        },
+        "advertiserRegion": "ND",
+        "orderName": "Mar 2024 - Feb 2026",
+        "companySlug": "keller-hearth-n-home-products",
+        "advertiserName": "Keller Hearth N Home Products",
+        "orderStartDate": "2024-03-01T00:00:00.000Z",
+        "orderEndDate": "2026-02-28T00:00:00.000Z",
+        "campaignType": "Renewal",
+        "contractedBudget": 18000,
+        "orderInfo": {
+          "aeUsernameDisplay": {
+            "username": "bill.schmid@townsquaremedia.com",
+            "fullName": "Bill Schmid",
+            "accountName": "Bill Schmid"
+          },
+          "dcmUsernameDisplay": {
+            "username": "edwin.lovett@townsquareignite.com",
+            "fullName": "Edwin Lovett",
+            "accountName": "Edwin Lovett"
+          },
+          "dslUsernameDisplay": {
+            "username": "steven.horinka@townsquareignite.com",
+            "fullName": "Steven Horinka",
+            "accountName": "Steven Horinka"
+          },
+          "buyerProgrammaticUsernameDisplay": {
+            "username": "will.hoffman@townsquareignite.com",
+            "fullName": "Will Hoffman",
+            "accountName": "Will Hoffman"
+          },
+          "buyerSocialUsernameDisplay": {
+            "username": "caroline.hirsh@townsquareignite.com",
+            "fullName": "Caroline Hirsh",
+            "accountName": "Caroline Hirsh"
+          },
+          "buyerSearchUsernameDisplay": {
+            "username": "bailey.fusco@townsquareignite.com",
+            "fullName": "Bailey Fusco",
+            "accountName": "Bailey Fusco"
+          },
+          "salesTasksAssigneeUsername": {
+            "username": "bill.schmid@townsquaremedia.com",
+            "fullName": "Bill Schmid",
+            "accountName": "Bill Schmid"
+          }
+        },
+        "tasksSummary": {
+          "activeWorkflow": "Revision Request",
+          "totalTasks": 8,
+          "totalCompletedTasks": 8,
+          "userIncompleteTasks": 0,
+          "activePrimaryTasksCount": 0,
+          "activeRevisionTasksCount": 0
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,63 @@
+Townsquare,Platform,Category,Product,Sub Product,Sub Product Alias Code,Medium,Rate,KPI,Data Value
+Ignite,"LeadMe, ADS, Site Impact, Bridge",Email Marketing,Email Marketing,1:1 Marketing,1:1 Marketing,Email,$24.00,CPM,emailMarketing
+Ignite,"LeadMe, ADS, Site Impact, Bridge",Email Marketing,Email Marketing,B2B (Business Targeting),B2B,Email,$24.00,CPM,emailMarketing
+Ignite,"LeadMe, ADS, Site Impact, Bridge",Email Marketing,Email Marketing,B2C (Consumer Targeting),B2C,Email,$30.00,CPM,emailMarketing
+Ignite,Various,Beta,Beta,Premium Plus,Premium Plus - RON; Premium Plus - AAT,Video,-,CPM,beta
+Ignite,Various,Beta,Beta,Nextdoor,Nextdoor - Reach/Awareness; Nextdoor - Traffic,"Single Image, Carousel, Slideshow, or Video",-,CPM,beta
+Ignite,Various,Beta,Beta,Netflix,Netflix - RON; Netflix - Genre,Video,-,CPM,beta
+Ignite,Various,Beta,Beta,Demand Gen,SEM - Demand Gen,"Text, Video, Email, Display, Maps",-,CPM,beta
+Ignite,The Trade Desk,Programmatic,Programmatic Audio,Advanced Audience Targeting,AAT,Audio,$25.00,CPM,programmaticAudio
+Ignite,The Trade Desk,Programmatic,Programmatic Audio,Run of Network,RON,Audio,$25.00,CPM,programmaticAudio
+Ignite,Sifi,Programmatic,Addressable Solutions,Addressable Display,AGF-DISP,Display,$12.00,CPM,addressableDisplay
+Ignite,Sifi,Programmatic,Addressable Solutions,Geofencing with Foot Traffic,GEO-FT; HLM,Display,$12.50,CPM,geofence
+Ignite,Sifi,Programmatic,Addressable Solutions,Addressable STV,Addressable STV,Video,$42.00,CPM,addressableStv
+Ignite,Sifi,Programmatic,Addressable Solutions,Addressable Video,AGF-VIDEO,Video,$22.00,CPM,addressableVideo
+Ignite,Xandr,Programmatic,Blended Tactics,Targeted Display,Run of Network; RON; Advanced Audience Targeting; AAT; Website Targeting; WTG; Keyword Targeting; KWD; Geo Fencing GEO; HLM; Retargeting; RTG; CRM,Display,Blended,CPM,targetedDisplay
+Ignite,Xandr,Programmatic,Blended Tactics,Social Display,RON; AAT; WTG; KWD; GEO; HLM; RTG; CRM,Display,Blended,CPM,socialDisplay
+Ignite,Xandr,Programmatic,Blended Tactics,Targeted Native,RON; AAT; WTG; KWD; GEO; HLM; RTG; CRM,Display,Blended,CPM,targetedNative
+Ignite,Xandr,Programmatic,Blended Tactics,Targeted Video,RON; AAT; WTG; KWD; GEO; HLM; RTG; CRM,Video,Blended,CPM,targetedVideo
+Ignite,LocalX,Locality Live Sports,STV,Video,Video,Video,Package,CPM,locality
+Ignite,MadHive,Programmatic,STV,Advanced Audience Targeting OTT,AAT-STV,Video,$38.00,CPM,streamingStv
+Ignite,MadHive,Programmatic,STV,Channel Targeted OTT,CHN-STV,Video,$38.00,CPM,streamingStv
+Ignite,MadHive,Programmatic,STV,Streaming TV OTT,STV-OTT,Video,$42.00,CPM,streamingStv
+Ignite,MadHive,Programmatic,STV,Run of Network,RON-STV,Video,$32.00,CPM,streamingStv
+Ignite,Hulu,Programmatic,STV,Hulu - Audience Targeted,Hulu - Audience Targeted,Video,-,CPM,streamingStv
+Ignite,Hulu,Programmatic,STV,Hulu - RON,Hulu - RON,Video,-,CPM,streamingStv
+Ignite,MadHive,Programmatic,STV,Polk,Polk,Video,-,CPM,streamingStv
+Ignite,YouTube,Programmatic,STV,YouTube TV - Audience Targeted,AAT 30s; AAT 15s,Video,-,CPM,youtubeTv
+Ignite,YouTube,Programmatic,STV,YouTube TV - Run of Network,RON 30s; RON 15s,Video,-,CPM,youtubeTv
+Ignite,Facebook,Social,Meta,Facebook - Link Click,FB-Link Click,"Single Image, Carousel, Slideshow, or Video",$2.50,CPM,meta
+Ignite,Facebook,Social,Meta,Facebook - Awareness,FB-Awareness,"Single Image, Carousel, Slideshow, or Video",$10.00,CPM,meta
+Ignite,Facebook,Social,Meta,Facebook - ThruPlay,FB-ThruPlay,"Single Image, Carousel, Slideshow, or Video",$0.27,CPV,meta
+Ignite,Facebook,Social,Meta,Facebook - Post Engagement,FB-Post Engagement,"Single Image, Carousel, Slideshow, or Video",$0.75,CPPE,meta
+Ignite,Facebook,Social,Meta,Facebook - Lead Gen,FB-Lead Gen,"Single Image, Carousel, Slideshow, or Video",Package,-,meta
+Ignite,Snapchat,Social,Snapchat,Snapchat - Aware,SC-Aware,"Single Image, Filter, Video, or Story",$12.00,CPM,snapchat
+Ignite,Snapchat,Social,Snapchat,Snapchat - Swipe Up,SC-Swipe Up,"Single Image, Video, or Story",$3.00,CPSU,snapchat
+Ignite,TikTok,Social,TikTok,TikTok - Awareness,TikTok - Awareness,Video or Slideshow,$16.00,CPM,tiktok
+Ignite,TikTok,Social,TikTok,TikTok - Link Click,TikTok - Link Click,Video or Slideshow,$3.00,CPM,tiktok
+Ignite,Twitter,Social,Twitter,Twitter - Link Click,Twitter - Link Click,"Image, Video, or Carousel",$2.50,CPLC,-
+Ignite,Twitter,Social,Twitter,Twitter - Awareness,Twitter - Awareness,"Image, Video, or Carousel",$12.00,CPM,-
+Ignite,Pinterest,Social,Pinterest,Pintrest - Link Click,Pintrest - Link Click,"Image, Video, or Carousel",$3.50,CPLC,pinterest
+Ignite,Pinterest,Social,Pinterest,Pintrest - Awareness,Pintrest - Awareness,"Image, Video, or Carousel",$16.00,CPM,pinterest
+Ignite,LinkedIn,Social,LinkedIn,LinkedIn - Link Click,LinkedIn - Link Click,Single Image,$10.00,CPLC,linkedIn
+Ignite,Google Ad Words,Google,SEM,SEM,SEM,Text Ads,Package,-,sem
+Ignite,Google Ad Words,Google,Spark,Spark,Spark,"SEM, YouTube, Email, Display, Local Maps",Package,-,spark
+Ignite,Google Ad Words,Programmatic,YouTube,YouTube True View,YT-TV,Video,$0.15,CPV,youtube
+Ignite,Google Ad Words,Programmatic,YouTube,YouTube Bumper,YT-Bumper,Video,$18.00,CPM,youtube
+Ignite,Ignite Network,CPM Display,Ignite Network,Ignite Network - Banner Ads,Ignite Network - Banner Ads,Display,,,cpmDisplay
+Amped,Facebook,Local Social,SSM,Sponsored Social Mentions - Link Click,SSM - Link Click; Social Impact - Link Click,"Single Image, or Video",$5.00,CPLC,socialMention
+Amped,Facebook,Local Social,SSM,Sponsored Social Mentions - Awareness,SSM - Awareness; Social Impact - Awareness,"Single Image, or Video",$20.00,CPM,socialMention
+Amped,Facebook,Local Social,SSM,Sponsored Social Mentions - ThruPlay,SSM - ThruPlay; Social Impact - Thruplay,Video,$0.37,CPV,socialMention
+Amped,Google Ad Words,Local Display,CPM Display,Banner Ads,Banner Ads (All Postions),Display,$7.00,CPM,localDisplay
+Amped,Google Ad Words,Local Display,CPM Display,Amplifier,Amplifier,Display,$7.00,CPM,localDisplay
+Amped,Google Ad Words,Local Display,CPM Display,Ignite Network,Ignite Network,Display,$7.00,CPM,localDisplay
+Amped,Google Ad Words,Local Display,CPM Display,Local Network,Local Network,Display,$7.00,CPM,localDisplay
+Amped,Google Ad Words,Local Display,CPM Display,Mobile Billboard,Mobile Billboard,Display,$11.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Takeovers,Station Site Takeovers,Station Site Takeovers,Display,$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Sponsorship,Content Sponsorship,Content Sponsorship,Display,$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Sponsorship,Contest Sponsorship,Contest Sponsorship,Display,$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Sponsorship,Listen Live Sponsorship,Listen Live Sponsorship,"Video, Audio, Image",$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Sponsorship,Station App Sponsorship,Station App Sponsorship,Display,$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Digital Endorsements,Advertorial,Advertorial,Display,$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Digital Endorsements,Booth,Booth,Display,$5.00,CPM,localDisplay
+Amped,Radio Station,Local Display,Digital Endorsements,Endorsement,Endorsement,Display,$5.00,CPM,localDisplay

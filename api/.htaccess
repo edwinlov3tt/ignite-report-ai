@@ -1,0 +1,37 @@
+# API Directory Configuration
+# CORS and security settings for Report.AI APIs
+
+# CORS Headers for all API endpoints
+Header always set Access-Control-Allow-Origin "https://ignite.edwinlovett.com"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+Header always set Access-Control-Allow-Credentials "true"
+Header always set Access-Control-Max-Age "3600"
+
+# Handle preflight requests
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Only allow PHP files to be executed
+<FilesMatch "\.php$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Deny access to non-PHP files
+<FilesMatch "\.(txt|log|md|json|env)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# PHP settings for API performance
+php_value max_execution_time 60
+php_value memory_limit 256M
+php_value upload_max_filesize 10M
+php_value post_max_size 10M

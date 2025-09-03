@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Sections Guide - Report.AI Documentation</title>
+    <link rel="stylesheet" href="../../../context/creative-docs/design-tokens.css">
+    <style>
+        /* Documentation Styles - Following Design System */
+        :root {
+            --doc-max-width: 1200px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .docs-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid var(--border-default);
+            padding: var(--space-8);
+        }
+
+        .header-content {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .docs-title {
+            font-size: var(--text-title-2xl-size);
+            font-weight: var(--text-title-2xl-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+        }
+
+        .docs-subtitle {
+            font-size: var(--text-body-lg-size);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .breadcrumb {
+            font-size: var(--text-body-sm-size);
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb a {
+            color: #CF0E0F;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* Container */
+        .docs-container {
+            max-width: var(--doc-max-width);
+            margin: 0 auto;
+            padding: var(--space-8);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--space-8);
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            height: fit-content;
+            position: sticky;
+            top: var(--space-4);
+        }
+
+        .toc h3 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            padding-bottom: var(--space-2);
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc li {
+            margin-bottom: var(--space-2);
+        }
+
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            padding: var(--space-2);
+            display: block;
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .toc a:hover,
+        .toc a.active {
+            color: #CF0E0F;
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        .toc ul ul {
+            margin-left: var(--space-4);
+            margin-top: var(--space-2);
+        }
+
+        .toc ul ul a {
+            font-size: var(--text-body-xs-size);
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            min-width: 0;
+        }
+
+        .content-section {
+            margin-bottom: var(--space-12);
+        }
+
+        .content-section h2 {
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-6) 0;
+            padding-bottom: var(--space-3);
+            border-bottom: 2px solid #CF0E0F;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .content-section h3 {
+            font-size: var(--text-title-md-size);
+            font-weight: var(--text-title-md-weight);
+            color: var(--text-primary);
+            margin: var(--space-8) 0 var(--space-4) 0;
+        }
+
+        .content-section h4 {
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+            margin: var(--space-6) 0 var(--space-3) 0;
+        }
+
+        .content-section p {
+            margin-bottom: var(--space-4);
+            line-height: 1.7;
+        }
+
+        /* Access Panel */
+        .access-panel {
+            background: linear-gradient(135deg, #CF0E0F 0%, #A00B0C 100%);
+            color: white;
+            padding: var(--space-8);
+            border-radius: var(--radii-lg);
+            margin: var(--space-8) 0;
+            text-align: center;
+        }
+
+        .access-panel h3 {
+            margin: 0 0 var(--space-4) 0;
+            font-size: var(--text-title-lg-size);
+            font-weight: var(--text-title-lg-weight);
+        }
+
+        .access-panel p {
+            margin: 0 0 var(--space-6) 0;
+            font-size: var(--text-body-lg-size);
+            opacity: 0.9;
+        }
+
+        .access-btn {
+            background: white;
+            color: #CF0E0F;
+            padding: var(--space-4) var(--space-8);
+            border: none;
+            border-radius: var(--radii-md);
+            font-size: var(--text-body-md-size);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all var(--duration-normal);
+            box-shadow: var(--shadow-md);
+        }
+
+        .access-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Section Examples */
+        .section-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .section-card {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+        }
+
+        .section-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .section-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-4);
+            display: block;
+        }
+
+        .section-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+            color: var(--text-primary);
+        }
+
+        .section-card p {
+            margin: 0 0 var(--space-4) 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        .section-card .example-text {
+            background: var(--bg-muted);
+            border-radius: var(--radii-sm);
+            padding: var(--space-3);
+            font-size: var(--text-body-xs-size);
+            font-style: italic;
+            color: var(--text-muted);
+            border-left: 3px solid #CF0E0F;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .feature-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            transition: all var(--duration-normal);
+        }
+
+        .feature-card:hover {
+            border-color: #CF0E0F;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-card h4 {
+            margin: 0 0 var(--space-3) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .feature-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--text-body-sm-size);
+            line-height: 1.6;
+        }
+
+        /* Workflow Steps */
+        .workflow-steps {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+            padding-bottom: var(--space-6);
+            border-bottom: 1px solid var(--border-muted);
+        }
+
+        .workflow-step:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .step-number {
+            background: #CF0E0F;
+            color: white;
+            border-radius: var(--radii-full);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-body-sm-size);
+            font-weight: var(--text-body-xs-weight);
+            flex-shrink: 0;
+            margin-top: var(--space-1);
+        }
+
+        .step-content h4 {
+            margin: 0 0 var(--space-2) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            border: 2px solid var(--border-default);
+            border-radius: var(--radii-md);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .info-box.tip {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .info-box.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .info-box.danger {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.05);
+        }
+
+        .info-box h4 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--text-title-sm-size);
+            font-weight: var(--text-title-sm-weight);
+        }
+
+        .info-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #f8fafc;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radii-sm);
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: var(--text-body-sm-size);
+            color: var(--text-primary);
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+
+        /* Navigation */
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-8) 0;
+            border-top: 1px solid var(--border-default);
+            margin-top: var(--space-12);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: #CF0E0F;
+            text-decoration: none;
+            font-size: var(--text-body-sm-size);
+            font-weight: 500;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radii-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .nav-link:hover {
+            background: rgba(207, 14, 15, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .docs-container {
+                grid-template-columns: 1fr;
+                gap: var(--space-6);
+            }
+
+            .toc {
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: var(--space-4);
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+
+            .feature-grid,
+            .section-examples {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hide scrollbars */
+        .toc,
+        .main-content,
+        .code-block {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .toc::-webkit-scrollbar,
+        .main-content::-webkit-scrollbar,
+        .code-block::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <div class="header-content">
+            <div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../../">Documentation</a> > <a href="../">Schema Admin</a> > <span>Report Sections</span>
+                </nav>
+                <h1 class="docs-title">Report Sections Guide</h1>
+                <p class="docs-subtitle">Configure custom sections for AI-generated reports</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="docs-container">
+        <!-- Table of Contents -->
+        <nav class="toc" aria-label="Table of Contents">
+            <h3>📋 Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#section-types">Section Types</a>
+                    <ul>
+                        <li><a href="#executive-summary">Executive Summary</a></li>
+                        <li><a href="#performance-analysis">Performance Analysis</a></li>
+                        <li><a href="#trend-analysis">Trend Analysis</a></li>
+                        <li><a href="#recommendations">Recommendations</a></li>
+                    </ul>
+                </li>
+                <li><a href="#customization">Customization</a></li>
+                <li><a href="#template-management">Templates</a></li>
+                <li><a href="#validation">Validation</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Quick Access Panel -->
+            <div class="access-panel">
+                <h3>📑 Access Report Sections</h3>
+                <p>Ready to configure custom report sections? Jump directly to the sections manager.</p>
+                <a href="../../../schema-admin/sections-manager/" class="access-btn" target="_blank">Open Sections Manager →</a>
+            </div>
+
+            <section id="overview" class="content-section">
+                <h2>📑 Overview</h2>
+                <p>The Report Sections Manager allows you to configure and customize the structure of AI-generated analysis reports. Define custom sections, set content requirements, and ensure consistent output formatting across all campaign analyses.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Section Configuration</h4>
+                        <p>Define custom sections with specific content requirements, formatting rules, and validation criteria</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span>Template Management</h4>
+                        <p>Create and manage reusable section templates for different analysis types and industries</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Content Guidelines</h4>
+                        <p>Specify AI guidelines for each section to ensure relevant and focused analysis output</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">✅</span>Structure Validation</h4>
+                        <p>Validate section configurations and ensure proper report structure before deployment</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="getting-started" class="content-section">
+                <h2>🚀 Getting Started</h2>
+                <p>The Sections Manager provides a visual interface for configuring the structure and content of your AI-generated reports.</p>
+
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Review Default Sections</h4>
+                            <p>Start by examining the existing section configurations to understand the structure and requirements.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Add Custom Sections</h4>
+                            <p>Create new sections tailored to your specific analysis requirements and reporting needs.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Configure Section Properties</h4>
+                            <p>Set content guidelines, formatting rules, and validation criteria for each section.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Test and Validate</h4>
+                            <p>Use the AI testing interface to validate section configurations and output quality.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Export Configuration</h4>
+                            <p>Save your section configuration and deploy it to the main analysis application.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Integration with Schema</h4>
+                    <p>Report sections work seamlessly with the schema administration system, using product and tactic context to generate relevant, targeted analysis for each section.</p>
+                </div>
+            </section>
+
+            <section id="section-types" class="content-section">
+                <h2>📊 Default Section Types</h2>
+                <p>Report.AI includes several standard section types that form the foundation of comprehensive campaign analysis:</p>
+
+                <div class="section-examples">
+                    <div class="section-card">
+                        <span class="icon">📋</span>
+                        <h4 id="executive-summary">Executive Summary</h4>
+                        <p>High-level overview of campaign performance, key findings, and critical insights for stakeholders.</p>
+                        <div class="example-text">
+                            "The Q3 campaign delivered strong performance across all channels, with display advertising exceeding targets by 15% and social media campaigns showing consistent engagement growth..."
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <span class="icon">📊</span>
+                        <h4 id="performance-analysis">Performance Analysis</h4>
+                        <p>Detailed breakdown of metrics, KPIs, and performance indicators by tactic and channel.</p>
+                        <div class="example-text">
+                            "Targeted Display campaigns achieved a 2.3% CTR, significantly above the industry benchmark of 1.8%. Video completion rates averaged 78%, with mobile performance leading at 82%..."
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <span class="icon">📈</span>
+                        <h4 id="trend-analysis">Trend Analysis</h4>
+                        <p>Identification of patterns, trends, and anomalies across time periods and campaign elements.</p>
+                        <div class="example-text">
+                            "Performance trends show consistent improvement throughout the campaign period, with a notable uptick in engagement during weeks 3-5. Weekend performance consistently outperformed weekdays by 12%..."
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <span class="icon">💡</span>
+                        <h4 id="recommendations">Strategic Recommendations</h4>
+                        <p>Actionable insights and strategic suggestions based on data analysis and industry best practices.</p>
+                        <div class="example-text">
+                            "Based on performance data, we recommend increasing budget allocation to mobile video campaigns by 20% and optimizing creative assets for peak engagement hours between 7-9 PM..."
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <span class="icon">📊</span>
+                        <h4>Data Visualizations</h4>
+                        <p>Charts, graphs, and visual representations of key metrics and performance indicators.</p>
+                        <div class="example-text">
+                            "[Chart: Campaign Performance Over Time] [Graph: CTR by Device Type] [Visualization: Conversion Funnel Analysis]"
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <span class="icon">🎯</span>
+                        <h4>Benchmark Comparisons</h4>
+                        <p>Performance comparisons against industry standards, previous campaigns, and competitive benchmarks.</p>
+                        <div class="example-text">
+                            "Current CPM of $3.45 is 8% below industry average of $3.75. Conversion rates exceed previous quarter by 23% and align with top-performing campaigns in the healthcare vertical..."
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="customization" class="content-section">
+                <h2>🎨 Section Customization</h2>
+                <p>Customize section content, structure, and AI guidelines to match your specific reporting requirements:</p>
+
+                <h3>Content Configuration</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📝</span>Content Guidelines</h4>
+                        <p>Specify what information should be included in each section</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📏</span>Length Requirements</h4>
+                        <p>Set minimum and maximum word counts for consistent section sizing</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Focus Areas</h4>
+                        <p>Define specific metrics, KPIs, or analysis points to emphasize</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">💼</span>Tone Requirements</h4>
+                        <p>Specify professional, conversational, or other tone requirements</p>
+                    </div>
+                </div>
+
+                <h3>Formatting Options</h3>
+                <div class="code-block">
+Section Configuration Example:
+{
+  "name": "Performance Summary",
+  "type": "analysis",
+  "guidelines": "Focus on key metrics with benchmark comparisons",
+  "minWords": 200,
+  "maxWords": 400,
+  "includeCharts": true,
+  "tone": "professional",
+  "requiredElements": [
+    "CTR analysis",
+    "Conversion metrics", 
+    "Cost efficiency",
+    "Benchmark comparisons"
+  ]
+}
+                </div>
+
+                <div class="info-box tip">
+                    <h4>💡 Dynamic Content</h4>
+                    <p>Sections automatically adapt content based on available data, detected tactics, and schema context. Missing data points are gracefully handled with alternative analysis approaches.</p>
+                </div>
+            </section>
+
+            <section id="template-management" class="content-section">
+                <h2>📋 Template Management</h2>
+                <p>Create and manage reusable section templates for different analysis scenarios:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🏢</span>Industry Templates</h4>
+                        <p>Pre-configured sections optimized for specific industries (healthcare, automotive, retail, etc.)</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Campaign Type Templates</h4>
+                        <p>Section sets tailored to campaign objectives (brand awareness, lead generation, sales conversion)</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📱</span>Platform-Specific Templates</h4>
+                        <p>Optimized sections for Facebook, Google, YouTube, or other platform-specific analysis</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">⏰</span>Time-Based Templates</h4>
+                        <p>Section configurations for monthly, quarterly, or campaign-end reporting cycles</p>
+                    </div>
+                </div>
+
+                <h3>Template Features</h3>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Template Creation</h4>
+                            <p>Create templates from existing section configurations or start from scratch with custom requirements.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Version Management</h4>
+                            <p>Maintain multiple template versions with change tracking and rollback capabilities.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Template Sharing</h4>
+                            <p>Export and import templates for team collaboration and cross-project consistency.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="validation" class="content-section">
+                <h2>✅ Section Validation</h2>
+                <p>Ensure section configurations are properly structured and will generate high-quality output:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🔍</span>Syntax Validation</h4>
+                        <p>Verify section configuration syntax and required field completion</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🧪</span>Content Testing</h4>
+                        <p>Test section configurations with sample data to validate output quality</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Logic Validation</h4>
+                        <p>Ensure section requirements align with available data sources and schema definitions</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Consistency Checks</h4>
+                        <p>Validate that section configurations work together cohesively across the full report</p>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <h4>⚠️ Validation Requirements</h4>
+                    <p>All sections must pass validation before deployment. Common issues include missing required fields, conflicting guidelines, and unrealistic length requirements relative to available data.</p>
+                </div>
+
+                <h3>Validation Process</h3>
+                <ol style="padding-left: var(--space-6);">
+                    <li>Check section configuration completeness and syntax</li>
+                    <li>Validate content guidelines against schema capabilities</li>
+                    <li>Test with sample data to ensure proper output generation</li>
+                    <li>Verify section interdependencies and flow</li>
+                    <li>Confirm formatting and length requirements are achievable</li>
+                    <li>Test with edge cases (missing data, minimal datasets)</li>
+                </ol>
+            </section>
+
+            <section id="best-practices" class="content-section">
+                <h2>💡 Best Practices</h2>
+                <p>Follow these guidelines for effective section configuration and management:</p>
+
+                <h3>Configuration Guidelines</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">🎯</span>Be Specific</h4>
+                        <p>Provide clear, specific guidelines for AI content generation rather than vague requirements</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">📊</span>Consider Data Availability</h4>
+                        <p>Align section requirements with typical data availability in your campaigns</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">👥</span>Think About Audience</h4>
+                        <p>Configure sections with your report audience's needs and expertise level in mind</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon">🧪</span>Test Thoroughly</h4>
+                        <p>Test section configurations with various data scenarios before deployment</p>
+                    </div>
+                </div>
+
+                <h3>Content Guidelines Best Practices</h3>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Use Action-Oriented Language</h4>
+                            <p>Write guidelines using clear, actionable language that tells the AI exactly what to focus on and include.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Specify Expected Formats</h4>
+                            <p>Include formatting expectations (bullet points, numbered lists, paragraph structure) in your guidelines.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Include Context Requirements</h4>
+                            <p>Specify what contextual information should be included (time periods, benchmarks, comparisons).</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Balance Detail and Brevity</h4>
+                            <p>Set realistic length requirements that allow for comprehensive analysis without unnecessary verbosity.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box danger">
+                    <h4>🚫 Common Mistakes</h4>
+                    <p>Avoid overly complex section requirements, unrealistic length expectations, or guidelines that conflict with available data. Always validate configurations before deployment.</p>
+                </div>
+            </section>
+
+            <nav class="page-nav">
+                <a href="../ai-testing/" class="nav-link">← AI Testing Guide</a>
+                <a href="../schema-export/" class="nav-link">Schema Export Guide →</a>
+            </nav>
+        </main>
+    </div>
+
+    <script>
+        // Table of Contents functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tocLinks = document.querySelectorAll('.toc a');
+            const sections = document.querySelectorAll('.content-section');
+
+            function updateActiveTocLink() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.getBoundingClientRect().top;
+                    if (sectionTop <= 100) {
+                        current = section.id;
+                    }
+                });
+
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // Smooth scrolling for TOC links
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            window.addEventListener('scroll', updateActiveTocLink);
+            updateActiveTocLink();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connectivity Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #b8daff; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Report.AI - API Test</h1>
+    <p>This page tests the API connectivity and CORS configuration.</p>
+    
+    <button onclick="testApiConnectivity()">Test API Connectivity</button>
+    <button onclick="testCors()">Test CORS Configuration</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testApiConnectivity() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div class="test-result info">🔍 Testing API connectivity...</div>';
+            
+            const endpoints = [
+                { name: 'Lumina API', path: '/report-ai/api/lumina.php' },
+                { name: 'Tactics API', path: '/report-ai/api/tactics.php' },
+                { name: 'Analysis API', path: '/report-ai/api/analyze.php' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    // Test with a simple GET request first
+                    const response = await fetch(endpoint.path, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    let result;
+                    if (response.ok) {
+                        result = `<div class="test-result success">✅ ${endpoint.name}: Connected (HTTP ${response.status})</div>`;
+                    } else {
+                        result = `<div class="test-result error">❌ ${endpoint.name}: HTTP ${response.status} - ${response.statusText}</div>`;
+                    }
+                    results.innerHTML += result;
+                    
+                } catch (error) {
+                    results.innerHTML += `<div class="test-result error">❌ ${endpoint.name}: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        async function testCors() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div class="test-result info">🌐 Testing CORS configuration...</div>';
+            
+            try {
+                // Test preflight request
+                const response = await fetch('/report-ai/api/lumina.php', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                if (response.ok) {
+                    const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                    if (corsHeader) {
+                        results.innerHTML += `<div class="test-result success">✅ CORS: Configured (Allow-Origin: ${corsHeader})</div>`;
+                    } else {
+                        results.innerHTML += '<div class="test-result error">❌ CORS: Headers missing</div>';
+                    }
+                } else {
+                    results.innerHTML += `<div class="test-result error">❌ CORS: Preflight failed (${response.status})</div>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<div class="test-result error">❌ CORS: ${error.message}</div>`;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Test on page load
+        window.addEventListener('load', () => {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="test-result info">📋 API Test Ready - Click buttons above to test</div>';
+        });
+    </script>
+</body>
+</html>
