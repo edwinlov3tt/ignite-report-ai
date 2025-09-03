@@ -1,6 +1,6 @@
 /* Design Tokens from design-tokens.css */
 :root {
-    --color-gray-50: #f8fafc; --color-gray-100: #f1f5f9; --color-gray-200: #e2e8f0; --color-gray-700: #374151; --color-gray-800: #1f2937; --color-gray-900: #1e293b; --color-red-primary: #CF0E0F; --color-red-primary-dark: #A00B0C; --color-green-500: #10b881; --color-green-600: #059669; --color-blue-100: #dbeafe; --color-blue-800: #1d4ed8;
+    --color-gray-50: #f8fafc; --color-gray-100: #f1f5f9; --color-gray-200: #e2e8f0; --color-gray-700: #374151; --color-gray-800: #1f2937; --color-gray-900: #1e293b; --color-red-primary: #CF0E0F; --color-red-primary-dark: #A00B0C; --color-green-300: #86efac; --color-green-500: #10b881; --color-green-600: #059669; --color-green-900: #14532d; --color-blue-100: #dbeafe; --color-blue-800: #1d4ed8;
     --bg-canvas: var(--color-gray-50); --bg-surface: #ffffff; --text-primary: var(--color-gray-900); --text-secondary: #64748b; --text-tertiary: #9ca3af; --border-default: var(--color-gray-200); --border-hover: #d1d5db; --border-emphasis: var(--color-red-primary); --focus-ring: rgba(207, 14, 15, 0.1);
     --button-primary-bg: var(--color-red-primary); --button-primary-fg: #ffffff; --button-primary-hover-bg: var(--color-red-primary-dark);
     --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
@@ -496,6 +496,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     border-radius: var(--radii-full);
     font-size: var(--text-body-sm-size);
     font-weight: 600;
+    width: max-content;
 }
 
 .status-chip.status-pending {
@@ -764,6 +765,233 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+
+/* Bulk Upload Styles */
+.bulk-upload-container {
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background: linear-gradient(135deg, var(--color-blue-50), var(--color-green-50));
+    border-radius: var(--radii-lg);
+    border: 1px solid var(--border-default);
+}
+
+[data-theme="dark"] .bulk-upload-container {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+    border-color: var(--border-default);
+}
+
+.bulk-upload-area {
+    border: 3px dashed var(--color-blue-300);
+    border-radius: var(--radii-lg);
+    padding: var(--space-8);
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    background: var(--bg-surface);
+}
+
+.bulk-upload-area:hover {
+    border-color: var(--color-blue-500);
+    background: var(--color-blue-25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.bulk-upload-area.drag-over {
+    border-color: var(--color-green-500);
+    background: var(--color-green-25);
+    box-shadow: 0 8px 25px rgba(34, 197, 94, 0.2);
+}
+
+.bulk-file-input {
+    display: none;
+}
+
+.bulk-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    cursor: pointer;
+}
+
+.bulk-upload-icon {
+    font-size: 48px;
+    opacity: 0.8;
+}
+
+.bulk-upload-text h4 {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--text-title-lg-size);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bulk-upload-text p {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--text-body-md-size);
+    color: var(--text-secondary);
+}
+
+.auto-sort-note {
+    font-size: var(--text-body-sm-size);
+    color: var(--color-blue-600);
+    font-weight: 500;
+    background: var(--color-blue-100);
+    padding: 4px 12px;
+    border-radius: var(--radii-full);
+    display: inline-block;
+}
+
+[data-theme="dark"] .auto-sort-note {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--color-blue-300);
+}
+
+/* Enhanced Progress Display */
+.upload-progress-summary {
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background: var(--bg-surface-secondary);
+    border-radius: var(--radii-md);
+    border: 1px solid var(--border-default);
+}
+
+.progress-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.progress-info > span {
+    font-size: var(--text-body-md-size);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.files-info {
+    font-size: var(--text-body-sm-size) !important;
+    font-weight: 400 !important;
+    color: var(--text-secondary) !important;
+    margin-left: var(--space-2);
+}
+
+.upload-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--color-gray-200);
+    border-radius: var(--radii-full);
+    overflow: hidden;
+}
+
+[data-theme="dark"] .upload-progress-bar {
+    background: var(--color-gray-700);
+}
+
+.upload-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-blue-500), var(--color-green-500));
+    transition: width 0.3s ease;
+    border-radius: var(--radii-full);
+}
+
+/* Tactic Upload Cards Enhancement */
+.upload-card .upload-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.upload-card .file-count {
+    font-size: var(--text-body-sm-size);
+    font-weight: 500;
+    color: var(--color-blue-600);
+    background: var(--color-blue-100);
+    padding: 2px 8px;
+    border-radius: var(--radii-full);
+}
+
+[data-theme="dark"] .upload-card .file-count {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--color-blue-300);
+}
+
+.upload-card.has-files {
+    border-color: var(--color-green-300);
+    background: var(--color-green-25);
+}
+
+[data-theme="dark"] .upload-card.has-files {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--color-green-600);
+}
+
+/* Auto-sort Badge */
+.auto-sort-badge {
+    font-size: var(--text-body-xs-size);
+    background: var(--color-green-100);
+    color: var(--color-green-700);
+    padding: 2px 6px;
+    border-radius: var(--radii-sm);
+    font-weight: 500;
+    margin-left: var(--space-2);
+}
+
+[data-theme="dark"] .auto-sort-badge {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--color-green-300);
+}
+
+/* Bulk Assignment Notifications */
+.bulk-assignment-notification {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-green-50);
+    border: 1px solid var(--color-green-200);
+    border-radius: var(--radii-md);
+    padding: var(--space-3) var(--space-4);
+    margin-top: var(--space-3);
+    animation: slideInFade 0.3s ease-out;
+}
+
+[data-theme="dark"] .bulk-assignment-notification {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--color-green-600);
+}
+
+.assignment-text {
+    font-size: var(--text-body-sm-size);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.confidence-score {
+    font-size: var(--text-body-xs-size);
+    color: var(--color-green-600);
+    font-weight: 600;
+    background: var(--color-green-100);
+    padding: 2px 6px;
+    border-radius: var(--radii-full);
+}
+
+[data-theme="dark"] .confidence-score {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--color-green-300);
+}
+
+@keyframes slideInFade {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* API Input Components */

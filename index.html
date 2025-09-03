@@ -363,12 +363,28 @@
                 
                 <div class="section-content">
                     <div class="form-description">
-                        <p>Upload performance data files for each detected tactic.</p>
+                        <p>Upload performance data files for each detected tactic. Drag multiple files to auto-sort them.</p>
+                    </div>
+                    
+                    <!-- Bulk Upload Area -->
+                    <div class="bulk-upload-container" id="bulk-upload-container">
+                        <div class="bulk-upload-area" id="bulk-upload-area">
+                            <input type="file" accept=".csv" multiple class="bulk-file-input" id="bulk-file-input">
+                            <label for="bulk-file-input" class="bulk-upload-label">
+                                <div class="bulk-upload-icon">📁</div>
+                                <div class="bulk-upload-text">
+                                    <h4>Bulk Upload Files</h4>
+                                    <p>Drag multiple CSV files here or click to browse</p>
+                                    <span class="auto-sort-note">Files will be automatically sorted to matching tactics</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                     
                     <div class="upload-progress-summary">
                         <div class="progress-info">
-                            <span>Files uploaded: <span id="files-uploaded">0</span> / <span id="files-total">0</span></span>
+                            <span>Uploads: <span id="tactics-uploaded">0</span> / <span id="tactics-total">0</span> tactics complete</span>
+                            <span class="files-info">(<span id="files-uploaded">0</span> files total)</span>
                             <div class="upload-progress-bar">
                                 <div class="upload-progress-fill" id="upload-progress-fill" style="width: 0%"></div>
                             </div>
@@ -770,6 +786,11 @@
         </div>
     </div>
 
+    <!-- CSV Processing Library -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
+    <!-- String Similarity Library for better file matching -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/string-similarity/4.0.4/string-similarity.min.js"></script>
+    
     <script src="config/path-config.js"></script>
     <script src="script.js"></script>
     <script>

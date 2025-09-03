@@ -125,6 +125,8 @@ const elements = {
     fileUploads: document.getElementById('file-uploads'),
     filesUploaded: document.getElementById('files-uploaded'),
     filesTotal: document.getElementById('files-total'),
+    tacticsUploaded: document.getElementById('tactics-uploaded'),
+    tacticsTotal: document.getElementById('tactics-total'),
     uploadProgressFill: document.getElementById('upload-progress-fill'),
     continueToAnalysisBtn: document.getElementById('continue-to-analysis'),
     
@@ -215,7 +217,11 @@ function getMostCommonStatus(lineItems) {
     
     const statusCounts = {};
     lineItems.forEach(item => {
-        const status = item.status || 'Unknown';
+        let status = item.status || 'Unknown';
+        // Clean up status text - remove "- Revision" suffix for better UI display
+        if (status.includes('Paused') && status.includes('Revision')) {
+            status = 'Paused';
+        }
         statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
     
@@ -667,6 +673,7 @@ function loadStateFromLocalStorage() {
     if (saved) {
         try {
             const parsedState = JSON.parse(saved);
+            console.log('Loading state from localStorage:', parsedState);
             
             // Don't load demo data - clear it if found
             if (parsedState.campaignData && parsedState.campaignData.id === '507f1f77bcf86cd799439011') {
@@ -677,10 +684,17 @@ function loadStateFromLocalStorage() {
             
             // Only load if there's real campaign data
             if (!parsedState.campaignData) {
+                console.log('No campaign data found in saved state');
                 return; // Don't restore empty state
             }
             
-            Object.assign(AppState, parsedState);
+            // Restore all state properties carefully
+            Object.keys(parsedState).forEach(key => {
+                if (parsedState[key] !== undefined && parsedState[key] !== null) {
+                    AppState[key] = parsedState[key];
+                    console.log(`Restored ${key}:`, AppState[key]);
+                }
+            });
             
             // Convert Array back to Set after loading from localStorage
             if (AppState.removedLineItems && Array.isArray(AppState.removedLineItems)) {
@@ -689,22 +703,69 @@ function loadStateFromLocalStorage() {
                 AppState.removedLineItems = new Set();
             }
             
-            // Restore UI state if data exists
-            if (AppState.campaignData) {
-                populateCampaignResults(AppState.campaignData);
-                // Safely update step progress with error handling
-                try {
-                    updateStepProgress(Math.max(AppState.currentStep || 1, 2));
-                } catch (stepError) {
-                    console.warn('Could not update step progress:', stepError);
-                    AppState.currentStep = 1;
+            // Restore UI state with proper sequencing
+            setTimeout(() => {
+                if (AppState.campaignData) {
+                    console.log('Restoring campaign UI state...');
+                    populateCampaignResults(AppState.campaignData);
+                    
+                    // Restore time range if exists
+                    if (AppState.timeRange) {
+                        console.log('Restoring time range:', AppState.timeRange);
+                        if (AppState.timeRange.startDate) {
+                            const startInput = document.getElementById('start-date');
+                            if (startInput) startInput.value = AppState.timeRange.startDate;
+                        }
+                        if (AppState.timeRange.endDate) {
+                            const endInput = document.getElementById('end-date');
+                            if (endInput) endInput.value = AppState.timeRange.endDate;
+                        }
+                    }
+                    
+                    // Restore company config if exists
+                    if (AppState.companyConfig) {
+                        console.log('Restoring company config:', AppState.companyConfig);
+                        const companyNameInput = document.getElementById('company-name');
+                        const industrySelect = document.getElementById('industry');
+                        const companyDescInput = document.getElementById('company-description');
+                        
+                        if (companyNameInput && AppState.companyConfig.name) {
+                            companyNameInput.value = AppState.companyConfig.name;
+                        }
+                        if (industrySelect && AppState.companyConfig.industry) {
+                            industrySelect.value = AppState.companyConfig.industry;
+                        }
+                        if (companyDescInput && AppState.companyConfig.description) {
+                            companyDescInput.value = AppState.companyConfig.description;
+                        }
+                    }
+                    
+                    // Restore uploaded files state
+                    if (AppState.uploadedFiles && Object.keys(AppState.uploadedFiles).length > 0) {
+                        console.log('Restoring uploaded files state:', AppState.uploadedFiles);
+                        // Trigger file display update
+                        updateFileUploadDisplay();
+                    }
+                    
+                    // Update step progress last
+                    try {
+                        const targetStep = Math.max(AppState.currentStep || 1, 2);
+                        console.log('Restoring step progress to:', targetStep);
+                        updateStepProgress(targetStep);
+                    } catch (stepError) {
+                        console.warn('Could not update step progress:', stepError);
+                        AppState.currentStep = 1;
+                    }
                 }
-            }
+            }, 100); // Small delay to ensure DOM is ready
+            
         } catch (error) {
             console.error('Error loading saved state:', error);
             // Reset to clean state if loading fails
             AppState.currentStep = 1;
             AppState.removedLineItems = new Set();
+            // Clear corrupted localStorage
+            localStorage.removeItem('campaignAnalyzer');
         }
     }
 }
@@ -1737,6 +1798,7 @@ function generateFileUploadCards() {
                 <h4>${tacticName}</h4>
                 <div class="upload-status" id="status-${tacticName}">
                     <span class="status-text">Pending</span>
+                    <span class="file-count hidden" id="count-${tacticName}">0 files</span>
                 </div>
             </div>
             <p class="upload-description">Upload ${tacticName} performance data (CSV format)</p>
@@ -1759,8 +1821,13 @@ function generateFileUploadCards() {
         container.appendChild(uploadCard);
     });
     
-    // Update total files count
-    elements.filesTotal.textContent = AppState.requiredTactics.length;
+    // Update total files count with safety checks
+    if (elements.filesTotal) {
+        elements.filesTotal.textContent = AppState.requiredTactics.length;
+    }
+    if (elements.tacticsTotal) {
+        elements.tacticsTotal.textContent = AppState.requiredTactics.length;
+    }
     
     // Add event listeners for reports buttons
     container.querySelectorAll('.reports-btn').forEach(button => {
@@ -1769,6 +1836,7 @@ function generateFileUploadCards() {
     
     // Setup file upload handlers
     setupFileUploadHandlers();
+    setupBulkUploadHandlers();
 }
 
 // Report URL Generation Functions
@@ -2102,21 +2170,436 @@ function showUploadSuccess(tacticName, filename) {
 }
 
 function updateUploadProgress() {
-    const uploadedCount = Object.keys(AppState.uploadedFiles).length;
-    const totalCount = AppState.requiredTactics.length;
-    const progressPercent = totalCount > 0 ? (uploadedCount / totalCount) * 100 : 0;
+    // Count tactics with files vs total files
+    const tacticsWithFiles = new Set();
+    let totalFileCount = 0;
     
-    elements.filesUploaded.textContent = uploadedCount;
+    // Convert AppState.uploadedFiles to handle multiple files per tactic
+    if (!AppState.uploadedFilesByTactic) {
+        AppState.uploadedFilesByTactic = {};
+    }
+    
+    // Count files and tactics
+    Object.keys(AppState.uploadedFilesByTactic).forEach(tacticName => {
+        const files = AppState.uploadedFilesByTactic[tacticName];
+        if (files && files.length > 0) {
+            tacticsWithFiles.add(tacticName);
+            totalFileCount += files.length;
+        }
+    });
+    
+    const completeTactics = tacticsWithFiles.size;
+    const totalTactics = AppState.requiredTactics.length;
+    const progressPercent = totalTactics > 0 ? (completeTactics / totalTactics) * 100 : 0;
+    
+    // Update progress displays
+    elements.tacticsUploaded.textContent = completeTactics;
+    elements.tacticsTotal.textContent = totalTactics;
+    elements.filesUploaded.textContent = totalFileCount;
     elements.uploadProgressFill.style.width = `${progressPercent}%`;
     
-    // Enable continue button if all files uploaded
-    if (uploadedCount === totalCount && totalCount > 0) {
+    // Update individual tactic file counts
+    AppState.requiredTactics.forEach(tacticName => {
+        const countEl = document.getElementById(`count-${tacticName}`);
+        const statusEl = document.getElementById(`status-${tacticName}`);
+        const uploadCard = countEl?.closest('.upload-card');
+        
+        const files = AppState.uploadedFilesByTactic[tacticName] || [];
+        const fileCount = files.length;
+        
+        if (countEl) {
+            if (fileCount > 0) {
+                countEl.textContent = `${fileCount} file${fileCount !== 1 ? 's' : ''}`;
+                countEl.classList.remove('hidden');
+                
+                if (uploadCard) {
+                    uploadCard.classList.add('has-files');
+                }
+                
+                if (statusEl) {
+                    statusEl.querySelector('.status-text').textContent = 'Complete';
+                    statusEl.querySelector('.status-text').className = 'status-text success';
+                }
+            } else {
+                countEl.classList.add('hidden');
+                if (uploadCard) {
+                    uploadCard.classList.remove('has-files');
+                }
+            }
+        }
+    });
+    
+    // Enable continue button if all tactics have files
+    if (completeTactics === totalTactics && totalTactics > 0) {
         elements.continueToAnalysisBtn.disabled = false;
         elements.continueToAnalysisBtn.classList.remove('disabled');
         updateSectionStatus('performance', 'Complete');
     } else {
         elements.continueToAnalysisBtn.disabled = true;
         elements.continueToAnalysisBtn.classList.add('disabled');
+    }
+}
+
+// Schema Loading for File Matching
+async function loadSchemaData() {
+    try {
+        const response = await fetch('api/schema-crud.php?path=products');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            AppState.schemaData = result.data;
+            console.log('✅ Schema data loaded:', Object.keys(result.data).length, 'products');
+            return result.data;
+        } else {
+            console.warn('⚠️ Schema API returned no data, using fallback');
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Error loading schema:', error);
+        return null;
+    }
+}
+
+// Bulk Upload System
+function setupBulkUploadHandlers() {
+    const bulkUploadArea = document.getElementById('bulk-upload-area');
+    const bulkFileInput = document.getElementById('bulk-file-input');
+    
+    if (!bulkUploadArea || !bulkFileInput) return;
+    
+    // File input change handler
+    bulkFileInput.addEventListener('change', handleBulkFileUpload);
+    
+    // Drag and drop handlers
+    bulkUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        bulkUploadArea.classList.add('drag-over');
+    });
+    
+    bulkUploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        if (!bulkUploadArea.contains(e.relatedTarget)) {
+            bulkUploadArea.classList.remove('drag-over');
+        }
+    });
+    
+    bulkUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        bulkUploadArea.classList.remove('drag-over');
+        
+        const files = Array.from(e.dataTransfer.files);
+        processBulkFiles(files);
+    });
+}
+
+async function handleBulkFileUpload(event) {
+    const files = Array.from(event.target.files);
+    await processBulkFiles(files);
+    event.target.value = ''; // Reset input
+}
+
+async function processBulkFiles(files) {
+    if (!files.length) return;
+    
+    const csvFiles = files.filter(file => file.name.toLowerCase().endsWith('.csv'));
+    if (csvFiles.length !== files.length) {
+        showError(`${files.length - csvFiles.length} non-CSV files were ignored`);
+    }
+    
+    if (csvFiles.length === 0) return;
+    
+    // Process each file and try to auto-sort
+    for (const file of csvFiles) {
+        await processAndSortFile(file);
+    }
+    
+    updateUploadProgress();
+}
+
+async function processAndSortFile(file) {
+    try {
+        // Parse CSV to analyze headers
+        const csvText = await file.text();
+        let headers = [];
+        
+        // Try Papa Parse first, fallback to simple parser
+        if (typeof Papa !== 'undefined' && Papa.parse) {
+            const parseResult = Papa.parse(csvText, { header: true, preview: 5 });
+            headers = parseResult.meta.fields || [];
+            if (parseResult.errors.length > 0) {
+                console.warn('CSV parse warnings for', file.name, parseResult.errors);
+            }
+        } else {
+            // Fallback: Simple CSV header parsing
+            console.warn('Papa Parse not available, using fallback parser for', file.name);
+            const lines = csvText.split('\n');
+            if (lines[0]) {
+                headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
+            }
+        }
+        
+        const filename = file.name.toLowerCase();
+        
+        // Try to match file to tactic using multiple strategies
+        const bestMatch = findBestTacticMatch(filename, headers);
+        
+        if (bestMatch && bestMatch.confidence > 0.6) {
+            // Auto-sort to matched tactic
+            await assignFileToTactic(file, bestMatch.tactic);
+            showBulkFileAssignment(file.name, bestMatch.tactic, bestMatch.confidence);
+        } else {
+            // Show manual assignment dialog
+            showManualAssignmentDialog(file, headers);
+        }
+        
+    } catch (error) {
+        console.error('Error processing file:', file.name, error);
+        showError(`Error processing ${file.name}: ${error.message}`);
+    }
+}
+
+function findBestTacticMatch(filename, headers) {
+    if (!AppState.schemaData) {
+        console.warn('⚠️ Schema data not loaded, using fallback matching');
+        return findFallbackTacticMatch(filename, headers);
+    }
+    
+    const tactics = AppState.requiredTactics;
+    let bestMatch = { tactic: null, confidence: 0 };
+    
+    for (const tacticName of tactics) {
+        let confidence = 0;
+        
+        // Strategy 1: Exact filename matching from schema
+        const filenameScore = calculateSchemaFilenameMatch(tacticName, filename);
+        confidence += filenameScore * 0.7;
+        
+        // Strategy 2: Header matching from schema
+        const headerScore = calculateSchemaHeaderMatch(tacticName, headers);
+        confidence += headerScore * 0.3;
+        
+        if (confidence > bestMatch.confidence) {
+            bestMatch = { tactic: tacticName, confidence };
+        }
+    }
+    
+    return bestMatch;
+}
+
+function calculateSchemaFilenameMatch(tacticName, filename) {
+    if (!AppState.schemaData) return 0;
+    
+    // Normalize filename by removing numbering like (2), (3) etc
+    const normalizedFilename = filename.toLowerCase().replace(/\s*\(\d+\)\s*/g, '');
+    
+    // Find the schema entry for this tactic
+    for (const [productKey, productData] of Object.entries(AppState.schemaData)) {
+        if (!productData.subproducts) continue;
+        
+        for (const [subKey, subData] of Object.entries(productData.subproducts)) {
+            // Check if this matches our tactic name
+            const tacticMatch = `${productData.name}-${subData.name}`.replace(/\s+/g, '') === tacticName.replace(/\s+/g, '');
+            
+            if (tacticMatch && subData.performance_tables) {
+                // Check exact filename matches
+                for (const table of subData.performance_tables) {
+                    if (table.file_name && normalizedFilename.includes(table.file_name.toLowerCase())) {
+                        return 1.0; // Exact match
+                    }
+                    
+                    // Check aliases with safe JSON parsing
+                    if (table.aliases) {
+                        try {
+                            if (table.aliases.trim() && table.aliases !== '""' && table.aliases !== "''") {
+                                const aliases = JSON.parse(table.aliases);
+                                if (Array.isArray(aliases)) {
+                                    for (const alias of aliases) {
+                                        if (normalizedFilename.includes(alias.toLowerCase())) {
+                                            return 0.9; // Alias match
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Invalid aliases JSON for table:', table.table_name, table.aliases);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+function findFallbackTacticMatch(filename, headers) {
+    const tactics = AppState.requiredTactics;
+    let bestMatch = { tactic: null, confidence: 0 };
+    
+    // Normalize filename by removing numbering like (2), (3) etc
+    const normalizedFilename = filename.toLowerCase().replace(/\s*\(\d+\)\s*/g, '');
+    
+    for (const tacticName of tactics) {
+        let confidence = 0;
+        
+        // Simple filename similarity as fallback
+        if (stringSimilarity && stringSimilarity.compareTwoStrings) {
+            const filenameScore = stringSimilarity.compareTwoStrings(normalizedFilename, tacticName.toLowerCase());
+            confidence += filenameScore * 0.4;
+        }
+        
+        // Fallback header matching
+        const schemaScore = calculateFallbackHeaderMatch(tacticName, headers);
+        confidence += schemaScore * 0.6;
+        
+        if (confidence > bestMatch.confidence) {
+            bestMatch = { tactic: tacticName, confidence };
+        }
+    }
+    
+    return bestMatch;
+}
+
+function calculateSchemaHeaderMatch(tacticName, headers) {
+    if (!AppState.schemaData) {
+        return calculateFallbackHeaderMatch(tacticName, headers);
+    }
+    
+    // Find schema headers for this tactic
+    for (const [productKey, productData] of Object.entries(AppState.schemaData)) {
+        if (!productData.subproducts) continue;
+        
+        for (const [subKey, subData] of Object.entries(productData.subproducts)) {
+            const tacticMatch = `${productData.name}-${subData.name}`.replace(/\s+/g, '') === tacticName.replace(/\s+/g, '');
+            
+            if (tacticMatch && subData.performance_tables) {
+                let bestScore = 0;
+                
+                for (const table of subData.performance_tables) {
+                    if (table.headers) {
+                        try {
+                            if (table.headers.trim() && table.headers !== '""' && table.headers !== "''") {
+                                const expectedHeaders = JSON.parse(table.headers);
+                                if (Array.isArray(expectedHeaders)) {
+                                    const matches = headers.filter(header => 
+                                        expectedHeaders.some(expected => 
+                                            header.toLowerCase().includes(expected.toLowerCase())
+                                        )
+                                    );
+                                    const score = matches.length / expectedHeaders.length;
+                                    bestScore = Math.max(bestScore, score);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Invalid headers JSON for table:', table.table_name, table.headers);
+                        }
+                    }
+                }
+                
+                return bestScore;
+            }
+        }
+    }
+    
+    return 0;
+}
+
+function calculateFallbackHeaderMatch(tacticName, headers) {
+    const commonHeaders = {
+        'SEM': ['clicks', 'impressions', 'cost', 'conversions', 'keywords'],
+        'Meta': ['reach', 'impressions', 'clicks', 'spend', 'results'],
+        'Display': ['impressions', 'clicks', 'cost', 'ctr', 'cpm'],
+        'Email Marketing': ['sent', 'delivered', 'opens', 'clicks', 'bounces']
+    };
+    
+    const expectedHeaders = commonHeaders[tacticName] || [];
+    if (expectedHeaders.length === 0) return 0;
+    
+    const headerMatches = headers.filter(header => 
+        expectedHeaders.some(expected => 
+            header.toLowerCase().includes(expected.toLowerCase())
+        )
+    );
+    
+    return headerMatches.length / expectedHeaders.length;
+}
+
+async function assignFileToTactic(file, tacticName) {
+    // Initialize tactic file array if needed
+    if (!AppState.uploadedFilesByTactic[tacticName]) {
+        AppState.uploadedFilesByTactic[tacticName] = [];
+    }
+    
+    // Add file to tactic
+    const fileData = {
+        file: file,
+        name: file.name,
+        size: file.size,
+        uploaded: true,
+        autoSorted: true
+    };
+    
+    AppState.uploadedFilesByTactic[tacticName].push(fileData);
+    
+    // Update UI for this tactic
+    updateTacticFileDisplay(tacticName);
+}
+
+function updateTacticFileDisplay(tacticName) {
+    const filesContainer = document.getElementById(`files-${tacticName}`);
+    if (!filesContainer) return;
+    
+    // Clear existing display
+    filesContainer.innerHTML = '';
+    
+    const files = AppState.uploadedFilesByTactic[tacticName] || [];
+    files.forEach((fileData, index) => {
+        const fileEntry = document.createElement('div');
+        fileEntry.className = 'uploaded-file-entry';
+        fileEntry.innerHTML = `
+            <div class="file-info">
+                <span class="filename">${fileData.name}</span>
+                ${fileData.autoSorted ? '<span class="auto-sort-badge">Auto-sorted</span>' : ''}
+            </div>
+            <div class="file-actions">
+                <button type="button" class="remove-file-btn" data-tactic="${tacticName}" data-file-index="${index}">Remove</button>
+            </div>
+        `;
+        filesContainer.appendChild(fileEntry);
+    });
+    
+    // Re-setup remove button handlers
+    setupRemoveButtonHandlers();
+}
+
+function showBulkFileAssignment(filename, tacticName, confidence) {
+    // Show a temporary notification
+    const notification = document.createElement('div');
+    notification.className = 'bulk-assignment-notification';
+    notification.innerHTML = `
+        <span class="assignment-text">${filename} → ${tacticName}</span>
+        <span class="confidence-score">${Math.round(confidence * 100)}% match</span>
+    `;
+    
+    const bulkContainer = document.getElementById('bulk-upload-container');
+    bulkContainer.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
+
+function showManualAssignmentDialog(file, headers) {
+    // For now, just show an alert - could be enhanced with a proper modal
+    const tacticOptions = AppState.requiredTactics.join(', ');
+    const selectedTactic = prompt(`Could not auto-sort "${file.name}". Please select a tactic:\n\nAvailable tactics: ${tacticOptions}`);
+    
+    if (selectedTactic && AppState.requiredTactics.includes(selectedTactic)) {
+        assignFileToTactic(file, selectedTactic);
+        updateUploadProgress();
     }
 }
 
@@ -2174,25 +2657,43 @@ async function generateAnalysis() {
         const tone = document.querySelector('.tone-card.active')?.getAttribute('data-tone') || 'professional';
         const customInstructions = document.getElementById('custom-instructions').value;
         
-        // Prepare analysis payload for real data
+        // Prepare analysis payload for v2 API with enhanced features
         const analysisPayload = {
             campaignData: AppState.campaignData,
-            companyInfo: AppState.companyConfig,  // Changed to match backend expectation
+            companyInfo: AppState.companyConfig,  
             timeRange: AppState.timeRange,
-            uploadedFiles: AppState.uploadedFiles,  // Send the actual files, not just keys
-            tactics: AppState.requiredTactics || [],
+            uploadedFiles: AppState.uploadedFiles,  
+            detectedTactics: AppState.requiredTactics || [],  // v2 expects 'detectedTactics'
             aiConfig: {
                 model: aiModel,
                 temperature: temperature,
                 tone: tone,
                 customInstructions: customInstructions
             },
-            marketResearchContext: AppState.marketResearchContext // Include plain text market research context
+            marketResearchContext: AppState.marketResearchContext,
+            streamingEnabled: false  // Set to true for real-time streaming updates
         };
         
-        // Call analysis API
-        const analysisResult = await makeAPICall('analyze.php', analysisPayload);
+        // Call v2 compatibility bridge for smooth transition to enhanced API
+        const apiResponse = await makeAPICall('v2/analyze-campaign-compat.php', analysisPayload);
         
+        // Handle v2 API response format - extract data from response wrapper
+        let analysisResult;
+        if (apiResponse && apiResponse.success && apiResponse.data) {
+            // New v2 API format: {success: true, data: {sections: [], metadata: {}}}
+            analysisResult = apiResponse.data;
+            console.log('Using v2 API response format');
+        } else if (apiResponse && apiResponse.sections) {
+            // Legacy format: {sections: []}
+            analysisResult = apiResponse;
+            console.log('Using legacy API response format');
+        } else {
+            // Fallback - use the response as-is
+            analysisResult = apiResponse;
+            console.log('Using response as-is:', apiResponse);
+        }
+        
+        console.log('Final analysis result:', analysisResult);
         AppState.analysisResults = analysisResult;
         
         // Hide current step and show results
@@ -3286,6 +3787,9 @@ function initializeApp() {
     
     // Load available AI models
     loadAvailableModels();
+    
+    // Load schema data for file matching
+    loadSchemaData();
     
     // Clean up any existing demo data from localStorage
     const saved = localStorage.getItem('campaignAnalyzer');
