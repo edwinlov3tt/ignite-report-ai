@@ -2410,8 +2410,8 @@ function calculateSchemaFilenameMatch(tacticName, filename) {
                     // Check aliases with safe JSON parsing
                     if (table.aliases) {
                         try {
-                            if (table.aliases.trim() && table.aliases !== '""' && table.aliases !== "''") {
-                                const aliases = JSON.parse(table.aliases);
+                            // Handle both array and string formats from database
+                            const aliases = Array.isArray(table.aliases) ? table.aliases : (table.aliases.trim() && table.aliases !== '""' && table.aliases !== "''" ? JSON.parse(table.aliases) : []);
                                 if (Array.isArray(aliases)) {
                                     for (const alias of aliases) {
                                         if (normalizedFilename.includes(alias.toLowerCase())) {
@@ -2478,8 +2478,8 @@ function calculateSchemaHeaderMatch(tacticName, headers) {
                 for (const table of subData.performance_tables) {
                     if (table.headers) {
                         try {
-                            if (table.headers.trim() && table.headers !== '""' && table.headers !== "''") {
-                                const expectedHeaders = JSON.parse(table.headers);
+                            // Handle both array and string formats from database
+                            const expectedHeaders = Array.isArray(table.headers) ? table.headers : (table.headers.trim() && table.headers !== '""' && table.headers !== "''" ? JSON.parse(table.headers) : []);
                                 if (Array.isArray(expectedHeaders)) {
                                     const matches = headers.filter(header => 
                                         expectedHeaders.some(expected => 
