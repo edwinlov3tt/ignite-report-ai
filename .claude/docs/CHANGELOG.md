@@ -18,6 +18,27 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## 2025-01-19
+
+### Major Audit - Architecture Documentation Update
+
+#### Updated
+- **ARCHITECTURE.md** - Comprehensive rewrite reflecting current dual-backend architecture:
+  - Added Cloudflare Workers as primary backend (was missing)
+  - Added Supabase as database layer
+  - Added all KV namespaces and R2 bucket documentation
+  - Updated directory structure to include workers/, migrations/, admin components
+  - Added Schema Admin flow diagram
+  - Added cron job documentation
+  - Updated all environment variables (frontend, worker secrets, wrangler.toml vars)
+
+#### Documented
+- **External Services**: Supabase, Cloudflare Workers, Cloudflare KV, Cloudflare R2
+- **57 TypeScript/TSX files** in src/ (~20,880 lines)
+- **Workers backend** (~3,331 lines of TypeScript)
+
+---
+
 ## 2025-01-17
 
 ### Schema Admin - Feature Cleanup

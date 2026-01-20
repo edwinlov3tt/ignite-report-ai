@@ -92,31 +92,92 @@ Use Jaccard similarity algorithm to compare CSV headers against known tactic sch
 
 ---
 
-## Vercel Serverless over Express Server
-- **Date**: 2025-01-XX
+## Cloudflare Workers over Vercel Serverless (Revised)
+- **Date**: 2025-01-17
+- **Status**: Accepted (supersedes previous Vercel-only decision)
+
+### Context
+Initial backend used Vercel serverless functions. As requirements grew (KV caching, R2 storage, scheduled tasks, edge performance), a more capable edge platform was needed.
+
+### Decision
+Use Cloudflare Workers with Hono framework as the primary backend, keeping Vercel serverless as fallback.
+
+### Alternatives Considered
+1. **Keep Vercel-only**
+   - Pros: Single platform, simpler deployment
+   - Cons: No native KV, no R2, no cron triggers, slower cold starts
+   - Rejected because: Missing critical infrastructure features
+
+2. **AWS Lambda + DynamoDB**
+   - Pros: Extensive AWS ecosystem
+   - Cons: More complex setup, higher latency, higher cost
+   - Rejected because: Cloudflare offers simpler DX for edge workloads
+
+### Consequences
+- **Positive**: Edge performance (<50ms globally), native KV/R2, cron triggers, prompt caching
+- **Negative**: Two deployment targets (Vercel frontend, Cloudflare backend)
+- **Neutral**: Team needs familiarity with both platforms
+
+---
+
+## Supabase over Direct PostgreSQL
+- **Date**: 2025-01-16
 - **Status**: Accepted
 
 ### Context
-Backend needs are limited: proxy Lumina API calls and call Claude API. Full server seemed excessive.
+Needed a database for schema configuration, reports, and feedback. Options included self-hosted PostgreSQL, managed services, or Supabase.
 
 ### Decision
-Use Vercel serverless functions for API endpoints, avoiding dedicated server infrastructure.
+Use Supabase for PostgreSQL with built-in auth, real-time, and admin UI.
 
 ### Alternatives Considered
-1. **Express/Fastify Server**
-   - Pros: Full control, traditional architecture
-   - Cons: Requires separate hosting, more infrastructure
-   - Rejected because: Only 2 endpoints needed
+1. **Self-hosted PostgreSQL**
+   - Pros: Full control, no vendor lock-in
+   - Cons: DevOps overhead, scaling complexity
+   - Rejected because: Too much infrastructure management
 
-2. **Cloudflare Workers**
-   - Pros: Edge compute, fast cold starts
-   - Cons: Different ecosystem from Vercel hosting
-   - Rejected because: Vercel hosting + serverless is unified
+2. **PlanetScale (MySQL)**
+   - Pros: Branching, edge reads
+   - Cons: MySQL syntax differences, no foreign keys
+   - Rejected because: PostgreSQL preferred for relational features
+
+3. **Neon (Serverless Postgres)**
+   - Pros: Serverless scaling, branching
+   - Cons: Newer platform, less mature
+   - Rejected because: Supabase offers more tooling (auth, storage, realtime)
 
 ### Consequences
-- **Positive**: Zero infrastructure management, automatic scaling
-- **Negative**: Cold starts on infrequent requests
-- **Neutral**: Limited to Vercel's function constraints
+- **Positive**: Instant API, admin dashboard, auth ready, generous free tier
+- **Negative**: Vendor lock-in for Supabase-specific features
+- **Neutral**: Need to manage RLS policies for security
+
+---
+
+## Hono over Express for Workers
+- **Date**: 2025-01-17
+- **Status**: Accepted
+
+### Context
+Needed a web framework for Cloudflare Workers. Express doesn't work well in Workers environment.
+
+### Decision
+Use Hono as the web framework - purpose-built for edge environments.
+
+### Alternatives Considered
+1. **Express (via adapter)**
+   - Pros: Familiar API
+   - Cons: Not optimized for Workers, larger bundle
+   - Rejected because: Poor fit for edge runtime
+
+2. **Itty-router**
+   - Pros: Tiny, simple
+   - Cons: Less middleware, smaller ecosystem
+   - Rejected because: Hono offers better DX while still being lightweight
+
+### Consequences
+- **Positive**: Fast, lightweight, excellent TypeScript support, built-in middleware
+- **Negative**: Smaller community than Express
+- **Neutral**: Team learns new framework (low learning curve)
 
 ---
 

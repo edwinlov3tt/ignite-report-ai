@@ -250,9 +250,6 @@ export function StepAnalysis() {
         },
       }
 
-      console.log('Calling worker at:', getAnalyzeEndpoint())
-      console.log('Payload:', workerPayload)
-
       const response = await fetch(getAnalyzeEndpoint(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -274,13 +271,6 @@ export function StepAnalysis() {
         generatedAt: new Date().toISOString(),
         campaignName: campaignData?.orderName || 'Campaign',
         companyName: companyConfig.companyName || campaignData?.companyName || 'Company',
-      })
-
-      console.log('Analysis complete:', {
-        reportId: result.reportId,
-        model: result.model,
-        tokensUsed: result.tokensUsed,
-        strategy: result.strategy,
       })
     } catch (err) {
       console.error('Analysis error:', err)
