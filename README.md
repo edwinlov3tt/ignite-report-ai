@@ -1,218 +1,73 @@
-# Report.AI - AI-Powered Marketing Campaign Analysis Platform
+# React + TypeScript + Vite
 
-## 🚀 Overview
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Report.AI is a sophisticated web application that leverages artificial intelligence to analyze digital marketing campaign performance. It integrates with Lumina API for campaign data extraction and uses advanced AI models (Claude, GPT, Gemini) to generate comprehensive, actionable insights.
+Currently, two official plugins are available:
 
-## ✨ Key Features
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-### 📊 Campaign Analysis
-- **Automated Data Extraction**: Seamlessly fetches campaign data from Lumina API
-- **Multi-Model AI Support**: Choose from Claude, GPT-5, or Gemini models for analysis
-- **Tactic Detection**: Automatically identifies and categorizes marketing tactics
-- **Performance Metrics**: Comprehensive analysis of campaign effectiveness
+## React Compiler
 
-### 📝 Report Generation
-- **Customizable Sections**: Define and manage report sections through Schema Admin
-- **AI-Powered Insights**: Generate executive summaries, performance analysis, and recommendations
-- **CSV Data Processing**: Upload and process campaign performance data
-- **Benchmark Comparisons**: Compare campaign performance against industry standards
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### 🛠️ Schema Administration
-- **Visual Schema Management**: Intuitive interface for managing tactic hierarchies
-- **Report Sections Manager**: Create custom report sections with AI instructions
-- **AI Testing Interface**: Test and validate AI outputs before production use
-- **Export/Import**: Full schema export and backup capabilities
+## Expanding the ESLint configuration
 
-## 🏗️ Architecture
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-### Tech Stack
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3 with custom design system
-- **Backend**: PHP 7.4+
-- **Database**: MySQL (optional Supabase integration)
-- **AI Models**: Anthropic Claude, OpenAI GPT-5, Google Gemini
-- **APIs**: Lumina Campaign API, Multiple AI provider APIs
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-### Project Structure
-```
-report-ai/
-├── index.html              # Main application entry point
-├── script.js               # Core application logic
-├── style.css               # Main stylesheet with design tokens
-├── /docs                   # Documentation and guides
-├── /context/
-│   ├── /api/              # PHP API endpoints
-│   │   ├── config.php     # Configuration utilities
-│   │   ├── lumina.php     # Campaign data integration
-│   │   ├── tactics.php    # Tactic detection engine
-│   │   └── analyze.php    # AI analysis endpoint
-│   ├── /creative-docs/    # Design system documentation
-│   └── /schema/           # Tactic schemas and configurations
-├── /schema-admin/          # Admin interface
-│   ├── /sections-manager/ # Report sections configuration
-│   └── /ai-testing/       # AI model testing interface
-└── /uploads/              # CSV file storage
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## 🚦 Getting Started
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-### Prerequisites
-- PHP 7.4 or higher
-- MySQL database (or Supabase account)
-- API keys for AI providers (Anthropic, OpenAI, or Google)
-- Web server (Apache/Nginx)
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/edwinlov3tt/report-ai.git
-cd report-ai
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-2. **Configure environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your API keys and database credentials
-```
-
-3. **Set up the database**
-```bash
-# Import the database schema
-mysql -u your_user -p your_database < schema/database.sql
-```
-
-4. **Configure your web server**
-```apache
-# Apache .htaccess example
-RewriteEngine On
-RewriteRule ^api/(.*)$ context/api/$1 [L]
-```
-
-5. **Access the application**
-- Main App: `http://localhost/report-ai/`
-- Schema Admin: `http://localhost/report-ai/schema-admin/`
-- Documentation: `http://localhost/report-ai/docs/`
-
-## 📖 Usage Guide
-
-### Basic Workflow
-
-1. **Enter Campaign URL**
-   - Navigate to the main application
-   - Enter a Lumina campaign URL
-   - Click "Generate Report"
-
-2. **Configure Company Settings**
-   - Set company name and context
-   - Choose report tone and style
-   - Select AI model and parameters
-
-3. **Upload Performance Data** (Optional)
-   - Upload CSV files with campaign metrics
-   - System automatically routes files to appropriate tactics
-   - Review and validate data mapping
-
-4. **Generate Analysis**
-   - Click "Generate Analysis"
-   - AI processes all data and generates insights
-   - Review comprehensive report with recommendations
-
-### Schema Administration
-
-Access the Schema Admin interface to:
-- Manage product/subproduct hierarchies
-- Configure report sections
-- Test AI outputs
-- Export/import schemas
-
-## 🎨 Design System
-
-The application follows a comprehensive design system with:
-- **Primary Color**: #CF0E0F (Bold red for urgency and action)
-- **Typography**: System font stack with clear hierarchy
-- **Spacing**: 8px base grid system
-- **Components**: Consistent buttons, cards, inputs, and modals
-
-See `/context/creative-docs/ui-overview.md` for complete design specifications.
-
-## 🔧 Configuration
-
-### Environment Variables
-```env
-# AI Model Configuration
-DEFAULT_AI_MODEL=claude-sonnet-4-20250514
-ANTHROPIC_API_KEY=your-api-key
-GOOGLE_AI_API_KEY=your-api-key
-OPENAI_API_KEY=your-api-key
-
-# Database Configuration
-DB_HOST=localhost
-DB_NAME=report_ai
-DB_USER=your_user
-DB_PASS=your_password
-DB_PORT=3306
-
-# Optional Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-```
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/lumina.php` | POST | Fetch campaign data |
-| `/api/tactics.php` | POST | Detect campaign tactics |
-| `/api/analyze.php` | POST | Generate AI analysis |
-| `/api/sections.php` | GET/POST | Manage report sections |
-| `/api/models.php` | GET | List available AI models |
-
-## 🔒 Security
-
-- All API keys stored in environment variables
-- Input sanitization on all user inputs
-- CORS configuration for API endpoints
-- SQL injection prevention
-- XSS protection
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow the existing code style
-- Use the design system tokens for UI work
-- Add tests for new features
-- Update documentation as needed
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
-
-## 👥 Team
-
-- **Lead Developer**: Edwin Lovett III
-- **Project Repository**: [github.com/edwinlov3tt/report-ai](https://github.com/edwinlov3tt/report-ai)
-
-## 📞 Support
-
-For support, please contact the development team or open an issue on GitHub.
-
-## 🔄 Version History
-
-- **v1.0.0** - Initial release with core functionality
-- Schema administration interface
-- AI testing capabilities
-- Multi-model support
-- Comprehensive design system
-
----
-
-Built with ❤️ for marketing professionals who demand data-driven insights.# ignite-report-ai

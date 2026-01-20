@@ -6,145 +6,175 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Report.AI** - A web application for analyzing digital marketing campaign performance using AI. The application integrates with Lumina API for campaign data extraction and uses Anthropic's Claude API for intelligent analysis.
 
-**Tech Stack**: PHP 7.4+, Vanilla JavaScript, HTML/CSS, Anthropic Claude API, Supabase (optional), No npm dependencies
+**Tech Stack**: React 19, TypeScript, Vite 7, Tailwind CSS 4, Zustand, Vercel (deployment)
 
 ## Development Commands
 
-### Local Development
 ```bash
-php -S localhost:8000    # Start local development server
+npm run dev      # Start development server (port 3000)
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
 ```
 
-### Testing & Verification
-```bash
-./verify_deployment.sh   # Run deployment verification tests
-```
+## Project Structure
 
-### URLs
-- **Production**: https://ignite.edwinlovett.com/report-ai/
-- **Schema Admin**: https://ignite.edwinlovett.com/report-ai/schema-admin/
-- **API Testing**: Open `/api/test-config.php` in browser
+```
+/report-ai/
+├── src/
+│   ├── components/      # React components
+│   │   ├── steps/       # Wizard step components
+│   │   ├── Layout.tsx   # App layout with header/footer
+│   │   └── ProgressStepper.tsx
+│   ├── pages/           # Page components
+│   ├── store/           # Zustand state management
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utilities (fileParser, etc.)
+│   ├── types/           # TypeScript type definitions
+│   └── api/             # API client functions
+├── api/                 # Vercel serverless functions
+│   ├── lumina.ts        # Lumina API proxy
+│   └── analyze.ts       # Claude AI analysis endpoint
+├── _legacy/             # Old PHP/HTML application (reference)
+└── public/              # Static assets
+```
 
 ## Core Architecture
 
-### Frontend (Single Page Application)
-- **Progressive Workflow**: Campaign Data → Company Config → File Uploads → AI Analysis
-- **State Management**: `campaignData` object holds fetched campaign information
-- **Theme System**: Light/dark mode with localStorage persistence
-- **File Processing**: Multi-level CSV upload with automatic table routing
+### Frontend (React SPA)
+- **5-Step Wizard**: Campaign Data → Time Range → Company Info → Performance Data → AI Analysis
+- **State Management**: Zustand with localStorage persistence
+- **File Processing**: Papa Parse (Web Workers) + JSZip for ZIP extraction
+- **Styling**: Tailwind CSS v4 with design tokens
 
-### Backend APIs
-- **Lumina Integration**: Fetches campaign data from `https://api.edwinlovett.com/order?query={orderID}`
-- **Tactic Detection**: Maps lineItems to standardized tactics using `enhanced_tactic_categories.json`
-- **AI Analysis**: Sends enriched context to Claude API for comprehensive campaign analysis
-
-### Schema Management System
-- **Hierarchical Structure**: Product → Subproduct → Tactic Type (v2)
-- **File Routing**: Deterministic CSV matching with Jaccard similarity scoring
-- **AI Context Enhancement**: Effective context inheritance from product hierarchy
-- **Access**: `/schema-admin/` provides visual interface for schema management
+### Backend (Vercel Serverless)
+- **`/api/lumina`**: Proxies requests to Lumina API, processes campaign data
+- **`/api/analyze`**: Calls Claude API with campaign context
 
 ## Key Features
 
-### Campaign Data Processing
-- **URL Extraction**: Parses 24-character hex ObjectIDs from Lumina URLs
-- **LineItem Processing**: Extracts status, company name, and metadata
-- **Tactic Mapping**: Uses `enhanced_tactic_categories.json` for product/subproduct classification
+### File Processing (Improved)
+- **CSV Parsing**: Papa Parse with Web Worker support for large files
+- **ZIP Extraction**: JSZip for in-browser extraction (no server upload needed)
+- **Auto-sorting**: Jaccard similarity algorithm for tactic matching
+- **Progress tracking**: Real-time feedback during processing
 
-### CSV File Management
-- **Bulk Upload**: Auto-sorts files across tactics using filename patterns
-- **Smart Routing**: Priority system (Exact → Alias → Pattern → Header similarity)
-- **Progress Tracking**: Visual indicators per tactic showing upload completion
+### State Management
+```typescript
+// Access state anywhere
+const campaignData = useAppStore((state) => state.campaignData)
+const setCampaignData = useAppStore((state) => state.setCampaignData)
+```
 
 ### AI Analysis
-- **Model**: claude-sonnet-4-20250514 with configurable temperature and tone
-- **Enhanced Context**: Includes complete lineItem details, schema context, and benchmarks
-- **Output Sections**: Executive Summary, Performance Analysis, Trends, Recommendations
+- **Models**: Claude Sonnet 4, Claude Opus 4
+- **Configurable**: Temperature, tone, custom instructions
+- **Streaming**: Support for streaming responses (to be implemented)
 
-## Environment Setup
+## Environment Variables
 
-### Required Environment Variables (.env)
-```
-ANTHROPIC_API_KEY=your-anthropic-api-key
+```env
+ANTHROPIC_API_KEY=your-api-key
 ```
 
-### Optional Supabase Configuration
+## Deployment
+
+### Vercel (Recommended)
+```bash
+vercel          # Deploy to preview
+vercel --prod   # Deploy to production
 ```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-key
-```
+
+### Configuration
+- `vercel.json` - Vercel deployment settings
+- SPA routing configured with rewrites
+
+## Legacy Reference
+
+The original PHP/HTML application is preserved in `_legacy/` for reference:
+- `_legacy/api/` - Original PHP endpoints
+- `_legacy/script.js` - Original frontend logic
+- `_legacy/context/` - Schema and training data
 
 ## Development Guidelines
 
-### CSS Architecture
-- **Design Tokens**: All colors, spacing, and typography use CSS custom properties
-- **Theme Support**: Dark mode implemented via `[data-theme="dark"]` selector
-- **Component System**: Modular styles with clear naming conventions
+### Component Patterns
+- Use functional components with hooks
+- Colocate related code (component + styles + tests)
+- Prefer composition over inheritance
 
-### JavaScript Patterns
-- **Event-Driven**: Uses addEventListener for user interactions
-- **Progressive Enhancement**: Sections reveal as workflow progresses
-- **Error Handling**: Graceful failure with user-friendly messages
+### State Updates
+- Use Zustand selectors for performance
+- Update state immutably
+- Persist only necessary state to localStorage
 
-### PHP Best Practices
-- **Input Sanitization**: All user inputs cleaned via `sanitizeInput()`
-- **Error Logging**: Centralized logging to `logs/error.log`
-- **CORS Configuration**: Proper headers for API communication
+### File Parsing
+- Always use Web Workers for large CSVs
+- Handle parsing errors gracefully
+- Validate headers before processing
 
-## File Upload System
+## Documentation Protocol
 
-### Supported Patterns
-- **Deterministic**: `report-{product}-{table}-*.csv`
-- **Exact Match**: Files listed in schema table definitions
-- **Header Similarity**: Jaccard coefficient ≥ 0.6 for fuzzy matching
+This project uses an automated documentation system. Follow these protocols to keep documentation current and accurate.
 
-### Upload Validation
-- **File Types**: CSV only
-- **Size Limit**: 10MB maximum
-- **Header Validation**: Against schema definitions
+### Quick Reference
 
-## API Endpoints
+| Command | When to Use | Example |
+|---------|-------------|---------|
+| `/doc` | After every coding session | `/doc` |
+| `/issue` | When you find a bug or edge case | `/issue API timeout on large payloads` |
+| `/decision` | When you make a technical choice | `/decision Using Redis over Memcached` |
+| `/service` | When you add/modify external service | `/service Stripe` |
+| `/audit` | Full project analysis (periodic) | `/audit` |
+| `/doc-status` | Check documentation health | `/doc-status` |
+| `/handoff` | Before sharing with another dev | `/handoff` |
 
-### POST /context/api/lumina.php
-Fetches campaign data from Lumina API
-- **Input**: `{"url": "lumina_order_url"}`
-- **Output**: Campaign data with lineItems array
+### Documentation Locations
 
-### POST /context/api/tactics.php  
-Detects tactics from campaign data
-- **Input**: Campaign data object
-- **Output**: Detected tactics with status and metadata
+| Document | Purpose | Update Frequency |
+|----------|---------|------------------|
+| `.claude/docs/CHANGELOG.md` | What changed and when | Every session |
+| `.claude/docs/KNOWN_ISSUES.md` | Bugs, edge cases, tech debt | When discovered |
+| `.claude/docs/DECISIONS.md` | Why things were built this way | When deciding |
+| `.claude/docs/ARCHITECTURE.md` | System overview, env vars | When structure changes |
+| `.claude/docs/services/*.md` | External service integrations | When services change |
+| `.claude/docs/components/*.md` | Internal component docs | When components change |
 
-### POST /context/api/analyze.php
-Generates AI analysis
-- **Input**: Complete campaign context (data + files + config)
-- **Output**: Structured analysis sections
+### Workflow Rules
 
-## Schema Administration
+**After Every Coding Session**: Run `/doc` to update CHANGELOG.md with what was done, flag any new issues discovered, and update affected service/component docs.
 
-### Access and Usage
-- **URL**: `/schema-admin/`
-- **Purpose**: Visual management of tactic schema without JSON editing
-- **Export**: Generates `unified_tactic_schema.json` for production
+**When You Encounter a Bug or Edge Case**: Run `/issue [description]` immediately. Don't trust your memory.
 
-### Key Functions
-- **Product Management**: Add/edit products with platforms and notes
-- **Table Configuration**: Define CSV structures and validation rules
-- **Lumina Extractors**: Map API response paths to data fields
-- **AI Configuration**: Set benchmarks and analysis guidelines
+**When You Make a Non-Obvious Technical Decision**: Run `/decision [what you decided]` to capture context for future developers.
 
-## Important File Paths
+**When You Add or Modify External Services**: Run `/service [service name]` to document the integration.
 
-### Production Deployment
-- **FTP Host**: c1100784.sgvps.net
-- **FTP User**: edwin@edwinlovett.com
-- **Deploy Path**: /ignite.edwinlovett.com/public_html/report-ai/
+**Before Handing Off to Another Developer**: Run `/handoff` to generate a comprehensive onboarding document.
 
-### Key Schema Files
-- `context/tactic-training/enhanced_tactic_categories.json` - Tactic categorization
-- `unified_tactic_schema.json` - Generated from Schema Admin
-- `context/tactic-training/payload-reference-lumina.json` - Lumina API response reference
+### Issue Severity Guide
+
+| Level | Description | Example |
+|-------|-------------|---------|
+| CRITICAL | System unusable, data loss risk | Auth completely broken |
+| HIGH | Major feature broken, no workaround | Checkout fails silently |
+| MEDIUM | Feature impaired, workaround exists | Export works but slow |
+| LOW | Minor inconvenience | Typo in error message |
+
+### Decision Recording Guide
+
+Record a decision when:
+- Choosing between technologies (e.g., "Why Cloudflare over Vercel")
+- Designing data models or APIs
+- Setting up infrastructure
+- Establishing patterns that will be repeated
+- Making tradeoffs that won't be obvious later
+
+Don't record:
+- Obvious choices (standard patterns)
+- Temporary implementations
+- Personal preferences without project impact
+
 ## Sessions System Behaviors
 
 @CLAUDE.sessions.md

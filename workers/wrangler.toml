@@ -1,0 +1,44 @@
+name = "report-ai-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+account_id = "6f162004d5bd40500b824a2f7f5a1a13"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "PLATFORMS_KV"
+id = "ac01dea648864dfcaa08db74ddd62d29"
+
+[[kv_namespaces]]
+binding = "INDUSTRIES_KV"
+id = "a7935cf1de0545d48ae3b6964478ed2c"
+
+[[kv_namespaces]]
+binding = "SOUL_DOCS_KV"
+id = "c0ac7f5b165945e3af670b89e314c835"
+
+[[kv_namespaces]]
+binding = "SCHEMA_KV"
+id = "8cdafb49808d42abad58d299cd7c722c"
+
+[[kv_namespaces]]
+binding = "LUMINA_CACHE_KV"
+id = "c8134f5a14514c56854840c5c009b18d"
+
+# R2 Bucket for report storage
+[[r2_buckets]]
+binding = "REPORTS_R2"
+bucket_name = "report-ai-reports"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+LUMINA_API_URL = "https://api.edwinlovett.com/order"
+
+# Cron Triggers - Daily database sync at 3 AM UTC
+[triggers]
+crons = ["0 3 * * *"]
+
+# Development overrides
+[env.development]
+vars = { ENVIRONMENT = "development" }

@@ -1,0 +1,32 @@
+{
+  "name": "report-ai-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production",
+    "tail": "wrangler tail",
+    "types": "wrangler types",
+    "kv:create": "npm run kv:create:platforms && npm run kv:create:industries && npm run kv:create:soul-docs && npm run kv:create:schema && npm run kv:create:lumina-cache",
+    "kv:create:platforms": "wrangler kv:namespace create PLATFORMS_KV",
+    "kv:create:industries": "wrangler kv:namespace create INDUSTRIES_KV",
+    "kv:create:soul-docs": "wrangler kv:namespace create SOUL_DOCS_KV",
+    "kv:create:schema": "wrangler kv:namespace create SCHEMA_KV",
+    "kv:create:lumina-cache": "wrangler kv:namespace create LUMINA_CACHE_KV",
+    "r2:create": "wrangler r2 bucket create report-ai-reports"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@supabase/supabase-js": "^2.48.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250115.0",
+    "@types/pg": "^8.11.11",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.0.0"
+  }
+}
