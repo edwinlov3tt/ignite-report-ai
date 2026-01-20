@@ -67,5 +67,9 @@ test-screenshots/
 # Vercel
 .vercel/
 
+# Cloudflare Workers
+.wrangler/
+.dev.vars
+
 # TypeScript
 *.tsbuildinfo
