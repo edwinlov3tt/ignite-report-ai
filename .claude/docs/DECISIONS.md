@@ -181,6 +181,95 @@ Use Hono as the web framework - purpose-built for edge environments.
 
 ---
 
+## OpenAI Structured Outputs over Manual JSON Parsing
+- **Date**: 2025-01-20
+- **Status**: Accepted
+
+### Context
+Schema Curator needs to extract structured data from AI responses. Need reliable JSON that matches expected schemas for benchmarks, seasonality, insights.
+
+### Decision
+Use OpenAI's Structured Outputs feature with `json_schema` response format and `strict: true`.
+
+### Alternatives Considered
+1. **Manual JSON parsing with validation**
+   - Pros: Works with any model
+   - Cons: Prone to malformed JSON, extra validation code
+   - Rejected because: OpenAI guarantees schema compliance
+
+2. **Function calling with tool use**
+   - Pros: Also structured
+   - Cons: Different API pattern, requires function definition
+   - Rejected because: `json_schema` is simpler for pure data extraction
+
+### Consequences
+- **Positive**: Guaranteed valid JSON matching schema, no parsing errors, simpler code
+- **Negative**: Tied to OpenAI's structured outputs feature
+- **Neutral**: Schema must be valid JSON Schema with `additionalProperties: false`
+
+---
+
+## Tavily over Brave/Perplexity for Web Research
+- **Date**: 2025-01-20
+- **Status**: Accepted
+
+### Context
+Schema Curator Research mode needs to find industry benchmarks, seasonality patterns, and buyer insights from the web.
+
+### Decision
+Use Tavily Search API for web research - provides answer synthesis and source URLs.
+
+### Alternatives Considered
+1. **Brave Search API**
+   - Pros: Privacy-focused, independent index
+   - Cons: No answer synthesis, requires separate processing
+   - Rejected because: Tavily provides pre-processed answers
+
+2. **Perplexity API**
+   - Pros: AI-native search
+   - Cons: More expensive, less control over sources
+   - Rejected because: Tavily offers better price/value for our use case
+
+3. **SerpAPI + OpenAI**
+   - Pros: Access to Google results
+   - Cons: Two API calls, more complex
+   - Rejected because: Single API preferred
+
+### Consequences
+- **Positive**: Single API for search + answer synthesis, domain filtering, good free tier
+- **Negative**: Dependency on Tavily service
+- **Neutral**: Need to manage TAVILY_API_KEY secret
+
+---
+
+## JSONB Columns over Relational Tables for Curator Data
+- **Date**: 2025-01-20
+- **Status**: Accepted
+
+### Context
+Industry research produces complex nested data (benchmark ranges, seasonality patterns, insights array). Options: normalize into relational tables or store as JSONB.
+
+### Decision
+Store curator research data as JSONB columns (`curator_benchmarks`, `curator_seasonality`, `curator_insights`) on the industries table.
+
+### Alternatives Considered
+1. **Relational tables**
+   - Pros: Queryable, indexable, normalized
+   - Cons: Complex joins, many tables, harder to update atomically
+   - Rejected because: Data is read as a unit, rarely queried individually
+
+2. **Separate curator_research table**
+   - Pros: Clean separation
+   - Cons: Extra join, denormalized anyway
+   - Rejected because: Industry and its research are 1:1, no benefit
+
+### Consequences
+- **Positive**: Atomic updates, simple queries, flexible schema evolution
+- **Negative**: Limited SQL querying of nested data
+- **Neutral**: Existing relational tables (industry_benchmarks, industry_insights) remain for manually-entered data
+
+---
+
 ## When to Record
 
 ✅ **Record when:**

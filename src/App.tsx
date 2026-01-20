@@ -16,6 +16,7 @@ import { IndustryDetailPage } from '@/pages/admin/IndustryDetailPage'
 import { SoulDocumentsPage } from '@/pages/admin/SoulDocumentsPage'
 import { SoulDocumentEditorPage } from '@/pages/admin/SoulDocumentEditorPage'
 import { ImportExportPage } from '@/pages/admin/ImportExportPage'
+import { SchemaCuratorPage } from '@/pages/admin/SchemaCuratorPage'
 import { useAppStore } from '@/store/useAppStore'
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
           <Route path="/schema-admin/soul-documents" element={<SoulDocumentsPage />} />
           <Route path="/schema-admin/soul-documents/:id" element={<SoulDocumentEditorPage />} />
           <Route path="/schema-admin/import-export" element={<ImportExportPage />} />
+          <Route path="/schema-admin/curator" element={<SchemaCuratorPage />} />
         </Route>
       </Routes>
 

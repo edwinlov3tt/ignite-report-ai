@@ -98,10 +98,64 @@ export interface Industry {
   is_active: boolean
   created_at?: string
   updated_at?: string
-  // Nested data
+  // Nested data from related tables
   benchmarks?: IndustryBenchmark[]
   insights?: IndustryInsight[]
   seasonality?: IndustrySeasonality[]
+  // Curator research data (JSONB columns)
+  curator_benchmarks?: CuratorBenchmarks
+  curator_seasonality?: CuratorSeasonality
+  curator_insights?: CuratorInsight[]
+  buyer_notes?: string
+  research_metadata?: ResearchMetadata
+}
+
+// ============================================
+// Curator Research Types (JSONB structures)
+// ============================================
+
+export interface CuratorBenchmarkRange {
+  min: number
+  max: number
+  avg: number
+  currency?: string
+  unit?: string
+}
+
+export interface CuratorBenchmarks {
+  cpc_range?: CuratorBenchmarkRange
+  cpa_range?: CuratorBenchmarkRange
+  ctr_range?: CuratorBenchmarkRange
+  cpm_range?: CuratorBenchmarkRange
+  roas_range?: { min: number; max: number; avg: number }
+  notes?: string
+}
+
+export interface CuratorSeasonality {
+  peak_months?: number[]
+  slow_months?: number[]
+  quarterly_trends?: {
+    q1?: string
+    q2?: string
+    q3?: string
+    q4?: string
+  }
+  holidays_impact?: string[]
+  notes?: string
+}
+
+export interface CuratorInsight {
+  topic: string
+  content: string
+  confidence: number
+}
+
+export interface ResearchMetadata {
+  researched_at?: string
+  sources?: string[]
+  query?: string
+  company_context?: string | null
+  tokens_used?: number
 }
 
 export interface IndustryBenchmark {

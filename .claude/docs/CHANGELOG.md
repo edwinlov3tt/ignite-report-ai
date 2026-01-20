@@ -18,6 +18,61 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## 2025-01-20
+
+### Schema Curator Agent - AI-Powered Industry Research
+
+#### Added - New Feature: Schema Curator
+- **SchemaCuratorPage** (`src/pages/admin/SchemaCuratorPage.tsx`) - New admin page for AI-powered schema data management
+- **Research Mode** - Natural language queries to seed industries with rich data (e.g., "Create industry for Electric Services with benchmarks")
+- **Text/URL/File Input Modes** - Multiple ways to extract schema entities
+- **Field-by-field Review UI** - Approve/reject extracted fields before committing
+
+#### Added - Worker Backend (Curator Routes)
+- `workers/src/routes/curator/index.ts` - Curator route registration
+- `workers/src/routes/curator/extract.ts` - Text/URL parsing with OpenAI GPT-5.2
+- `workers/src/routes/curator/research.ts` - Tavily web search + GPT-5.2 synthesis
+- `workers/src/routes/curator/commit.ts` - Save approved entities with audit trail
+
+#### Added - Worker Services
+- `workers/src/services/curator/openai.ts` - OpenAI client with structured outputs
+- `workers/src/services/curator/webResearch.ts` - Tavily API integration for industry research
+- `workers/src/services/curator/audit.ts` - Provenance and audit log management
+
+#### Added - Database Schema (Migration 005)
+- `schema_provenance` - Field-level source tracking
+- `schema_audit_log` - Full change history for rollback
+- `curator_domain_whitelist` - Trusted research sources
+- `curator_sessions` - Chat/context persistence
+
+#### Added - Industry Research Fields (Migration 006)
+- `curator_benchmarks` JSONB - CPC, CPA, CTR, CPM, ROAS ranges
+- `curator_seasonality` JSONB - Peak/slow months, quarterly trends, holiday impact
+- `curator_insights` JSONB - AI-generated insights with confidence scores
+- `buyer_notes` TEXT - Buyer persona and targeting notes
+- `research_metadata` JSONB - Sources, tokens used, query context
+
+#### Added - IndustryDetailPage "AI Research" Tab
+- Displays curator-generated research data
+- Benchmark cards with min/max/avg ranges
+- Seasonality badges for peak/slow months
+- Quarterly trend descriptions
+- Buyer notes with formatted display
+- Insights with confidence scores
+- Clickable source links
+
+#### Changed
+- Updated `Industry` type in `src/types/admin.ts` and `src/lib/industriesApi.ts` to include curator fields
+- Updated `industriesApi.getIndustry()` and `getIndustries()` to fetch curator JSONB columns
+- AdminSidebar now includes "Curator" navigation item
+
+#### Technical Details
+- **OpenAI Structured Outputs**: Uses `json_schema` response format with `strict: true`
+- **Tavily Search**: Specialized queries for benchmarks, seasonality, buyer personas
+- **Column Renaming**: Renamed JSONB columns from `benchmarks`→`curator_benchmarks` to avoid conflicts with relational table aliases
+
+---
+
 ## 2025-01-19
 
 ### Major Audit - Architecture Documentation Update

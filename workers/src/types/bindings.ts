@@ -18,6 +18,8 @@ export interface Env {
   ANTHROPIC_API_KEY: string
   SUPABASE_URL: string
   SUPABASE_SERVICE_KEY: string
+  OPENAI_API_KEY: string    // For Schema Curator (GPT-5.2)
+  TAVILY_API_KEY: string    // For Schema Curator web research
 
   // Fallback database (SiteGround Postgres)
   FALLBACK_DB_URL?: string // Format: postgresql://user:pass@host:5432/dbname

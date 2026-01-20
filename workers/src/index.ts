@@ -15,6 +15,7 @@ import { handlePublish } from './routes/admin/publish'
 import { handleSync, handleSyncStatus } from './routes/admin/sync'
 import { handleGetReport } from './routes/reports'
 import { handleGetProducts, handleGetPlatforms, handleGetIndustries, handleGetSoulDocs } from './routes/schema'
+import { curatorRouter } from './routes/curator'
 import { syncAllToFallback } from './services/sync'
 
 // Create Hono app with typed bindings
@@ -67,6 +68,9 @@ app.get('/schema/soul-docs', handleGetSoulDocs)
 app.post('/admin/publish', handlePublish)
 app.post('/admin/sync', handleSync)
 app.get('/admin/sync/status', handleSyncStatus)
+
+// Curator Routes (Schema Curator Agent)
+app.route('/curator', curatorRouter)
 
 // 404 handler
 app.notFound((c) => {

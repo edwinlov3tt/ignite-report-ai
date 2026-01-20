@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
 import {
   Settings, Table, FileSpreadsheet, Trash2, Save, Plus, Edit2,
   Loader2, AlertTriangle, X, ChevronRight, ArrowLeft, Brain, Target, ShieldAlert, Clock
@@ -214,17 +215,8 @@ export function SubProductDetailPage() {
     loadData()
   }, [loadData])
 
-  // Warn on page leave with unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault()
-        e.returnValue = ''
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [hasUnsavedChanges])
+  // Warn on navigation with unsaved changes (browser close, back button, link clicks)
+  useUnsavedChangesWarning(hasUnsavedChanges)
 
   // Load available platforms for autocomplete
   const loadPlatforms = useCallback(async () => {

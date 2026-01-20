@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   BarChart3, Smartphone, Factory, FileText, ChevronLeft, ChevronRight, ChevronDown,
-  Home, Package, Layers, TestTube, FolderInput, Settings
+  Home, Package, Layers, TestTube, FolderInput, Settings, Bot
 } from 'lucide-react'
 
 interface AdminSidebarProps {
@@ -50,6 +50,12 @@ const mainNavItems: NavItem[] = [
     label: 'Industries',
     icon: <Factory size={20} />,
     path: '/schema-admin/industries'
+  },
+  {
+    id: 'curator',
+    label: 'Schema Curator',
+    icon: <Bot size={20} />,
+    path: '/schema-admin/curator'
   }
 ]
 

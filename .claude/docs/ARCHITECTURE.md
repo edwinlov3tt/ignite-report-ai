@@ -2,7 +2,7 @@
 
 System design and technical reference for Report.AI.
 
-**Last Updated**: 2025-01-19
+**Last Updated**: 2025-01-20
 
 ---
 
@@ -82,11 +82,20 @@ report-ai/
 │   │   │   ├── schema.ts          # Schema data endpoints
 │   │   │   ├── reports.ts         # Report storage (R2)
 │   │   │   ├── feedback.ts        # Report feedback
-│   │   │   └── admin/             # Admin routes
+│   │   │   ├── admin/             # Admin routes
+│   │   │   └── curator/           # Schema Curator routes
+│   │   │       ├── index.ts       # Route registration
+│   │   │       ├── extract.ts     # Text/URL extraction with OpenAI
+│   │   │       ├── research.ts    # Tavily web research + GPT synthesis
+│   │   │       └── commit.ts      # Save entities with audit trail
 │   │   ├── services/
 │   │   │   ├── anthropic.ts       # Claude API client with caching
 │   │   │   ├── supabase.ts        # Supabase database client
-│   │   │   └── sync.ts            # DB-to-KV sync service
+│   │   │   ├── sync.ts            # DB-to-KV sync service
+│   │   │   └── curator/           # Curator services
+│   │   │       ├── openai.ts      # OpenAI client with structured outputs
+│   │   │       ├── webResearch.ts # Tavily API for industry research
+│   │   │       └── audit.ts       # Provenance and audit log
 │   │   ├── storage/
 │   │   │   ├── kv.ts              # KV namespace operations
 │   │   │   └── r2.ts              # R2 bucket operations
@@ -175,6 +184,8 @@ report-ai/
 | Service | Purpose | Docs |
 |---------|---------|------|
 | Anthropic Claude | AI-powered campaign analysis | [docs.anthropic.com](https://docs.anthropic.com) |
+| OpenAI GPT-5.2 | Schema Curator extraction & synthesis | [platform.openai.com](https://platform.openai.com/docs) |
+| Tavily Search | Web research for industry data | [tavily.com](https://tavily.com) |
 | Supabase | PostgreSQL database + auth | [supabase.com/docs](https://supabase.com/docs) |
 | Cloudflare Workers | Edge API functions | [developers.cloudflare.com](https://developers.cloudflare.com) |
 | Cloudflare KV | Key-value cache storage | Part of Workers |
@@ -196,6 +207,8 @@ report-ai/
 | Variable | Purpose | Required |
 |----------|---------|----------|
 | `ANTHROPIC_API_KEY` | Claude API authentication | Yes |
+| `OPENAI_API_KEY` | OpenAI GPT-5.2 for Schema Curator | Yes (for Curator) |
+| `TAVILY_API_KEY` | Tavily Search API for industry research | Yes (for Curator) |
 | `SUPABASE_URL` | Supabase project URL | Yes |
 | `SUPABASE_SERVICE_KEY` | Supabase service role key | Yes |
 | `FALLBACK_DB_URL` | PostgreSQL fallback connection | No |

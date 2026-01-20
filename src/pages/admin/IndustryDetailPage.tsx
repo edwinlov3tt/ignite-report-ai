@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Factory, BarChart3, Lightbulb, CalendarDays,
-  Plus, Trash2, Loader2, Edit2, Eye, BookOpen, ShieldCheck, Save
+  Plus, Trash2, Loader2, Edit2, Eye, BookOpen, ShieldCheck, Save,
+  Sparkles, Users, Globe, TrendingUp
 } from 'lucide-react'
 import { Tabs, TabPanel } from '@/components/admin/Tabs'
 import { Modal } from '@/components/admin/Modal'
 import { FormField, Input, Textarea, Select } from '@/components/admin/FormField'
 import { Badge } from '@/components/admin/Badge'
 import * as industriesApi from '@/lib/industriesApi'
-import type { Industry, InsightType, SeasonalityPeriodType, SeasonalityImpact } from '@/types/admin'
+import type { InsightType, SeasonalityPeriodType, SeasonalityImpact } from '@/types/admin'
+import type { Industry } from '@/lib/industriesApi'
 
 export function IndustryDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -183,10 +185,15 @@ export function IndustryDetailPage() {
     }
   }
 
+  // Check if industry has curator research data
+  const hasResearchData = industry?.curator_benchmarks || industry?.curator_seasonality ||
+    industry?.curator_insights || industry?.buyer_notes
+
   const tabs = [
     { id: 'benchmarks', label: 'Benchmarks', icon: <BarChart3 size={16} /> },
     { id: 'insights', label: 'Insights', icon: <Lightbulb size={16} /> },
     { id: 'seasonality', label: 'Seasonality', icon: <CalendarDays size={16} /> },
+    ...(hasResearchData ? [{ id: 'research', label: 'AI Research', icon: <Sparkles size={16} /> }] : []),
     { id: 'compliance', label: 'Compliance', icon: <ShieldCheck size={16} /> },
     { id: 'case-studies', label: 'Case Studies', icon: <BookOpen size={16} /> },
     { id: 'preview', label: 'AI Preview', icon: <Eye size={16} /> }
@@ -544,6 +551,312 @@ export function IndustryDetailPage() {
               </p>
             )}
           </TabPanel>
+
+          {/* AI Research Tab - Curator-generated data */}
+          {hasResearchData && (
+            <TabPanel id="research" activeTab={activeTab}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <Sparkles size={20} style={{ color: 'var(--color-primary)' }} />
+                <h3 style={{ margin: 0 }}>AI-Researched Industry Data</h3>
+                {industry.research_metadata?.researched_at && (
+                  <Badge size="sm" variant="info">
+                    Researched {new Date(industry.research_metadata.researched_at).toLocaleDateString()}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Research Metadata */}
+              {industry.research_metadata && (
+                <div style={{
+                  backgroundColor: 'var(--color-surface-secondary)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 16px',
+                  marginBottom: '24px',
+                  fontSize: '13px',
+                  color: 'var(--color-text-muted)',
+                  display: 'flex',
+                  gap: '24px',
+                  flexWrap: 'wrap'
+                }}>
+                  {industry.research_metadata.sources && (
+                    <span><Globe size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />{industry.research_metadata.sources.length} sources</span>
+                  )}
+                  {industry.research_metadata.tokens_used && (
+                    <span><TrendingUp size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />{industry.research_metadata.tokens_used.toLocaleString()} tokens</span>
+                  )}
+                  {industry.research_metadata.query && (
+                    <span>Query: "{industry.research_metadata.query}"</span>
+                  )}
+                </div>
+              )}
+
+              {/* Benchmarks Section */}
+              {industry.curator_benchmarks && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BarChart3 size={18} /> Benchmark Ranges
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                    {industry.curator_benchmarks.cpc_range && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>CPC (Cost Per Click)</div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                          ${industry.curator_benchmarks.cpc_range.avg?.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          Range: ${industry.curator_benchmarks.cpc_range.min?.toFixed(2)} - ${industry.curator_benchmarks.cpc_range.max?.toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                    {industry.curator_benchmarks.cpa_range && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>CPA (Cost Per Acquisition)</div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                          ${industry.curator_benchmarks.cpa_range.avg?.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          Range: ${industry.curator_benchmarks.cpa_range.min?.toFixed(2)} - ${industry.curator_benchmarks.cpa_range.max?.toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                    {industry.curator_benchmarks.ctr_range && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>CTR (Click-Through Rate)</div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                          {industry.curator_benchmarks.ctr_range.avg?.toFixed(2)}%
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          Range: {industry.curator_benchmarks.ctr_range.min?.toFixed(2)}% - {industry.curator_benchmarks.ctr_range.max?.toFixed(2)}%
+                        </div>
+                      </div>
+                    )}
+                    {industry.curator_benchmarks.cpm_range && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>CPM (Cost Per 1000)</div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                          ${industry.curator_benchmarks.cpm_range.avg?.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          Range: ${industry.curator_benchmarks.cpm_range.min?.toFixed(2)} - ${industry.curator_benchmarks.cpm_range.max?.toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                    {industry.curator_benchmarks.roas_range && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>ROAS (Return on Ad Spend)</div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                          {industry.curator_benchmarks.roas_range.avg?.toFixed(1)}x
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          Range: {industry.curator_benchmarks.roas_range.min?.toFixed(1)}x - {industry.curator_benchmarks.roas_range.max?.toFixed(1)}x
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {industry.curator_benchmarks.notes && (
+                    <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                      {industry.curator_benchmarks.notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Seasonality Section */}
+              {industry.curator_seasonality && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CalendarDays size={18} /> Seasonality Patterns
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                    {industry.curator_seasonality.peak_months && industry.curator_seasonality.peak_months.length > 0 && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Peak Months</div>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {industry.curator_seasonality.peak_months.map((month: number) => (
+                            <Badge key={month} variant="success" size="sm">
+                              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {industry.curator_seasonality.slow_months && industry.curator_seasonality.slow_months.length > 0 && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Slow Months</div>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {industry.curator_seasonality.slow_months.map((month: number) => (
+                            <Badge key={month} variant="warning" size="sm">
+                              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {industry.curator_seasonality.holidays_impact && industry.curator_seasonality.holidays_impact.length > 0 && (
+                      <div style={{
+                        backgroundColor: 'var(--color-surface-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Holiday Impact</div>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {industry.curator_seasonality.holidays_impact.map((holiday: string, i: number) => (
+                            <Badge key={i} variant="info" size="sm">{holiday}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {industry.curator_seasonality.quarterly_trends && (
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Quarterly Trends</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                        {['q1', 'q2', 'q3', 'q4'].map((q) => (
+                          <div key={q} style={{
+                            backgroundColor: 'var(--color-surface-secondary)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '12px',
+                            fontSize: '13px'
+                          }}>
+                            <strong style={{ color: 'var(--color-primary)' }}>{q.toUpperCase()}</strong>
+                            <p style={{ margin: '4px 0 0 0', color: 'var(--color-text-muted)' }}>
+                              {industry.curator_seasonality.quarterly_trends?.[q as 'q1' | 'q2' | 'q3' | 'q4'] || '—'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {industry.curator_seasonality.notes && (
+                    <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                      {industry.curator_seasonality.notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Buyer Notes Section */}
+              {industry.buyer_notes && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={18} /> Buyer Notes
+                  </h4>
+                  <div style={{
+                    backgroundColor: 'var(--color-surface-secondary)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '20px',
+                    border: '1px solid var(--color-border)',
+                    fontSize: '14px',
+                    lineHeight: 1.7,
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {industry.buyer_notes}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Insights Section */}
+              {industry.curator_insights && industry.curator_insights.length > 0 && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Lightbulb size={18} /> AI-Generated Insights ({industry.curator_insights.length})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {industry.curator_insights.map((insight, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          backgroundColor: 'var(--color-surface-secondary)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '16px 20px',
+                          border: '1px solid var(--color-border)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>{insight.topic}</h5>
+                          <Badge
+                            variant={insight.confidence >= 0.8 ? 'success' : insight.confidence >= 0.6 ? 'warning' : 'default'}
+                            size="sm"
+                          >
+                            {Math.round(insight.confidence * 100)}% confidence
+                          </Badge>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: 'var(--color-text-secondary)' }}>
+                          {insight.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sources */}
+              {industry.research_metadata?.sources && industry.research_metadata.sources.length > 0 && (
+                <div>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Research Sources
+                  </h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {industry.research_metadata.sources.map((source, i) => (
+                      <a
+                        key={i}
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: '12px',
+                          color: 'var(--color-primary)',
+                          textDecoration: 'none',
+                          backgroundColor: 'var(--color-surface-secondary)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--color-border)'
+                        }}
+                      >
+                        {new URL(source).hostname}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabPanel>
+          )}
 
           {/* Compliance Tab */}
           <TabPanel id="compliance" activeTab={activeTab}>
