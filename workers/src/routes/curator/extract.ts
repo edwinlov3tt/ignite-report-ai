@@ -1,18 +1,22 @@
 /**
  * Curator Extract Route
  * POST /curator/extract - Extract schema entities from content
+ * Supports both legacy and smart extraction modes
  */
 
 import { Context } from 'hono'
 import type { Env } from '../../types/bindings'
 import { createSupabaseClient } from '../../services/supabase'
-import { createOpenAIClient, extractEntities, classifyContent } from '../../services/curator/openai'
+import { createOpenAIClient, extractEntities, classifyContent, smartExtract } from '../../services/curator/openai'
+import { findMatchingEntities, formatMatchContextForPrompt } from '../../services/curator/semanticMatch'
 import type {
   ExtractRequest,
   ExtractResponse,
   ExtractedItem,
   ExtractedField,
   CuratorSession,
+  CuratorAction,
+  SmartExtractionResult,
   CURATOR_CONFIG,
 } from '../../types/curator'
 
@@ -26,11 +30,12 @@ function generateItemId(): string {
 /**
  * POST /curator/extract
  * Extract schema entities from provided content
+ * Supports 'smart' mode (semantic matching + actions) and 'legacy' mode
  */
 export async function handleExtract(c: Context<{ Bindings: Env }>): Promise<Response> {
   try {
     const body = await c.req.json<ExtractRequest>()
-    const { session_id, content, content_type, file_name, target_types } = body
+    const { session_id, content, content_type, file_name, target_types, mode = 'smart' } = body
 
     // Validate input
     if (!content || content.trim().length === 0) {
@@ -43,7 +48,12 @@ export async function handleExtract(c: Context<{ Bindings: Env }>): Promise<Resp
     const supabase = createSupabaseClient(c.env)
     const openai = createOpenAIClient(c.env)
 
-    // Get or create session
+    // Use smart mode by default
+    if (mode === 'smart') {
+      return handleSmartExtract(c, supabase, openai, body)
+    }
+
+    // Legacy mode: Get or create session
     let session: CuratorSession
     if (session_id) {
       // Resume existing session
@@ -250,6 +260,160 @@ export async function handleExtract(c: Context<{ Bindings: Env }>): Promise<Resp
       error: error instanceof Error ? error.message : 'Unknown error',
     }, 500)
   }
+}
+
+/**
+ * Smart extraction handler
+ * Uses semantic matching to find existing entities and determines actions
+ */
+async function handleSmartExtract(
+  c: Context<{ Bindings: Env }>,
+  supabase: ReturnType<typeof createSupabaseClient>,
+  openai: ReturnType<typeof createOpenAIClient>,
+  body: ExtractRequest
+): Promise<Response> {
+  const { session_id, content, content_type, file_name } = body
+
+  // Get or create session
+  let session: CuratorSession
+  if (session_id) {
+    const { data, error } = await supabase
+      .from('curator_sessions')
+      .select('*')
+      .eq('id', session_id)
+      .single()
+
+    if (error || !data) {
+      return c.json({ success: false, error: 'Session not found' }, 404)
+    }
+
+    session = data as CuratorSession
+    if (session.status !== 'active') {
+      return c.json({ success: false, error: 'Session is no longer active' }, 400)
+    }
+    if (session.tokens_used >= session.tokens_limit) {
+      return c.json({ success: false, error: 'Token budget exceeded' }, 429)
+    }
+  } else {
+    const { data, error } = await supabase
+      .from('curator_sessions')
+      .insert({
+        status: 'active',
+        messages: [],
+        pending_items: [],
+        committed_items: [],
+        tokens_used: 0,
+        tokens_limit: 500000,
+      })
+      .select()
+      .single()
+
+    if (error || !data) {
+      throw new Error(`Failed to create session: ${error?.message}`)
+    }
+    session = data as CuratorSession
+  }
+
+  // Step 1: Find matching entities via semantic search
+  console.log('Finding matching entities...')
+  const matchedEntities = await findMatchingEntities(supabase, c.env, content)
+  const matchContext = formatMatchContextForPrompt(matchedEntities)
+  console.log('Match context:', matchContext)
+
+  // Step 2: Smart extraction with context
+  console.log('Running smart extraction...')
+  const extraction = await smartExtract(openai, {
+    content,
+    matchedEntitiesContext: matchContext,
+  })
+
+  // Convert actions to CuratorAction format with IDs
+  const actions: CuratorAction[] = extraction.actions.map(action => ({
+    id: generateItemId(),
+    action_type: action.action_type,
+    entity_type: action.entity_type as CuratorAction['entity_type'],
+    target_entity: action.target_entity_id ? {
+      id: action.target_entity_id,
+      name: action.target_entity_name || '',
+      type: action.target_entity_type as CuratorAction['target_entity']['type'],
+    } : undefined,
+    fields: action.fields.map(f => ({
+      name: f.name,
+      value: f.value,
+      confidence: f.confidence,
+      source: content_type === 'url' ? 'url' as const : content_type === 'file_content' ? 'file' as const : 'manual' as const,
+      source_snippet: f.reasoning,
+    })),
+    confidence: action.confidence,
+    reasoning: action.reasoning,
+    requires_research: action.requires_research,
+    status: 'pending' as const,
+  }))
+
+  const smartResult: SmartExtractionResult = {
+    intent: extraction.intent,
+    intent_confidence: extraction.intent_confidence,
+    matched_entities: matchedEntities,
+    actions,
+    clarification_needed: extraction.clarification_needed || undefined,
+    summary: extraction.summary,
+  }
+
+  // Build assistant message
+  const actionSummary = actions.map(action => {
+    const targetInfo = action.target_entity
+      ? ` → ${action.target_entity.name} (${action.target_entity.type})`
+      : ''
+    const nameField = action.fields.find(f => f.name === 'name' || f.name === 'title')
+    const name = nameField ? String(nameField.value) : ''
+    return `- ${action.action_type}: ${action.entity_type}${name ? ` "${name}"` : ''}${targetInfo} (${Math.round(action.confidence * 100)}%)`
+  }).join('\n')
+
+  const assistantMessage = extraction.clarification_needed
+    ? `I need clarification: ${extraction.clarification_needed}\n\nBased on what I can infer, here are potential actions:\n${actionSummary}`
+    : `Intent: ${extraction.intent} (${Math.round(extraction.intent_confidence * 100)}% confident)\n\nProposed actions:\n${actionSummary}\n\n${extraction.summary}`
+
+  // Update session
+  const contextMessage = `User submitted ${content_type} content${file_name ? ` from file: ${file_name}` : ''}\n\nContent:\n${content.substring(0, 500)}${content.length > 500 ? '...' : ''}`
+
+  await supabase
+    .from('curator_sessions')
+    .update({
+      tokens_used: session.tokens_used + extraction.usage.total_tokens,
+      last_activity_at: new Date().toISOString(),
+      messages: [
+        ...session.messages,
+        {
+          id: generateItemId(),
+          role: 'user',
+          content: contextMessage,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          id: generateItemId(),
+          role: 'assistant',
+          content: assistantMessage,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            extracted_items: actions.length,
+            tokens_used: extraction.usage.total_tokens,
+            model: 'gpt-5.2-2025-12-11',
+            mode: 'smart',
+          },
+        },
+      ],
+      pending_items: actions, // Store actions as pending items
+    })
+    .eq('id', session.id)
+
+  return c.json({
+    success: true,
+    session_id: session.id,
+    smart_result: smartResult,
+    tokens_used: extraction.usage.total_tokens,
+    tokens_remaining: session.tokens_limit - session.tokens_used - extraction.usage.total_tokens,
+    message: assistantMessage,
+  })
 }
 
 /**

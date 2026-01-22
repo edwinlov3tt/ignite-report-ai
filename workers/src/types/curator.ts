@@ -7,7 +7,21 @@
 // Database Entity Types
 // ============================================
 
-export type EntityType = 'platform' | 'industry' | 'product' | 'subproduct' | 'tactic_type' | 'soul_doc'
+// Core entity types (things you create)
+export type CoreEntityType = 'platform' | 'industry' | 'product' | 'subproduct' | 'tactic_type' | 'soul_doc'
+
+// Enrichment entity types (things you add to existing entities)
+export type EnrichmentEntityType = 'platform_quirk' | 'industry_insight' | 'platform_buyer_note' | 'platform_kpi'
+
+// All entity types
+export type EntityType = CoreEntityType | EnrichmentEntityType
+
+// Action types - what the curator can do
+export type CuratorActionType =
+  | 'create_entity'      // Create a new entity
+  | 'update_field'       // Update a field on existing entity
+  | 'add_enrichment'     // Add quirk/insight/note to existing entity
+  | 'research_fill'      // Research and fill missing data
 export type SourceType = 'file' | 'url' | 'web_research' | 'ai_generated' | 'manual'
 export type TrustLevel = 'authoritative' | 'standard' | 'limited'
 export type SessionStatus = 'active' | 'completed' | 'abandoned'
@@ -126,6 +140,54 @@ export interface FieldConflict {
 }
 
 // ============================================
+// Semantic Matching Types
+// ============================================
+
+export interface SemanticMatch {
+  entity_type: CoreEntityType
+  entity_id: string
+  entity_name: string
+  similarity: number
+  matched_text: string  // What text triggered the match
+}
+
+export interface MatchContext {
+  platforms: SemanticMatch[]
+  industries: SemanticMatch[]
+  products: SemanticMatch[]
+  tactic_types: SemanticMatch[]
+}
+
+// ============================================
+// Action-Based Extraction Types
+// ============================================
+
+export interface CuratorAction {
+  id: string
+  action_type: CuratorActionType
+  entity_type: EntityType
+  target_entity?: {
+    id: string
+    name: string
+    type: CoreEntityType
+  }
+  fields: ExtractedField[]
+  confidence: number
+  reasoning: string
+  requires_research: boolean
+  status: 'pending' | 'approved' | 'rejected' | 'completed'
+}
+
+export interface SmartExtractionResult {
+  intent: 'enrichment' | 'creation' | 'mixed' | 'unclear'
+  intent_confidence: number
+  matched_entities: MatchContext
+  actions: CuratorAction[]
+  clarification_needed?: string
+  summary: string
+}
+
+// ============================================
 // API Request/Response Types
 // ============================================
 
@@ -136,12 +198,16 @@ export interface ExtractRequest {
   content_type: 'text' | 'url' | 'file_content'
   file_name?: string          // Original filename if from file
   target_types?: EntityType[] // Filter extraction to specific types
+  mode?: 'smart' | 'legacy'   // Smart = semantic matching + actions, Legacy = old behavior
 }
 
 export interface ExtractResponse {
   success: boolean
   session_id: string
-  extracted_items: ExtractedItem[]
+  // Legacy mode response
+  extracted_items?: ExtractedItem[]
+  // Smart mode response
+  smart_result?: SmartExtractionResult
   tokens_used: number
   tokens_remaining: number
   message?: string           // AI response message
@@ -310,3 +376,239 @@ export const CURATOR_CONFIG = {
   },
   SESSION_TIMEOUT_HOURS: 24,
 } as const
+
+// ============================================
+// Research Mode Evolution Types
+// ============================================
+
+// Authority tiers for sources
+export type AuthorityTier = 'authoritative' | 'standard' | 'user_provided'
+
+// Research depth levels
+export type ResearchDepth = 'quick' | 'standard' | 'deep'
+
+// Research session status
+export type ResearchStatus = 'in_progress' | 'completed' | 'failed'
+
+// Feedback types for continuous learning
+export type FeedbackType = 'good' | 'bad' | 'partial'
+
+// Research target type
+export type ResearchType = 'product' | 'subproduct' | 'platform' | 'industry' | 'cross_entity'
+
+// Curator Source - centralized source repository
+export interface CuratorSource {
+  id: string
+  url: string
+  domain: string
+  title?: string
+  snippet?: string
+  authority_tier: AuthorityTier
+  authority_score: number  // 1.0, 0.7, 0.5
+  categories?: string[]
+  fetch_count: number
+  is_user_provided: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Entity Source - links sources to entities
+export interface EntitySource {
+  id: string
+  source_id: string
+  entity_type: CoreEntityType
+  entity_id: string
+  field_name?: string
+  citation_text?: string
+  relevance_score: number
+  created_at: string
+}
+
+// Source with authority information for display
+export interface SourceWithAuthority {
+  id: string
+  url: string
+  domain: string
+  title?: string
+  authority_tier: AuthorityTier
+  authority_score: number
+  citation_text?: string
+  categories?: string[]
+}
+
+// Research readiness check result
+export interface ResearchReadiness {
+  is_ready: boolean
+  warnings: string[]
+  missing_fields: string[]
+  recommendation: string
+  data_quality_score?: number
+}
+
+// Individual reasoning step in chain of thought
+export interface ReasoningStep {
+  step_number: number
+  description: string
+  sources_used: string[]
+  confidence: number
+  duration_ms?: number
+}
+
+// Extracted guidance fields from research
+export interface ExtractedGuidanceFields {
+  chain_of_thought_guidance?: string[]
+  analysis_instructions?: string[]
+  example_good_analysis?: string[]
+  example_bad_analysis?: string[]
+  critical_metrics?: string[]
+  optimization_priorities?: string[]
+  important_constraints_restrictions?: string
+}
+
+// Inheritance analysis - what applies at product vs subproduct level
+export interface InheritanceAnalysis {
+  product_level_guidance: ExtractedField[]
+  subproduct_specific_guidance: ExtractedField[]
+  inheritance_reasoning: string
+}
+
+// Cross-entity intelligence suggestion
+export interface CrossEntitySuggestion {
+  target_entity_type: CoreEntityType
+  target_entity_id?: string
+  target_entity_name?: string
+  suggested_field: string
+  suggested_value: string
+  reasoning: string
+  confidence: number
+}
+
+// Research session - full research context
+export interface ResearchSession {
+  id: string
+  target_product_id?: string
+  target_subproduct_id?: string
+  target_platform_id?: string
+  target_industry_id?: string
+  research_type: ResearchType
+  research_depth: ResearchDepth
+  user_context?: string
+  chain_of_thought: string
+  reasoning_steps?: ReasoningStep[]
+  sources_consulted?: SourceWithAuthority[]
+  extracted_fields?: ExtractedGuidanceFields
+  inheritance_analysis?: InheritanceAnalysis
+  cross_entity_suggestions?: CrossEntitySuggestion[]
+  readiness_check?: ResearchReadiness
+  tokens_used: number
+  model_used?: string
+  duration_ms?: number
+  status: ResearchStatus
+  error_message?: string
+  created_at: string
+  completed_at?: string
+}
+
+// Research feedback for continuous learning
+export interface ResearchFeedback {
+  id: string
+  research_session_id: string
+  feedback_type: FeedbackType
+  field_name?: string
+  feedback_notes?: string
+  marked_by: string
+  created_at: string
+}
+
+// ============================================
+// Research API Request/Response Types
+// ============================================
+
+// POST /curator/research/product
+export interface ProductResearchRequest {
+  product_id: string             // Required
+  subproduct_id?: string         // Optional - narrows scope
+  platform_focus?: string        // Optional - e.g., "Google Ads"
+  user_context?: string          // Optional - notes to guide research
+  research_depth?: ResearchDepth
+}
+
+// Available metrics context from performance tables
+export interface AvailableMetricsContext {
+  all_metrics: string[]           // All unique column headers available
+  tables_count: number            // Number of performance tables found
+  is_product_level: boolean       // True if product-only (no subproduct specified)
+  metrics_by_subproduct?: Record<string, string[]>  // Breakdown by subproduct
+  not_available: string[]         // Common metrics NOT in our data
+}
+
+export interface ProductResearchResponse {
+  success: boolean
+  session_id: string
+  readiness_check: ResearchReadiness
+  available_metrics?: AvailableMetricsContext  // What data we actually have
+  chain_of_thought: string
+  reasoning_steps: ReasoningStep[]
+  extracted_fields: ExtractedGuidanceFields
+  sources: SourceWithAuthority[]
+  cross_entity_suggestions: CrossEntitySuggestion[]
+  inheritance_analysis?: InheritanceAnalysis
+  tokens_used: number
+  duration_ms: number
+  error?: string
+}
+
+// GET /curator/sources
+export interface SourcesListRequest {
+  entity_type?: CoreEntityType
+  authority_tier?: AuthorityTier
+  domain?: string
+  limit?: number
+  offset?: number
+}
+
+export interface SourcesListResponse {
+  success: boolean
+  sources: CuratorSource[]
+  total_count: number
+}
+
+// POST /curator/sources
+export interface CreateSourceRequest {
+  url: string
+  title?: string
+  snippet?: string
+  categories?: string[]
+}
+
+export interface CreateSourceResponse {
+  success: boolean
+  source: CuratorSource
+  error?: string
+}
+
+// POST /curator/feedback
+export interface SubmitFeedbackRequest {
+  research_session_id: string
+  feedback_type: FeedbackType
+  field_name?: string
+  notes?: string
+}
+
+export interface SubmitFeedbackResponse {
+  success: boolean
+  feedback_id: string
+  error?: string
+}
+
+// GET /curator/feedback/patterns
+export interface FeedbackPatternsResponse {
+  success: boolean
+  patterns: Array<{
+    field_name: string
+    good_count: number
+    bad_count: number
+    total_count: number
+    success_rate: number
+  }>
+}

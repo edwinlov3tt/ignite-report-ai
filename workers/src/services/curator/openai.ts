@@ -568,3 +568,235 @@ export async function chat(
     },
   }
 }
+
+// ============================================
+// Smart Extraction Service
+// ============================================
+
+const SMART_EXTRACTION_SYSTEM_PROMPT = `You are an intelligent Schema Curator AI for a digital marketing analytics platform. Your role is to analyze content and determine the BEST actions to take.
+
+You can perform these action types:
+1. **create_entity** - Create a new platform, industry, product, subproduct, tactic_type, or soul_doc
+2. **update_field** - Update a specific field on an EXISTING entity (like adding ai_instruction)
+3. **add_enrichment** - Add a quirk, insight, or note to an EXISTING entity
+4. **research_fill** - Flag that additional research is needed to fill gaps
+
+## Entity Types
+
+### Core Entities (things you create):
+- **platform** - Advertising platforms (Meta, Google Ads, TikTok)
+- **industry** - Business verticals (Retail, Healthcare, Roofing)
+- **product** - Ad product categories (Search, Display, Video)
+- **subproduct** - Product subdivisions
+- **tactic_type** - Specific tactics
+- **soul_doc** - AI prompts and templates
+
+### Enrichment Entities (things you add to existing entities):
+- **platform_quirk** - Gotchas, edge cases, reporting quirks for a platform
+  Fields: title, description, quirk_type (reporting/optimization/creative/targeting), ai_instruction, impact
+- **industry_insight** - Tips, benchmarks, strategies for an industry
+  Fields: title, content, insight_type (trend/benchmark/strategy/warning), ai_instruction
+- **platform_buyer_note** - Practitioner tips for a platform
+  Fields: content, note_type (tip/warning/best_practice)
+
+## Decision Logic
+
+1. **If content describes characteristics OF an existing entity** → add_enrichment or update_field
+   Example: "Facebook's API often double-counts conversions" → platform_quirk for Facebook/Meta
+
+2. **If content describes a NEW entity not in the schema** → create_entity
+   Example: "We should add the Roofing industry" → create industry
+
+3. **If content mentions both existing AND new entities** → multiple actions
+   Example: "In roofing, SEM impression share is critical" →
+   - create industry "Roofing" (if doesn't exist)
+   - add industry_insight for SEM+Roofing
+   - update_field on "Search" product ai_instruction
+
+4. **If you can't determine the right entity** → set requires_research: true
+
+5. **If the intent is unclear** → set clarification_needed with a question
+
+## Confidence Scoring
+- 0.90-1.00: Unambiguous, direct statement
+- 0.70-0.89: Strong implication
+- 0.50-0.69: Reasonable inference
+- Below 0.50: Needs clarification
+
+Always prefer enriching existing entities over creating new ones when the content is about existing things.`
+
+const SMART_EXTRACTION_JSON_SCHEMA = {
+  name: 'smart_extraction_result',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      intent: {
+        type: 'string',
+        enum: ['enrichment', 'creation', 'mixed', 'unclear'],
+        description: 'Overall intent of the content',
+      },
+      intent_confidence: {
+        type: 'number',
+        minimum: 0,
+        maximum: 1,
+      },
+      clarification_needed: {
+        type: ['string', 'null'],
+        description: 'Question to ask user if intent is unclear',
+      },
+      actions: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            action_type: {
+              type: 'string',
+              enum: ['create_entity', 'update_field', 'add_enrichment', 'research_fill'],
+            },
+            entity_type: {
+              type: 'string',
+              enum: ['platform', 'industry', 'product', 'subproduct', 'tactic_type', 'soul_doc', 'platform_quirk', 'industry_insight', 'platform_buyer_note', 'platform_kpi'],
+            },
+            target_entity_id: {
+              type: ['string', 'null'],
+              description: 'ID of existing entity to update/enrich (from matched entities)',
+            },
+            target_entity_name: {
+              type: ['string', 'null'],
+              description: 'Name of existing entity to update/enrich',
+            },
+            target_entity_type: {
+              type: ['string', 'null'],
+              description: 'Type of existing entity to update/enrich',
+            },
+            fields: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  value: { type: ['string', 'number', 'boolean', 'null'] },
+                  confidence: { type: 'number', minimum: 0, maximum: 1 },
+                  reasoning: { type: 'string' },
+                },
+                required: ['name', 'value', 'confidence', 'reasoning'],
+                additionalProperties: false,
+              },
+            },
+            confidence: {
+              type: 'number',
+              minimum: 0,
+              maximum: 1,
+            },
+            reasoning: {
+              type: 'string',
+            },
+            requires_research: {
+              type: 'boolean',
+            },
+          },
+          required: ['action_type', 'entity_type', 'target_entity_id', 'target_entity_name', 'target_entity_type', 'fields', 'confidence', 'reasoning', 'requires_research'],
+          additionalProperties: false,
+        },
+      },
+      summary: {
+        type: 'string',
+        description: 'Human-readable summary of what was extracted',
+      },
+    },
+    required: ['intent', 'intent_confidence', 'clarification_needed', 'actions', 'summary'],
+    additionalProperties: false,
+  },
+}
+
+export interface SmartExtractionOptions {
+  content: string
+  matchedEntitiesContext: string  // Formatted string of matched entities
+  maxTokens?: number
+}
+
+export interface SmartExtractionResponse {
+  intent: 'enrichment' | 'creation' | 'mixed' | 'unclear'
+  intent_confidence: number
+  clarification_needed: string | null
+  actions: Array<{
+    action_type: 'create_entity' | 'update_field' | 'add_enrichment' | 'research_fill'
+    entity_type: string
+    target_entity_id: string | null
+    target_entity_name: string | null
+    target_entity_type: string | null
+    fields: Array<{
+      name: string
+      value: unknown
+      confidence: number
+      reasoning: string
+    }>
+    confidence: number
+    reasoning: string
+    requires_research: boolean
+  }>
+  summary: string
+  usage: {
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
+  }
+}
+
+/**
+ * Smart extraction that understands enrichment vs creation
+ * and uses semantic matching context
+ */
+export async function smartExtract(
+  client: OpenAI,
+  options: SmartExtractionOptions
+): Promise<SmartExtractionResponse> {
+  const { content, matchedEntitiesContext, maxTokens = CURATOR_CONFIG.MAX_TOKENS_PER_REQUEST } = options
+
+  const userPrompt = `Analyze this content and determine the best actions to take:
+
+---
+CONTENT:
+${content}
+---
+
+${matchedEntitiesContext}
+
+Based on the matched entities above and the content, determine:
+1. Is this content meant to ENRICH existing entities or CREATE new ones?
+2. What specific actions should be taken?
+3. For each action, provide the relevant fields and confidence levels.
+
+Remember: Prefer enriching existing entities when the content is about them.`
+
+  const response = await client.chat.completions.create({
+    model: CURATOR_CONFIG.MODEL,
+    max_completion_tokens: maxTokens,
+    temperature: 0.3,
+    messages: [
+      { role: 'system', content: SMART_EXTRACTION_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    response_format: {
+      type: 'json_schema',
+      json_schema: SMART_EXTRACTION_JSON_SCHEMA,
+    },
+  })
+
+  const content_response = response.choices[0]?.message?.content
+  if (!content_response) {
+    throw new Error('No response content from OpenAI')
+  }
+
+  const parsed = JSON.parse(content_response)
+
+  return {
+    ...parsed,
+    usage: {
+      prompt_tokens: response.usage?.prompt_tokens ?? 0,
+      completion_tokens: response.usage?.completion_tokens ?? 0,
+      total_tokens: response.usage?.total_tokens ?? 0,
+    },
+  }
+}
