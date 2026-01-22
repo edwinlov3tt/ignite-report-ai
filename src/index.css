@@ -466,6 +466,16 @@ body {
   transform: translateY(-1px);
 }
 
+.tactic-card-hover:hover .tactic-remove-btn {
+  opacity: 1 !important;
+}
+
+.tactic-remove-btn:hover {
+  background-color: var(--color-error) !important;
+  border-color: var(--color-error) !important;
+  color: white !important;
+}
+
 /* Card grid */
 .card-grid {
   display: grid;

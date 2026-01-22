@@ -11,6 +11,7 @@ import type {
   UploadedFile,
   WorkflowStep,
   ToneType,
+  Initiative,
 } from '@/types';
 
 interface AppState {
@@ -28,6 +29,14 @@ interface AppState {
   detectedTactics: DetectedTactic[];
   setDetectedTactics: (tactics: DetectedTactic[]) => void;
   removeTactic: (tacticName: string) => void;
+  removedTacticIds: string[];
+  setRemovedTacticIds: (ids: string[]) => void;
+  addRemovedTacticId: (id: string) => void;
+
+  // Initiatives
+  initiatives: Initiative[];
+  setInitiatives: (initiatives: Initiative[]) => void;
+  toggleInitiative: (name: string) => void;
 
   // Company Config
   companyConfig: CompanyConfig;
@@ -111,6 +120,22 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           detectedTactics: state.detectedTactics.filter((t) => t.name !== tacticName),
         })),
+      removedTacticIds: [],
+      setRemovedTacticIds: (ids) => set({ removedTacticIds: ids }),
+      addRemovedTacticId: (id) =>
+        set((state) => ({
+          removedTacticIds: [...state.removedTacticIds, id],
+        })),
+
+      // Initiatives
+      initiatives: [],
+      setInitiatives: (initiatives) => set({ initiatives }),
+      toggleInitiative: (name) =>
+        set((state) => ({
+          initiatives: state.initiatives.map((init) =>
+            init.name === name ? { ...init, isActive: !init.isActive } : init
+          ),
+        })),
 
       // Company Config
       companyConfig: defaultCompanyConfig,
@@ -176,6 +201,8 @@ export const useAppStore = create<AppState>()(
           currentStep: 1,
           campaignData: null,
           detectedTactics: [],
+          removedTacticIds: [],
+          initiatives: [],
           companyConfig: defaultCompanyConfig,
           timeRange: null,
           filesByTactic: {},
@@ -193,6 +220,8 @@ export const useAppStore = create<AppState>()(
         currentStep: state.currentStep,
         campaignData: state.campaignData,
         detectedTactics: state.detectedTactics,
+        removedTacticIds: state.removedTacticIds,
+        initiatives: state.initiatives,
         companyConfig: state.companyConfig,
         timeRange: state.timeRange,
         filesByTactic: state.filesByTactic,

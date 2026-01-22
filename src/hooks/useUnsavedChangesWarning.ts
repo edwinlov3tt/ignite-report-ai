@@ -30,7 +30,7 @@ export function useUnsavedChangesWarning(hasUnsavedChanges: boolean) {
   useEffect(() => {
     if (!hasUnsavedChanges) return
 
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = (_e: PopStateEvent) => {
       if (hasUnsavedChanges) {
         const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?')
         if (!confirmed) {

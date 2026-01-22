@@ -148,6 +148,7 @@ export function StepAnalysis() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
   const [activeSection, setActiveSection] = useState('executiveSummary')
+  const [generationError, setGenerationError] = useState<string | null>(null)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const navRef = useRef<HTMLDivElement>(null)
 
@@ -205,6 +206,7 @@ export function StepAnalysis() {
 
   const handleGenerate = async () => {
     setIsGenerating(true)
+    setGenerationError(null)
     setActiveSection('executiveSummary')
 
     const isDemo = campaignData?.id === DEMO_ORDER_ID
@@ -274,7 +276,9 @@ export function StepAnalysis() {
       })
     } catch (err) {
       console.error('Analysis error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to generate analysis')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate analysis'
+      setGenerationError(errorMessage)
+      setError(errorMessage)
     } finally {
       setIsGenerating(false)
     }
@@ -597,11 +601,39 @@ ${reportSections
           padding: '48px',
           backgroundColor: 'var(--color-surface-secondary)',
           borderRadius: 'var(--radius-md)',
-          marginBottom: '24px'
+          marginBottom: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
           <Loader2 size={48} className="animate-spin" style={{ color: 'var(--color-primary)', marginBottom: '16px' }} />
           <p style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>Analyzing your campaign data...</p>
           <p style={{ margin: 0, color: 'var(--color-text-muted)' }}>This may take 30-60 seconds</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {generationError && !isGenerating && (
+        <div style={{
+          padding: '16px 20px',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px'
+        }}>
+          <span style={{ color: 'var(--color-error)', fontSize: '20px', lineHeight: 1 }}>⚠</span>
+          <div>
+            <p style={{ margin: '0 0 4px 0', fontWeight: 600, color: 'var(--color-error)' }}>
+              Analysis Failed
+            </p>
+            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+              {generationError}
+            </p>
+          </div>
         </div>
       )}
 

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   BarChart3, Smartphone, Factory, FileText, ChevronLeft, ChevronRight, ChevronDown,
-  Home, Package, Layers, TestTube, FolderInput, Settings, Bot
+  Home, Package, Layers, TestTube, FolderInput, Settings, Bot, ArrowLeftCircle, Sparkles,
+  BookOpen
 } from 'lucide-react'
 
 interface AdminSidebarProps {
@@ -56,6 +57,12 @@ const mainNavItems: NavItem[] = [
     label: 'Schema Curator',
     icon: <Bot size={20} />,
     path: '/schema-admin/curator'
+  },
+  {
+    id: 'sources',
+    label: 'Research Sources',
+    icon: <BookOpen size={20} />,
+    path: '/schema-admin/sources'
   }
 ]
 
@@ -88,6 +95,12 @@ const configurationsGroup: NavGroup = {
       label: 'Import/Export',
       icon: <FolderInput size={18} />,
       path: '/schema-admin/import-export'
+    },
+    {
+      id: 'extractor-suggestions',
+      label: 'Extractor Suggestions',
+      icon: <Sparkles size={18} />,
+      path: '/schema-admin/extractor-suggestions'
     }
   ]
 }
@@ -275,11 +288,39 @@ export function AdminSidebar({ collapsed, onToggleCollapse, currentPath }: Admin
         {renderNavGroup(configurationsGroup)}
       </nav>
 
-      {/* Footer / Collapse Toggle */}
+      {/* Footer / Return & Collapse */}
       <div style={{
         borderTop: '1px solid var(--color-border)',
-        padding: '12px'
+        padding: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
       }}>
+        {/* Return to Report AI */}
+        <Link
+          to="/"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            gap: '8px',
+            padding: '10px 12px',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--color-primary)',
+            cursor: 'pointer',
+            color: 'white',
+            fontSize: '13px',
+            fontWeight: 500,
+            textDecoration: 'none',
+            transition: 'opacity 0.15s'
+          }}
+        >
+          <ArrowLeftCircle size={18} />
+          {!collapsed && <span>Return to Report AI</span>}
+        </Link>
+
+        {/* Collapse Toggle */}
         <button
           onClick={onToggleCollapse}
           style={{

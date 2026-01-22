@@ -2,19 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [Unreleased] - Current Development
 
 ### Added
--
+- **PPTX Integration**: PowerPoint extraction and preview capabilities
+- **Enhanced Curator**: Product research and semantic matching features
+- **Advanced Analytics**: Performance tables and comprehensive data audit tools
+- **Vector Search**: Embeddings-based content discovery with pgvector
+- **Field Discovery**: Automatic schema field detection from Lumina data
+- **Extractor Suggestions**: AI-powered data extraction recommendations
 
-### Changed
--
-
-### Fixed
--
-
-### Removed
--
+### Modified (In Progress)
+- 24 files with ongoing enhancements across frontend and backend
+- Worker routes for curator services and schema APIs
+- Enhanced state management with new data types
+- Updated design tokens and component styles
 
 ---
 

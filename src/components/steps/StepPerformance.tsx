@@ -1,6 +1,10 @@
-import { useCallback, useState, useRef } from 'react'
+import { useCallback, useState, useRef, useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { parseCSV, extractZip, createUploadedFile } from '@/lib/fileParser'
+import { getSubproductHeadersMap, type SubproductHeadersMap } from '@/lib/schemaApi'
+import { usePPTXUpload } from '@/hooks/usePPTXUpload'
+import { PPTXPreviewModal } from './PPTXPreviewModal'
+import type { UploadedFile } from '@/types'
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,6 +13,7 @@ import {
   Loader2,
   ExternalLink,
   Package,
+  Presentation,
 } from 'lucide-react'
 
 // Tactic to report type mappings
@@ -69,7 +74,29 @@ export function StepPerformance() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingStatus, setProcessingStatus] = useState('')
   const [dragOverTactic, setDragOverTactic] = useState<string | null>(null)
+  const [showPPTXModal, setShowPPTXModal] = useState(false)
+  const [subproductHeaders, setSubproductHeaders] = useState<SubproductHeadersMap>({})
   const bulkInputRef = useRef<HTMLInputElement>(null)
+  const pptxInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch subproduct headers from database on mount
+  useEffect(() => {
+    getSubproductHeadersMap()
+      .then(setSubproductHeaders)
+      .catch((err) => console.error('Failed to load subproduct headers:', err))
+  }, [])
+
+  // PPTX upload hook
+  const {
+    isLoading: isPPTXLoading,
+    error: pptxError,
+    data: pptxData,
+    uploadPPTX,
+    reset: resetPPTX,
+    assignTactic,
+    toggleIncluded,
+    updateCell,
+  } = usePPTXUpload()
 
   const detectedTactics = useAppStore((state) => state.detectedTactics)
   const filesByTactic = useAppStore((state) => state.filesByTactic)
@@ -246,6 +273,64 @@ export function StepPerformance() {
     await processFilesForTactic(files, tacticName)
   }
 
+  // Get expected headers for a tactic (used for PPTX validation)
+  // Fetches from performance_tables schema in database, falls back to defaults
+  const getExpectedHeadersForTactic = useCallback((tacticName: string): string[] => {
+    // Find the matching tactic to get the subProduct name
+    const tactic = detectedTactics.find(t => t.name === tacticName)
+
+    if (tactic?.subProduct && subproductHeaders[tactic.subProduct]) {
+      // Return headers from database
+      return subproductHeaders[tactic.subProduct].headers
+    }
+
+    // Also try matching by product name in case subProduct is empty
+    if (tactic?.product && subproductHeaders[tactic.product]) {
+      return subproductHeaders[tactic.product].headers
+    }
+
+    // Fallback: try matching the tactic name directly (for backwards compatibility)
+    if (subproductHeaders[tacticName]) {
+      return subproductHeaders[tacticName].headers
+    }
+
+    // Final fallback: hardcoded defaults for common tactics
+    const defaultHeadersByTactic: Record<string, string[]> = {
+      'Email Marketing': ['Campaign', 'Sends', 'Opens', 'Clicks', 'CTR', 'Open Rate'],
+      'Social Media': ['Campaign', 'Impressions', 'Reach', 'Clicks', 'CTR', 'Engagement'],
+      'Display': ['Campaign', 'Impressions', 'Clicks', 'CTR', 'Spend', 'CPC', 'CPM'],
+      'Paid Search': ['Campaign', 'Impressions', 'Clicks', 'CTR', 'Spend', 'CPC'],
+      'SEM': ['Campaign', 'Impressions', 'Clicks', 'CTR', 'Spend', 'CPC'],
+      'OTT': ['Campaign', 'Impressions', 'Completions', 'Completion Rate', 'Spend'],
+      'CTV': ['Campaign', 'Impressions', 'Completions', 'Completion Rate', 'Spend'],
+      'Video': ['Campaign', 'Impressions', 'Views', 'Completions', 'View Rate'],
+      'Audio': ['Campaign', 'Impressions', 'Listens', 'Completion Rate', 'Spend'],
+      'Native': ['Campaign', 'Impressions', 'Clicks', 'CTR', 'Spend'],
+    }
+    return defaultHeadersByTactic[tacticName] || []
+  }, [detectedTactics, subproductHeaders])
+
+  // PPTX upload handler
+  const handlePPTXUpload = async (file: File) => {
+    await uploadPPTX(file)
+    setShowPPTXModal(true)
+  }
+
+  // Handle PPTX import (from modal)
+  const handlePPTXImport = (files: UploadedFile[]) => {
+    for (const file of files) {
+      addFileToTactic(file.tacticName, file)
+    }
+    resetPPTX()
+    setShowPPTXModal(false)
+  }
+
+  // Close PPTX modal
+  const handleClosePPTXModal = () => {
+    setShowPPTXModal(false)
+    resetPPTX()
+  }
+
   // Calculate progress
   const totalTactics = detectedTactics.length
   const tacticsWithFiles = detectedTactics.filter(t => (filesByTactic[t.name]?.length || 0) > 0).length
@@ -314,6 +399,65 @@ export function StepPerformance() {
               ZIP files will be extracted and CSVs automatically sorted to tactics
             </span>
           </div>
+        )}
+      </div>
+
+      {/* PowerPoint Upload */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '24px',
+        }}
+      >
+        <input
+          ref={pptxInputRef}
+          type="file"
+          accept=".pptx"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) handlePPTXUpload(file)
+            e.target.value = ''
+          }}
+          disabled={isPPTXLoading}
+        />
+        <button
+          onClick={() => pptxInputRef.current?.click()}
+          disabled={isPPTXLoading}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 24px',
+            borderRadius: 'var(--radius-md)',
+            border: '2px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: isPPTXLoading ? 'not-allowed' : 'pointer',
+            opacity: isPPTXLoading ? 0.6 : 1,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {isPPTXLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Extracting tables...
+            </>
+          ) : (
+            <>
+              <Presentation size={18} />
+              Upload PowerPoint
+            </>
+          )}
+        </button>
+        {pptxError && (
+          <span style={{ marginLeft: '12px', color: 'var(--color-error)', fontSize: '14px' }}>
+            {pptxError}
+          </span>
         )}
       </div>
 
@@ -550,6 +694,21 @@ export function StepPerformance() {
           <ChevronRight size={20} />
         </button>
       </div>
+
+      {/* PPTX Preview Modal */}
+      {showPPTXModal && pptxData && (
+        <PPTXPreviewModal
+          isOpen={showPPTXModal}
+          data={pptxData}
+          detectedTactics={detectedTactics}
+          getExpectedHeaders={getExpectedHeadersForTactic}
+          onClose={handleClosePPTXModal}
+          onImport={handlePPTXImport}
+          onAssignTactic={assignTactic}
+          onToggleIncluded={toggleIncluded}
+          onUpdateCell={updateCell}
+        />
+      )}
     </div>
   )
 }

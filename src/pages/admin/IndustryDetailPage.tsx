@@ -756,7 +756,7 @@ export function IndustryDetailPage() {
                           }}>
                             <strong style={{ color: 'var(--color-primary)' }}>{q.toUpperCase()}</strong>
                             <p style={{ margin: '4px 0 0 0', color: 'var(--color-text-muted)' }}>
-                              {industry.curator_seasonality.quarterly_trends?.[q as 'q1' | 'q2' | 'q3' | 'q4'] || '—'}
+                              {industry.curator_seasonality?.quarterly_trends?.[q as 'q1' | 'q2' | 'q3' | 'q4'] || '—'}
                             </p>
                           </div>
                         ))}

@@ -13,6 +13,14 @@ export interface LineItem {
   platform?: string;
   totalBudget?: number;
   monthlyBudget?: number;
+  initiative?: string;
+}
+
+// Initiative tracking
+export interface Initiative {
+  name: string;
+  lineItemCount: number;
+  isActive: boolean;
 }
 
 export interface CampaignData {
@@ -55,7 +63,7 @@ export interface UploadedFile {
   tacticName: string;
   confidence: number;
   autoSorted: boolean;
-  source: 'manual' | 'zip_extraction' | 'drag_drop';
+  source: 'manual' | 'zip_extraction' | 'drag_drop' | 'pptx_extraction';
   uploadedAt: Date;
 }
 

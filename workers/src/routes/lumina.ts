@@ -6,6 +6,41 @@
 import { Context } from 'hono'
 import type { Env, LuminaRequest, LuminaResponse } from '../types/bindings'
 import { getLuminaCache, setLuminaCache } from '../storage/kv'
+import { discoverFields, discoverOrderFields, saveDiscoveredFields } from '../services/fieldDiscovery'
+import { createSupabaseClient } from '../services/supabase'
+
+/**
+ * Run field discovery in background (non-blocking)
+ * This automatically catalogs new fields from Lumina responses
+ */
+async function runFieldDiscovery(env: Env, orderId: string, data: Record<string, unknown>): Promise<void> {
+  try {
+    const startTime = Date.now()
+    const lineItems = (data.lineItems || data.items || []) as unknown[]
+    const orderData = data.order || data
+
+    // Discover fields
+    const lineItemFields = discoverFields(lineItems)
+    const orderFields = discoverOrderFields(orderData)
+    const allFields = [...lineItemFields, ...orderFields]
+
+    // Save to database
+    const supabase = createSupabaseClient(env)
+    const companyName = (orderData as Record<string, unknown>).companyName as string | undefined
+    const result = await saveDiscoveredFields(
+      supabase,
+      allFields,
+      orderId,
+      companyName,
+      lineItems.length
+    )
+
+    console.log(`Field discovery completed for order ${orderId}: ${result.newFields} new, ${result.updatedFields} updated (${Date.now() - startTime}ms)`)
+  } catch (error) {
+    console.error(`Field discovery failed for order ${orderId}:`, error)
+    // Don't throw - this is a background task
+  }
+}
 
 /**
  * POST /lumina
@@ -55,11 +90,14 @@ export async function handleLumina(c: Context<{ Bindings: Env }>): Promise<Respo
       }, response.status as 400 | 500)
     }
 
-    const data = await response.json()
+    const data = await response.json() as Record<string, unknown>
 
     // Cache the response (10 minute TTL)
     await setLuminaCache(c.env, orderId, data)
     console.log(`Lumina response cached for order: ${orderId}`)
+
+    // Run field discovery in the background (non-blocking)
+    c.executionCtx.waitUntil(runFieldDiscovery(c.env, orderId, data))
 
     return c.json({
       success: true,

@@ -149,3 +149,37 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+/**
+ * Validate extracted headers against expected schema headers
+ * Returns detailed match information including confidence score
+ */
+export function validateHeadersAgainstSchema(
+  extractedHeaders: string[],
+  expectedHeaders: string[]
+): {
+  confidence: number;
+  matchedHeaders: string[];
+  missingHeaders: string[];
+  extraHeaders: string[];
+} {
+  // Use existing Jaccard similarity for confidence score
+  const confidence = calculateJaccardSimilarity(extractedHeaders, expectedHeaders);
+
+  // Normalize headers for comparison
+  const extractedSet = new Set(extractedHeaders.map((h) => h.toLowerCase().trim()));
+  const expectedSet = new Set(expectedHeaders.map((h) => h.toLowerCase().trim()));
+
+  // Find matched, missing, and extra headers
+  const matchedHeaders = expectedHeaders.filter((h) =>
+    extractedSet.has(h.toLowerCase().trim())
+  );
+  const missingHeaders = expectedHeaders.filter(
+    (h) => !extractedSet.has(h.toLowerCase().trim())
+  );
+  const extraHeaders = extractedHeaders.filter(
+    (h) => !expectedSet.has(h.toLowerCase().trim())
+  );
+
+  return { confidence, matchedHeaders, missingHeaders, extraHeaders };
+}

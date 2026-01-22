@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAppStore } from '@/store/useAppStore'
-import { Search, Loader2, ChevronRight, X, ExternalLink } from 'lucide-react'
-import type { LineItem, CampaignData, DetectedTactic } from '@/types'
+import { Search, Loader2, ChevronRight, ChevronDown, X, ExternalLink, Check, DollarSign, Calendar, Layers, Target } from 'lucide-react'
+import type { LineItem, CampaignData, DetectedTactic, Initiative } from '@/types'
 
 // Demo mode constant
 export const DEMO_ORDER_ID = '507f1f77bcf86cd799439011'
@@ -31,6 +31,7 @@ const DEMO_CAMPAIGN_DATA: CampaignData = {
       woOrderNumber: 'WO-2024-DEMO-001',
       totalBudget: 25000,
       monthlyBudget: 2083,
+      initiative: 'Brand Awareness',
     },
     {
       id: 'demo-li-002',
@@ -44,6 +45,7 @@ const DEMO_CAMPAIGN_DATA: CampaignData = {
       woOrderNumber: 'WO-2024-DEMO-001',
       totalBudget: 35000,
       monthlyBudget: 2917,
+      initiative: 'Lead Generation',
     },
     {
       id: 'demo-li-003',
@@ -57,6 +59,7 @@ const DEMO_CAMPAIGN_DATA: CampaignData = {
       woOrderNumber: 'WO-2024-DEMO-001',
       totalBudget: 15000,
       monthlyBudget: 1250,
+      initiative: 'Lead Generation',
     },
     {
       id: 'demo-li-004',
@@ -70,6 +73,7 @@ const DEMO_CAMPAIGN_DATA: CampaignData = {
       woOrderNumber: 'WO-2024-DEMO-001',
       totalBudget: 20000,
       monthlyBudget: 1667,
+      initiative: 'Brand Awareness',
     },
     {
       id: 'demo-li-005',
@@ -83,6 +87,7 @@ const DEMO_CAMPAIGN_DATA: CampaignData = {
       woOrderNumber: 'WO-2024-DEMO-001',
       totalBudget: 18000,
       monthlyBudget: 3000,
+      initiative: 'Product Launch',
     },
   ],
 }
@@ -103,6 +108,28 @@ function formatDate(dateString: string): string {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC'
+  })
+}
+
+// Helper function to format currency
+function formatCurrency(amount: number): string {
+  if (!amount) return '--'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+// Helper function to format short date (MMM 'YY)
+function formatShortDate(dateString: string): string {
+  if (!dateString) return '--'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: '2-digit',
     timeZone: 'UTC'
   })
 }
@@ -143,19 +170,49 @@ interface TacticGroup {
   tacticSpecial: string
   lineItems: LineItem[]
   status: string
+  // Aggregated data for display
+  totalBudget: number
+  monthlyBudget: number
+  earliestStart: string | null
+  latestEnd: string | null
+  subProducts: string[]
+  tacticTypes: string[]
+  initiatives: string[]
+}
+
+// Helper function to extract unique initiatives from line items
+function extractInitiatives(lineItems: LineItem[]): Initiative[] {
+  const initiativeMap = new Map<string, number>()
+
+  lineItems.forEach(item => {
+    const initiative = item.initiative || 'Uncategorized'
+    initiativeMap.set(initiative, (initiativeMap.get(initiative) || 0) + 1)
+  })
+
+  return Array.from(initiativeMap.entries()).map(([name, count]) => ({
+    name,
+    lineItemCount: count,
+    isActive: true, // All initiatives active by default
+  }))
 }
 
 export function StepCampaign() {
   const [url, setUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedTactic, setSelectedTactic] = useState<TacticGroup | null>(null)
-  const [removedTacticIds, setRemovedTacticIds] = useState<Set<string>>(new Set())
+  const [initiativesCollapsed, setInitiativesCollapsed] = useState(false)
 
+  // Store state (persisted)
   const campaignData = useAppStore((state) => state.campaignData)
   const setCampaignData = useAppStore((state) => state.setCampaignData)
-  const detectedTactics = useAppStore((state) => state.detectedTactics)
   const setDetectedTactics = useAppStore((state) => state.setDetectedTactics)
   const removeTactic = useAppStore((state) => state.removeTactic)
+  const removedTacticIds = useAppStore((state) => state.removedTacticIds)
+  const setRemovedTacticIds = useAppStore((state) => state.setRemovedTacticIds)
+  const addRemovedTacticId = useAppStore((state) => state.addRemovedTacticId)
+  const initiatives = useAppStore((state) => state.initiatives)
+  const setInitiatives = useAppStore((state) => state.setInitiatives)
+  const toggleInitiative = useAppStore((state) => state.toggleInitiative)
   const setError = useAppStore((state) => state.setError)
   const nextStep = useAppStore((state) => state.nextStep)
 
@@ -172,7 +229,8 @@ export function StepCampaign() {
     setTimeout(() => {
       setCampaignData(DEMO_CAMPAIGN_DATA)
       setDetectedTactics(DEMO_TACTICS)
-      setRemovedTacticIds(new Set())
+      setRemovedTacticIds([])
+      setInitiatives(extractInitiatives(DEMO_CAMPAIGN_DATA.lineItems))
       setIsLoading(false)
     }, 1000)
   }
@@ -246,6 +304,22 @@ export function StepCampaign() {
         orderStatus = Object.entries(statusCounts).sort((a, b) => b[1] - a[1])[0][0]
       }
 
+      // Transform line items with initiative
+      const transformedLineItems: LineItem[] = lineItems.map((item: Record<string, unknown>) => ({
+        id: (item.lineitemId || item._id || item.id || String(Math.random())) as string,
+        product: (item.product || 'Unknown') as string,
+        subProduct: normalizeSubProduct(item.subProduct),
+        tacticTypeSpecial: item.tacticTypeSpecial as string | string[] | undefined,
+        status: (item.status || 'Unknown') as string,
+        workflowStepName: item.workflowStepName as string | undefined,
+        startDate: (item.startDate || '') as string,
+        endDate: (item.endDate || '') as string,
+        woOrderNumber: (item.woOrderNumber || item.wideOrbitNumber) as string | undefined,
+        totalBudget: item.totalBudget as number | undefined,
+        monthlyBudget: item.monthlyBudget as number | undefined,
+        initiative: (item.campaignInitiative || item.initiative) as string | undefined,
+      }))
+
       // Transform to expected format
       setCampaignData({
         id: orderData.orderId || orderId,
@@ -258,39 +332,18 @@ export function StepCampaign() {
         status: orderStatus,
         daysElapsed: 0,
         daysRemaining: 0,
-        lineItems: lineItems.map((item: Record<string, unknown>) => ({
-          id: (item.lineitemId || item._id || item.id || String(Math.random())) as string,
-          product: (item.product || 'Unknown') as string,
-          subProduct: normalizeSubProduct(item.subProduct),
-          tacticTypeSpecial: item.tacticTypeSpecial as string | string[] | undefined,
-          status: (item.status || 'Unknown') as string,
-          workflowStepName: item.workflowStepName as string | undefined,
-          startDate: (item.startDate || '') as string,
-          endDate: (item.endDate || '') as string,
-          woOrderNumber: (item.woOrderNumber || item.wideOrbitNumber) as string | undefined,
-          totalBudget: item.totalBudget as number | undefined,
-          monthlyBudget: item.monthlyBudget as number | undefined,
-        })),
+        lineItems: transformedLineItems,
       })
 
-      // Group line items by product to create tactics
+      // Extract and set initiatives
+      setInitiatives(extractInitiatives(transformedLineItems))
+
+      // Group line items by product to create tactics (use transformed line items)
       const tacticMap = new Map<string, LineItem[]>()
-      lineItems.forEach((item: Record<string, unknown>) => {
-        const key = item.product as string || 'Unknown'
+      transformedLineItems.forEach((item) => {
+        const key = item.product || 'Unknown'
         const existing = tacticMap.get(key) || []
-        existing.push({
-          id: (item.lineitemId || item._id || item.id || String(Math.random())) as string,
-          product: (item.product || 'Unknown') as string,
-          subProduct: normalizeSubProduct(item.subProduct),
-          tacticTypeSpecial: item.tacticTypeSpecial as string | string[] | undefined,
-          status: (item.status || 'Unknown') as string,
-          workflowStepName: item.workflowStepName as string | undefined,
-          startDate: (item.startDate || '') as string,
-          endDate: (item.endDate || '') as string,
-          woOrderNumber: (item.woOrderNumber || item.wideOrbitNumber) as string | undefined,
-          totalBudget: item.totalBudget as number | undefined,
-          monthlyBudget: item.monthlyBudget as number | undefined,
-        })
+        existing.push(item)
         tacticMap.set(key, existing)
       })
 
@@ -307,7 +360,7 @@ export function StepCampaign() {
         }
       })
       setDetectedTactics(tactics)
-      setRemovedTacticIds(new Set())
+      setRemovedTacticIds([])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch campaign')
     } finally {
@@ -318,8 +371,20 @@ export function StepCampaign() {
   const handleRemoveTactic = (tacticName: string, e: React.MouseEvent) => {
     e.stopPropagation()
     removeTactic(tacticName)
-    setRemovedTacticIds(prev => new Set([...prev, tacticName]))
+    addRemovedTacticId(tacticName)
   }
+
+  // Get active initiative names for filtering
+  const activeInitiativeNames = useMemo(() =>
+    new Set(initiatives.filter(i => i.isActive).map(i => i.name)),
+    [initiatives]
+  )
+
+  // Convert removedTacticIds array to Set for efficient lookup
+  const removedTacticIdsSet = useMemo(() =>
+    new Set(removedTacticIds),
+    [removedTacticIds]
+  )
 
   const handleContinue = () => {
     if (campaignData) {
@@ -327,29 +392,117 @@ export function StepCampaign() {
     }
   }
 
-  // Group line items by product for tactic cards
-  const tacticGroups: TacticGroup[] = campaignData?.lineItems
-    ? Array.from(
-        campaignData.lineItems.reduce((map, item) => {
-          const key = item.product
-          const existing = map.get(key) || {
-            platform: item.product,
-            subProduct: item.subProduct,
-            tacticSpecial: Array.isArray(item.tacticTypeSpecial)
-              ? item.tacticTypeSpecial.join(', ')
-              : item.tacticTypeSpecial || '',
-            lineItems: [],
-            status: '',
-          }
-          existing.lineItems.push(item)
-          existing.status = getMostCommonStatus(existing.lineItems)
-          map.set(key, existing)
-          return map
-        }, new Map<string, TacticGroup>())
-      ).map(([, group]) => group).filter(g => !removedTacticIds.has(g.platform))
-    : []
+  // Group line items by product for tactic cards with aggregated data
+  // First filter by active initiatives, then group by product
+  const tacticGroups: TacticGroup[] = useMemo(() => {
+    if (!campaignData?.lineItems) return []
 
-  const activeTacticsCount = detectedTactics.filter(t => !removedTacticIds.has(t.name)).length
+    // Filter line items by active initiatives
+    const filteredLineItems = campaignData.lineItems.filter(item => {
+      const initiative = item.initiative || 'Uncategorized'
+      return activeInitiativeNames.has(initiative)
+    })
+
+    return Array.from(
+      filteredLineItems.reduce((map, item) => {
+        const key = item.product
+        const existing = map.get(key) || {
+          platform: item.product,
+          subProduct: item.subProduct,
+          tacticSpecial: Array.isArray(item.tacticTypeSpecial)
+            ? item.tacticTypeSpecial.join(', ')
+            : item.tacticTypeSpecial || '',
+          lineItems: [],
+          status: '',
+          totalBudget: 0,
+          monthlyBudget: 0,
+          earliestStart: null as string | null,
+          latestEnd: null as string | null,
+          subProducts: [] as string[],
+          tacticTypes: [] as string[],
+          initiatives: [] as string[],
+        }
+        existing.lineItems.push(item)
+        existing.status = getMostCommonStatus(existing.lineItems)
+
+        // Aggregate budgets
+        if (item.totalBudget) existing.totalBudget += item.totalBudget
+        if (item.monthlyBudget) existing.monthlyBudget += item.monthlyBudget
+
+        // Track date range (earliest start, latest end)
+        if (item.startDate) {
+          if (!existing.earliestStart || item.startDate < existing.earliestStart) {
+            existing.earliestStart = item.startDate
+          }
+        }
+        if (item.endDate) {
+          if (!existing.latestEnd || item.endDate > existing.latestEnd) {
+            existing.latestEnd = item.endDate
+          }
+        }
+
+        // Collect unique sub-products
+        if (item.subProduct && !existing.subProducts.includes(item.subProduct)) {
+          existing.subProducts.push(item.subProduct)
+        }
+
+        // Collect unique tactic types
+        const tactics = Array.isArray(item.tacticTypeSpecial)
+          ? item.tacticTypeSpecial
+          : item.tacticTypeSpecial ? [item.tacticTypeSpecial] : []
+        tactics.forEach(t => {
+          if (t && !existing.tacticTypes.includes(t)) {
+            existing.tacticTypes.push(t)
+          }
+        })
+
+        // Collect unique initiatives
+        const initiative = item.initiative || 'Uncategorized'
+        if (!existing.initiatives.includes(initiative)) {
+          existing.initiatives.push(initiative)
+        }
+
+        map.set(key, existing)
+        return map
+      }, new Map<string, TacticGroup>())
+    ).map(([, group]) => group).filter(g => !removedTacticIdsSet.has(g.platform))
+  }, [campaignData?.lineItems, activeInitiativeNames, removedTacticIdsSet])
+
+  // Computed stats for quick stats bar (based on filtered data)
+  const quickStats = useMemo(() => {
+    const totalBudget = tacticGroups.reduce((sum, g) => sum + g.totalBudget, 0)
+    const totalMonthly = tacticGroups.reduce((sum, g) => sum + g.monthlyBudget, 0)
+    const totalLineItems = tacticGroups.reduce((sum, g) => sum + g.lineItems.length, 0)
+    const productCount = tacticGroups.length
+
+    // Find date range across all filtered groups
+    let earliestStart: string | null = null
+    let latestEnd: string | null = null
+    tacticGroups.forEach(g => {
+      if (g.earliestStart && (!earliestStart || g.earliestStart < earliestStart)) {
+        earliestStart = g.earliestStart
+      }
+      if (g.latestEnd && (!latestEnd || g.latestEnd > latestEnd)) {
+        latestEnd = g.latestEnd
+      }
+    })
+
+    // Collect unique initiatives in filtered data
+    const activeInitiatives = new Set<string>()
+    tacticGroups.forEach(g => {
+      g.initiatives.forEach(init => activeInitiatives.add(init))
+    })
+
+    return {
+      totalBudget,
+      totalMonthly,
+      totalLineItems,
+      productCount,
+      initiativeCount: activeInitiatives.size,
+      earliestStart,
+      latestEnd,
+    }
+  }, [tacticGroups])
 
   return (
     <div className="report-container animate-fade-in">
@@ -402,6 +555,114 @@ export function StepCampaign() {
         <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '24px', marginTop: '24px' }}>
           <h3 style={{ color: 'var(--color-primary)', fontSize: '20px', marginBottom: '16px' }}>Campaign Summary</h3>
 
+          {/* Quick Stats Bar */}
+          {tacticGroups.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '12px',
+              padding: '16px',
+              backgroundColor: 'var(--color-surface-secondary)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '24px',
+              border: '1px solid var(--color-border)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <DollarSign size={20} style={{ color: 'rgb(34, 197, 94)' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Total Budget</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>{formatCurrency(quickStats.totalBudget)}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Calendar size={20} style={{ color: 'rgb(59, 130, 246)' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Flight Dates</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text)' }}>
+                    {quickStats.earliestStart && quickStats.latestEnd
+                      ? `${formatShortDate(quickStats.earliestStart)} → ${formatShortDate(quickStats.latestEnd)}`
+                      : '--'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Layers size={20} style={{ color: 'rgb(168, 85, 247)' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Products</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>{quickStats.productCount}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Target size={20} style={{ color: 'rgb(249, 115, 22)' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Initiatives</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>{quickStats.initiativeCount}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <ChevronRight size={20} style={{ color: 'rgb(236, 72, 153)' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Line Items</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>{quickStats.totalLineItems}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Info Grid - 4 columns */}
           <div style={{
             display: 'grid',
@@ -433,9 +694,240 @@ export function StepCampaign() {
             </div>
           </div>
 
+          {/* Initiative Chips - Collapsible */}
+          {initiatives.length > 0 && (
+            <div style={{
+              marginBottom: '24px',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              overflow: 'hidden',
+            }}>
+              {/* Collapsible Header */}
+              <button
+                onClick={() => setInitiativesCollapsed(!initiativesCollapsed)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  backgroundColor: 'var(--color-surface-secondary)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <ChevronDown
+                    size={18}
+                    style={{
+                      transform: initiativesCollapsed ? 'rotate(-90deg)' : 'rotate(0)',
+                      transition: 'transform 0.2s',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  />
+                  <span style={{ fontWeight: 600, fontSize: '15px' }}>
+                    Initiatives
+                  </span>
+                  <span style={{
+                    fontSize: '12px',
+                    padding: '2px 8px',
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'white',
+                    borderRadius: 'var(--radius-sm)',
+                  }}>
+                    {initiatives.filter(i => i.isActive).length}/{initiatives.length} active
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: '12px',
+                  color: 'var(--color-text-muted)',
+                }}>
+                  {initiativesCollapsed ? 'Click to expand' : 'Click to collapse'}
+                </span>
+              </button>
+
+              {/* Collapsible Content */}
+              {!initiativesCollapsed && (
+                <div style={{ padding: '16px' }}>
+                  <p style={{
+                    fontSize: '13px',
+                    color: 'var(--color-text-muted)',
+                    marginBottom: '12px',
+                    marginTop: 0,
+                  }}>
+                    Toggle initiatives to include/exclude from analysis
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {initiatives.map((init) => (
+                      <button
+                        key={init.name}
+                        onClick={() => toggleInitiative(init.name)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 14px',
+                          borderRadius: 'var(--radius-md)',
+                          border: init.isActive
+                            ? '2px solid var(--color-primary)'
+                            : '2px solid var(--color-border)',
+                          backgroundColor: init.isActive
+                            ? 'var(--color-primary)'
+                            : 'var(--color-surface)',
+                          color: init.isActive
+                            ? 'white'
+                            : 'var(--color-text-secondary)',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          opacity: init.isActive ? 1 : 0.6,
+                        }}
+                      >
+                        {init.isActive && <Check size={16} />}
+                        {init.name}
+                        <span style={{
+                          backgroundColor: init.isActive
+                            ? 'rgba(255,255,255,0.2)'
+                            : 'var(--color-surface-secondary)',
+                          padding: '2px 6px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                        }}>
+                          {init.lineItemCount}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {initiatives.some(i => !i.isActive) && (
+                    <p style={{
+                      marginTop: '12px',
+                      marginBottom: 0,
+                      fontSize: '13px',
+                      color: 'var(--color-warning)',
+                      fontStyle: 'italic',
+                    }}>
+                      ⚠️ {initiatives.filter(i => !i.isActive).length} initiative(s) excluded from analysis
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Budget Summary by Product */}
+          {tacticGroups.length > 0 && quickStats.totalBudget > 0 && (
+            <div style={{
+              marginBottom: '24px',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                padding: '12px 16px',
+                backgroundColor: 'var(--color-surface-secondary)',
+                borderBottom: '1px solid var(--color-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <DollarSign size={18} style={{ color: 'var(--color-primary)' }} />
+                  <span style={{ fontWeight: 600, fontSize: '15px' }}>Budget Breakdown by Product</span>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' }}>
+                  {formatCurrency(quickStats.totalBudget)}
+                </span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--color-surface-secondary)' }}>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+                        Product
+                      </th>
+                      <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+                        Line Items
+                      </th>
+                      <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+                        Total Budget
+                      </th>
+                      <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+                        Monthly
+                      </th>
+                      <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+                        % of Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tacticGroups
+                      .slice()
+                      .sort((a, b) => b.totalBudget - a.totalBudget)
+                      .map((group, idx) => {
+                        const percentage = quickStats.totalBudget > 0
+                          ? ((group.totalBudget / quickStats.totalBudget) * 100).toFixed(1)
+                          : '0'
+                        return (
+                          <tr
+                            key={group.platform}
+                            style={{
+                              backgroundColor: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-secondary)',
+                            }}
+                          >
+                            <td style={{ padding: '10px 16px', fontWeight: 500, color: 'var(--color-text)' }}>
+                              {group.platform}
+                            </td>
+                            <td style={{ padding: '10px 16px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+                              {group.lineItems.length}
+                            </td>
+                            <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: 'var(--color-text)' }}>
+                              {formatCurrency(group.totalBudget)}
+                            </td>
+                            <td style={{ padding: '10px 16px', textAlign: 'right', color: 'var(--color-text-secondary)' }}>
+                              {formatCurrency(group.monthlyBudget)}
+                            </td>
+                            <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                                <div style={{
+                                  width: '60px',
+                                  height: '6px',
+                                  backgroundColor: 'var(--color-border)',
+                                  borderRadius: '3px',
+                                  overflow: 'hidden',
+                                }}>
+                                  <div style={{
+                                    width: `${percentage}%`,
+                                    height: '100%',
+                                    backgroundColor: 'var(--color-primary)',
+                                    borderRadius: '3px',
+                                    transition: 'width 0.3s ease',
+                                  }} />
+                                </div>
+                                <span style={{ color: 'var(--color-text-secondary)', minWidth: '45px' }}>
+                                  {percentage}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Line Items Header */}
           <h4 style={{ marginBottom: '8px' }}>
-            Discovered Line Items: <span style={{ color: 'var(--color-primary)' }}>{activeTacticsCount}</span>
+            Discovered Tactics: <span style={{ color: 'var(--color-primary)' }}>{tacticGroups.length}</span>
+            {tacticGroups.length > 0 && (
+              <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: '14px', marginLeft: '8px' }}>
+                ({tacticGroups.reduce((sum, g) => sum + g.lineItems.length, 0)} line items)
+              </span>
+            )}
           </h4>
           <p className="form-description" style={{ marginBottom: '16px' }}>
             Remove unneeded tactics with the X on each chip.
@@ -444,7 +936,7 @@ export function StepCampaign() {
           {/* Tactic Cards Grid */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
             gap: '16px',
             marginBottom: '24px'
           }}>
@@ -460,7 +952,7 @@ export function StepCampaign() {
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: '140px',
+                  minHeight: '180px',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
@@ -470,30 +962,113 @@ export function StepCampaign() {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '8px'
+                  alignItems: 'flex-start',
+                  marginBottom: '12px'
                 }}>
-                  <h5 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{group.platform}</h5>
+                  <h5 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                    {group.platform}
+                  </h5>
                   <span className={`tactic-badge ${getStatusClass(group.status)}`}>
                     {group.status}
                   </span>
                 </div>
 
-                {/* SubProduct and Tactic Special */}
-                <div style={{ flex: 1, marginBottom: '8px' }}>
-                  {group.subProduct && (
-                    <div style={{ fontWeight: 500, marginBottom: '4px' }}>{group.subProduct}</div>
-                  )}
-                  {group.tacticSpecial && (
-                    <div style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '14px' }}>
-                      {group.tacticSpecial}
+                {/* Sub-products list */}
+                {group.subProducts.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {group.subProducts.slice(0, 3).map((sp) => (
+                        <span
+                          key={sp}
+                          style={{
+                            fontSize: '12px',
+                            padding: '2px 8px',
+                            backgroundColor: 'var(--color-surface-secondary)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--color-text-secondary)',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
+                          {sp}
+                        </span>
+                      ))}
+                      {group.subProducts.length > 3 && (
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            padding: '2px 8px',
+                            backgroundColor: 'var(--color-primary)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'white',
+                          }}
+                        >
+                          +{group.subProducts.length - 3} more
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* Tactic types */}
+                {group.tacticTypes.length > 0 && (
+                  <div style={{ marginBottom: '12px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+                    <span style={{ fontStyle: 'italic' }}>
+                      {group.tacticTypes.join(' • ')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Budget and Date info */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px',
+                  padding: '10px',
+                  backgroundColor: 'var(--color-surface-secondary)',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: '8px',
+                  flex: 1,
+                }}>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Total Budget
+                    </div>
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' }}>
+                      {formatCurrency(group.totalBudget)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Monthly
+                    </div>
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' }}>
+                      {formatCurrency(group.monthlyBudget)}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Flight Dates
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                      {group.earliestStart && group.latestEnd
+                        ? `${formatShortDate(group.earliestStart)} → ${formatShortDate(group.latestEnd)}`
+                        : '--'}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Line Items Count */}
-                <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-                  Line Items: {group.lineItems.length}
+                {/* Footer: Line Items Count */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '8px',
+                  borderTop: '1px solid var(--color-border)',
+                }}>
+                  <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                    {group.lineItems.length} Line Item{group.lineItems.length !== 1 ? 's' : ''}
+                  </span>
+                  <ChevronRight size={16} style={{ color: 'var(--color-text-muted)' }} />
                 </div>
 
                 {/* Remove Button */}
@@ -501,7 +1076,7 @@ export function StepCampaign() {
                   onClick={(e) => handleRemoveTactic(group.platform, e)}
                   style={{
                     position: 'absolute',
-                    bottom: '8px',
+                    top: '8px',
                     right: '8px',
                     width: '24px',
                     height: '24px',
@@ -514,8 +1089,10 @@ export function StepCampaign() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '16px',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    opacity: 0,
                   }}
+                  className="tactic-remove-btn"
                   title="Remove this tactic"
                 >
                   <X size={14} />
@@ -588,20 +1165,73 @@ export function StepCampaign() {
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div style={{ marginBottom: '16px' }}>
-              <p style={{ fontWeight: 600, marginBottom: '4px' }}>{selectedTactic.platform}</p>
-              {selectedTactic.subProduct && (
-                <p style={{ color: 'var(--color-text-secondary)', margin: '0 0 8px 0' }}>
-                  {selectedTactic.subProduct}
-                </p>
-              )}
-              {selectedTactic.tacticSpecial && (
-                <p style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', margin: 0 }}>
-                  Special: {selectedTactic.tacticSpecial}
-                </p>
-              )}
+            {/* Modal Summary */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '12px',
+              padding: '16px',
+              backgroundColor: 'var(--color-surface-secondary)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '20px',
+            }}>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Total Budget
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                  {formatCurrency(selectedTactic.totalBudget)}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Monthly
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>
+                  {formatCurrency(selectedTactic.monthlyBudget)}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Flight Dates
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' }}>
+                  {selectedTactic.earliestStart && selectedTactic.latestEnd
+                    ? `${formatShortDate(selectedTactic.earliestStart)} → ${formatShortDate(selectedTactic.latestEnd)}`
+                    : '--'}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Status
+                </div>
+                <span className={`tactic-badge ${getStatusClass(selectedTactic.status)}`}>
+                  {selectedTactic.status}
+                </span>
+              </div>
             </div>
+
+            {/* Sub-products and Tactic Types */}
+            {(selectedTactic.subProducts.length > 0 || selectedTactic.tacticTypes.length > 0) && (
+              <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedTactic.subProducts.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginRight: '8px' }}>Sub-Products:</span>
+                    <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                      {selectedTactic.subProducts.join(', ')}
+                    </span>
+                  </div>
+                )}
+                {selectedTactic.tacticTypes.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginRight: '8px' }}>Tactic Types:</span>
+                    <span style={{ fontSize: '13px', fontStyle: 'italic', color: 'var(--color-text-secondary)' }}>
+                      {selectedTactic.tacticTypes.join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Line Items List */}
             <h4 style={{ marginBottom: '12px' }}>Line Items ({selectedTactic.lineItems.length})</h4>
@@ -616,28 +1246,44 @@ export function StepCampaign() {
                     border: '1px solid var(--color-border)'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 500 }}>{item.subProduct || item.product}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>{item.subProduct || item.product}</div>
+                      {item.tacticTypeSpecial && (
+                        <div style={{ fontSize: '12px', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>
+                          {Array.isArray(item.tacticTypeSpecial) ? item.tacticTypeSpecial.join(', ') : item.tacticTypeSpecial}
+                        </div>
+                      )}
+                    </div>
                     <span className={`tactic-badge ${getStatusClass(item.workflowStepName || item.status)}`}>
                       {item.workflowStepName || item.status}
                     </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
                     <div>
-                      <span style={{ color: 'var(--color-text-muted)' }}>Dates: </span>
-                      {item.startDate && item.endDate
-                        ? `${formatDate(item.startDate)} - ${formatDate(item.endDate)}`
-                        : '--'}
+                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block' }}>Budget</span>
+                      <span style={{ fontWeight: 500 }}>{formatCurrency(item.totalBudget || 0)}</span>
                     </div>
-                    {item.woOrderNumber && (
-                      <div>
-                        <span style={{ color: 'var(--color-text-muted)' }}>WO#: </span>
-                        {item.woOrderNumber}
-                      </div>
-                    )}
+                    <div>
+                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block' }}>Monthly</span>
+                      <span>{formatCurrency(item.monthlyBudget || 0)}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block' }}>Dates</span>
+                      <span>
+                        {item.startDate && item.endDate
+                          ? `${formatShortDate(item.startDate)} → ${formatShortDate(item.endDate)}`
+                          : '--'}
+                      </span>
+                    </div>
                   </div>
                   {/* View Line Link */}
-                  <div style={{ marginTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {item.woOrderNumber && (
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        WO# {item.woOrderNumber}
+                      </span>
+                    )}
                     <a
                       href={`https://townsquarelumina.com/lumina/view/lineItem/${item.id}`}
                       target="_blank"
@@ -646,13 +1292,14 @@ export function StepCampaign() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
-                        fontSize: '14px',
+                        fontSize: '13px',
                         color: 'var(--color-primary)',
-                        textDecoration: 'none'
+                        textDecoration: 'none',
+                        marginLeft: 'auto',
                       }}
                     >
                       <ExternalLink size={14} />
-                      View Line
+                      View in Lumina
                     </a>
                   </div>
                 </div>

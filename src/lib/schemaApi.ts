@@ -884,3 +884,67 @@ export async function upsertTableValidator(data: {
 
   return { id: result.id }
 }
+
+// ============================================
+// Subproduct Headers Map (for PPTX validation)
+// ============================================
+
+export interface SubproductHeadersMap {
+  [subproductName: string]: {
+    subproductId: string
+    productName: string
+    headers: string[]
+  }
+}
+
+/**
+ * Get a map of all subproduct names to their expected headers.
+ * Used for validating extracted PPTX data against database schemas.
+ */
+export async function getSubproductHeadersMap(): Promise<SubproductHeadersMap> {
+  const { data, error } = await supabase
+    .from('subproducts')
+    .select(`
+      id,
+      name,
+      products!inner (
+        name
+      ),
+      performance_tables (
+        headers
+      )
+    `)
+    .eq('is_active', true)
+
+  if (error) {
+    console.error('Failed to fetch subproduct headers:', error)
+    throw new Error(error.message)
+  }
+
+  const headersMap: SubproductHeadersMap = {}
+
+  for (const subproduct of data || []) {
+    // Aggregate all headers from all performance tables for this subproduct
+    const allHeaders: string[] = []
+    const perfTables = subproduct.performance_tables as { headers: string[] }[] | null
+
+    if (perfTables && Array.isArray(perfTables)) {
+      for (const table of perfTables) {
+        if (table.headers && Array.isArray(table.headers)) {
+          allHeaders.push(...table.headers)
+        }
+      }
+    }
+
+    // Use subproduct name as key (for matching with DetectedTactic.subProduct)
+    // products is returned as object from !inner join
+    const productData = subproduct.products as unknown as { name: string } | null
+    headersMap[subproduct.name] = {
+      subproductId: subproduct.id,
+      productName: productData?.name || 'Unknown',
+      headers: [...new Set(allHeaders)], // deduplicate
+    }
+  }
+
+  return headersMap
+}

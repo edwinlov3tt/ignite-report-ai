@@ -1,8 +1,8 @@
-# Architecture Overview
+# Report.AI Architecture
 
-System design and technical reference for Report.AI.
+System design and technical reference for Report.AI - a web application for analyzing digital marketing campaign performance using AI.
 
-**Last Updated**: 2025-01-20
+**Last Updated**: 2025-01-22
 
 ---
 
