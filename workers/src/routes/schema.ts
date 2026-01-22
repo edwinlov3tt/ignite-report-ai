@@ -294,3 +294,106 @@ export async function handleGetSoulDocs(c: Context<{ Bindings: Env }>): Promise<
     }, 500)
   }
 }
+
+/**
+ * GET /schema/performance-tables
+ * Get all performance tables with product/subproduct info
+ */
+export async function handleGetPerformanceTables(c: Context<{ Bindings: Env }>): Promise<Response> {
+  try {
+    const supabase = createSupabaseClient(c.env)
+
+    // First get performance tables with subproduct info
+    const { data: performanceTables, error: ptError } = await supabase
+      .from('performance_tables')
+      .select(`
+        id,
+        table_name,
+        file_name,
+        headers,
+        description,
+        is_required,
+        sort_order,
+        subproduct_id
+      `)
+      .order('sort_order', { ascending: true })
+
+    if (ptError) {
+      throw new Error(`Failed to fetch performance tables: ${ptError.message}`)
+    }
+
+    // Get subproducts with product info
+    const { data: subproducts, error: spError } = await supabase
+      .from('subproducts')
+      .select(`
+        id,
+        name,
+        product_id,
+        products (
+          id,
+          name
+        )
+      `)
+
+    if (spError) {
+      throw new Error(`Failed to fetch subproducts: ${spError.message}`)
+    }
+
+    // Create lookup map
+    const subproductMap = new Map(subproducts?.map(sp => [sp.id, sp]) || [])
+
+    // Enrich performance tables with product/subproduct names
+    const enrichedData = (performanceTables || []).map(pt => {
+      const subproduct = subproductMap.get(pt.subproduct_id)
+      const product = subproduct?.products as { id: string; name: string } | undefined
+
+      return {
+        ...pt,
+        subproduct_name: subproduct?.name || null,
+        product_name: product?.name || null,
+      }
+    })
+
+    // Check format query param
+    const format = c.req.query('format')
+
+    if (format === 'csv') {
+      // Generate CSV
+      const headers = ['product_name', 'subproduct_name', 'table_name', 'file_name', 'headers', 'description', 'is_required', 'sort_order']
+      const csvRows = [headers.join(',')]
+
+      for (const row of enrichedData) {
+        const values = [
+          `"${row.product_name || ''}"`,
+          `"${row.subproduct_name || ''}"`,
+          `"${row.table_name || ''}"`,
+          `"${row.file_name || ''}"`,
+          `"${Array.isArray(row.headers) ? row.headers.join('; ') : ''}"`,
+          `"${(row.description || '').replace(/"/g, '""')}"`,
+          row.is_required ? 'TRUE' : 'FALSE',
+          row.sort_order || 0,
+        ]
+        csvRows.push(values.join(','))
+      }
+
+      return new Response(csvRows.join('\n'), {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': 'attachment; filename="performance_tables.csv"',
+        },
+      })
+    }
+
+    return c.json({
+      success: true,
+      count: enrichedData.length,
+      data: enrichedData,
+    })
+  } catch (error) {
+    console.error('Schema performance tables error:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500)
+  }
+}

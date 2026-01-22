@@ -14,9 +14,35 @@ import { handleFeedback } from './routes/feedback'
 import { handlePublish } from './routes/admin/publish'
 import { handleSync, handleSyncStatus } from './routes/admin/sync'
 import { handleGetReport } from './routes/reports'
-import { handleGetProducts, handleGetPlatforms, handleGetIndustries, handleGetSoulDocs } from './routes/schema'
+import { handleGetProducts, handleGetPlatforms, handleGetIndustries, handleGetSoulDocs, handleGetPerformanceTables } from './routes/schema'
 import { curatorRouter } from './routes/curator'
 import { syncAllToFallback } from './services/sync'
+import {
+  handleDiscover,
+  handleGetFields,
+  handleGetLogs,
+  handleGetNewFields,
+  handleUpdateFieldStatus,
+  handleGetStats,
+} from './routes/fieldDiscovery'
+import {
+  handleGenerateSuggestions,
+  handleGetSuggestions,
+  handleGetSuggestionStats,
+  handleApproveSuggestion,
+  handleRejectSuggestion,
+  handleBulkApprove,
+  handlePreviewSuggestion,
+  handleExportSuggestions,
+} from './routes/extractorSuggestions'
+import {
+  handleGenerateEmbeddings,
+  handleGenerateAllEmbeddings,
+  handleEmbedSoulDocument,
+  handleGetEmbeddingStats,
+  handleSemanticSearch,
+  handleMatchTactic,
+} from './routes/embeddings'
 
 // Create Hono app with typed bindings
 const app = new Hono<{ Bindings: Env }>()
@@ -63,6 +89,7 @@ app.get('/schema/products', handleGetProducts)
 app.get('/schema/platforms', handleGetPlatforms)
 app.get('/schema/industries', handleGetIndustries)
 app.get('/schema/soul-docs', handleGetSoulDocs)
+app.get('/schema/performance-tables', handleGetPerformanceTables)
 
 // Admin Routes (protected in production)
 app.post('/admin/publish', handlePublish)
@@ -71,6 +98,32 @@ app.get('/admin/sync/status', handleSyncStatus)
 
 // Curator Routes (Schema Curator Agent)
 app.route('/curator', curatorRouter)
+
+// Field Discovery Routes (Schema Intelligence)
+app.post('/field-discovery/discover', handleDiscover)
+app.get('/field-discovery/fields', handleGetFields)
+app.get('/field-discovery/logs', handleGetLogs)
+app.get('/field-discovery/new', handleGetNewFields)
+app.get('/field-discovery/stats', handleGetStats)
+app.put('/field-discovery/fields/:path/status', handleUpdateFieldStatus)
+
+// Extractor Suggestions Routes (AI-powered)
+app.post('/extractor-suggestions/generate', handleGenerateSuggestions)
+app.get('/extractor-suggestions', handleGetSuggestions)
+app.get('/extractor-suggestions/stats', handleGetSuggestionStats)
+app.get('/extractor-suggestions/export', handleExportSuggestions)
+app.post('/extractor-suggestions/bulk-approve', handleBulkApprove)
+app.get('/extractor-suggestions/:id/preview', handlePreviewSuggestion)
+app.post('/extractor-suggestions/:id/approve', handleApproveSuggestion)
+app.post('/extractor-suggestions/:id/reject', handleRejectSuggestion)
+
+// Embeddings Routes (RAG-enhanced semantic search)
+app.post('/embeddings/generate', handleGenerateEmbeddings)
+app.post('/embeddings/generate-all', handleGenerateAllEmbeddings)
+app.post('/embeddings/soul-document/:versionId', handleEmbedSoulDocument)
+app.get('/embeddings/stats', handleGetEmbeddingStats)
+app.post('/embeddings/search', handleSemanticSearch)
+app.post('/embeddings/match-tactic', handleMatchTactic)
 
 // 404 handler
 app.notFound((c) => {
