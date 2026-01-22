@@ -4,7 +4,11 @@
  */
 
 // Worker API base URL - use environment variable or default to production
-const WORKER_API_URL = import.meta.env.VITE_WORKER_API_URL || 'https://report-ai-api.edwin-6f1.workers.dev'
+const WORKER_API_URL = import.meta.env.VITE_API_URL || 'https://report-ai-api.edwin-6f1.workers.dev'
+
+// Supabase configuration
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ggxbjxouyhntdbgcnvcu.supabase.co'
+export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_ouxCoxZjAtsLHO4L-sToJA_I6hoHsAm'
 
 // Legacy API URL (for development fallback)
 const LEGACY_API_URL = import.meta.env.VITE_LEGACY_API_URL || ''

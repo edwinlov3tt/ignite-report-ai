@@ -4,10 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-
-// Supabase configuration
-const SUPABASE_URL = 'https://ggxbjxouyhntdbgcnvcu.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_ouxCoxZjAtsLHO4L-sToJA_I6hoHsAm'
+import { SUPABASE_URL, SUPABASE_ANON_KEY, API_CONFIG } from '@/config/api'
 
 // Create the Supabase client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -18,7 +15,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 })
 
 // Worker API URL for operations that need the service key
-export const WORKER_API_URL = 'https://report-ai-api.edwin-6f1.workers.dev'
+export const WORKER_API_URL = API_CONFIG.worker.base
 
 /**
  * Publish changes to KV cache via worker

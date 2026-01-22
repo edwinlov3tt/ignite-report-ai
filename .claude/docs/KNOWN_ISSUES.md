@@ -2,9 +2,76 @@
 
 Track bugs, edge cases, and technical debt. This is the goldmine for developer handoffs.
 
-**Last Audit**: 2025-01-20
+**Last Audit**: 2025-01-22
 
 ## Active Issues
+
+### 🟡 MEDIUM - TODO Comments in Codebase Indicate Missing User Auth
+- **Location**: `workers/src/routes/curator/feedback.ts:67`, `workers/src/routes/curator/commit.ts:773`
+- **Symptom**: Hardcoded user identification `marked_by: 'admin'` and `changedBy = 'curator_agent'`
+- **Root Cause**: No authentication system implemented yet
+- **Impact**: All feedback marked as admin, all schema changes attributed to curator agent
+- **Workaround**: Manual tracking of actual users and sessions
+- **Proper Fix**: Implement user authentication and pass actual user context
+- **Added**: 2025-01-22
+
+### 🟢 LOW - Debug Limitation in Embeddings Service
+- **Location**: `workers/src/services/embeddings.ts:165`
+- **Symptom**: Storing only first 1000 chars in `embedding_text` for debugging
+- **Root Cause**: Debug limitation comment indicates temporary truncation
+- **Impact**: Truncated embedding context may affect search quality analysis
+- **Workaround**: Full text still embedded, only storage truncated for debugging
+- **Proper Fix**: Remove debug limitation or make configurable
+- **Added**: 2025-01-22
+
+### ✅ RESOLVED - Hardcoded URLs Throughout Codebase
+- **Location**: Multiple files with hardcoded API base URLs
+- **Files**: 
+  - `src/pages/AITestingPage.tsx:27`
+  - `src/pages/admin/SourcesPage.tsx:14`
+  - `src/pages/admin/SchemaCuratorPage.tsx:28`
+  - `src/lib/extractorSuggestionsApi.ts:6`
+  - `src/lib/supabase.ts:9` (hardcoded Supabase URL)
+- **Impact**: Difficult to change API endpoints, environment-specific configuration
+- **Resolution**: 
+  - Created centralized API configuration in `src/config/api.ts`
+  - All components now import from centralized config
+  - Created comprehensive `.env.example` file with all environment variables
+  - Updated all files to use `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Added**: 2025-01-22
+- **Resolved**: 2025-01-22
+
+### 🟡 MEDIUM - Multiple Migration Directories with Potential Conflicts
+- **Location**: Four different migration directories
+- **Directories**: 
+  - `/migrations/` (7 files, 001-007)
+  - `/workers/migrations/` (11 files, 001-011)
+  - `/supabase/migrations/` (1 file)
+  - `/_legacy/api/migrations/` (4 files)
+- **Impact**: Potential confusion about migration order and dependencies
+- **Workaround**: Follow workers/migrations/ as primary source
+- **Proper Fix**: Consolidate migrations or clearly document precedence
+- **Added**: 2025-01-22
+
+### 🟢 LOW - Git Branch Workflow Confusion
+- **Location**: Current branch: `example` with extensive uncommitted changes
+- **Symptom**: 24 modified files and 35 untracked files on non-main branch
+- **Impact**: Unclear which changes are ready for production vs experimental
+- **Workaround**: Manual review and selective commits
+- **Proper Fix**: Clean up branch state and establish clear git workflow
+- **Added**: 2025-01-22
+
+### 🟢 LOW - No Environment Variables Documentation
+- **Location**: Missing .env.example file
+- **Impact**: New developers struggle with environment setup
+- **Required Variables**: 
+  - Frontend: VITE_WORKER_API_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+  - Workers: ANTHROPIC_API_KEY, OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY
+- **Workaround**: Manual environment setup using architecture documentation
+- **Proper Fix**: Create comprehensive .env.example with documentation
+- **Added**: 2025-01-22
+
+## Active Issues (From Previous Audit)
 
 ### 🟢 LOW - Industry Insights/Seasonality Missing Update Functions
 - **Location**: `src/lib/industriesApi.ts`

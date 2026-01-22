@@ -1,223 +1,328 @@
+/**
+ * Schema Curator Page - Research Mode
+ *
+ * Full-screen research-first platform for seeding high-quality data
+ * into products, platforms, and industries with source tracking.
+ */
+
 import { useState, useRef, useEffect } from 'react'
 import {
-  Bot, Send, Loader2, AlertTriangle, CheckCircle2,
-  FileText, Link2, Type, Sparkles, ChevronDown, ChevronUp,
-  RefreshCw, Trash2, Smartphone, Factory, Package, Layers, Target,
-  Check, X, Upload, Search, Lightbulb
+  Bot, Loader2, AlertTriangle, CheckCircle2,
+  FileText, ChevronDown, ChevronUp, Check, X,
+  Sparkles, RefreshCw, Upload, History, Clock
 } from 'lucide-react'
+import { EntitySelector } from '@/components/admin/curator/EntitySelector'
+import { ChainOfThoughtDisplay } from '@/components/admin/curator/ChainOfThoughtDisplay'
 import type {
-  ExtractedItem,
   ExtractedField,
-  ChatMessage,
-  EntityType,
-  CommitResponse,
+  ResearchReadiness,
+  ResearchDepth,
+  ExtractedGuidanceFields,
+  FeedbackType,
+  ProductResearchResponse,
+  ResearchSessionListItem,
+  ListSessionsResponse,
+  GetSessionResponse,
 } from '@/types/curator'
-import {
-  ENTITY_TYPES,
-  getConfidenceLevel,
-  getConfidenceColor,
-} from '@/types/curator'
+import { API_CONFIG } from '@/config/api'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://report-ai-api.edwin-6f1.workers.dev'
+const API_BASE = API_CONFIG.worker.base
+
+// Field display configuration
+const GUIDANCE_FIELD_LABELS: Record<string, string> = {
+  chain_of_thought_guidance: 'Chain of Thought Guidance',
+  analysis_instructions: 'Analysis Instructions',
+  example_good_analysis: 'Good Analysis Examples',
+  example_bad_analysis: 'Anti-Patterns to Avoid',
+  critical_metrics: 'Critical Metrics',
+  optimization_priorities: 'Optimization Priorities',
+  important_constraints_restrictions: 'Constraints & Restrictions',
+}
 
 export function SchemaCuratorPage() {
-  // Session state
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [pendingItems, setPendingItems] = useState<ExtractedItem[]>([])
-  const [approvedItemIds, setApprovedItemIds] = useState<Set<string>>(new Set())
-  const [tokensUsed, setTokensUsed] = useState(0)
-  const [tokensLimit, setTokensLimit] = useState(500000)
-  const [isCommitting, setIsCommitting] = useState(false)
-  const [commitResult, setCommitResult] = useState<CommitResponse | null>(null)
+  // Entity selection state
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
+  const [selectedSubproductId, setSelectedSubproductId] = useState<string | null>(null)
+  const [selectedPlatformFocus, setSelectedPlatformFocus] = useState<string | null>(null)
+  const [researchDepth, setResearchDepth] = useState<ResearchDepth>('standard')
+  const [userContext, setUserContext] = useState('')
 
-  // Input state
-  const [inputMode, setInputMode] = useState<'text' | 'url' | 'file' | 'research'>('text')
-  const [inputContent, setInputContent] = useState('')
-  const [targetTypes, setTargetTypes] = useState<EntityType[]>([])
+  // Research state
   const [isResearching, setIsResearching] = useState(false)
+  const [researchResult, setResearchResult] = useState<ProductResearchResponse | null>(null)
+  const [readinessStatus, setReadinessStatus] = useState<ResearchReadiness | null>(null)
+
+  // Approval state
+  const [approvedFields, setApprovedFields] = useState<Set<string>>(new Set())
+  const [isCommitting, setIsCommitting] = useState(false)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
   // UI state
-  const [isExtracting, setIsExtracting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+  const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set())
+  const [tokensUsed, setTokensUsed] = useState(0)
 
-  const chatEndRef = useRef<HTMLDivElement>(null)
+  // Sessions state
+  const [previousSessions, setPreviousSessions] = useState<ResearchSessionListItem[]>([])
+  const [showSessionsDropdown, setShowSessionsDropdown] = useState(false)
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+  const [isLoadingSession, setIsLoadingSession] = useState(false)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const sessionsDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom of chat
+  // Fetch previous sessions on mount
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    fetchPreviousSessions()
+  }, [])
 
-  // Handle extraction
-  const handleExtract = async () => {
-    if (!inputContent.trim()) return
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sessionsDropdownRef.current && !sessionsDropdownRef.current.contains(event.target as Node)) {
+        setShowSessionsDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-    setIsExtracting(true)
+  // Fetch previous research sessions
+  const fetchPreviousSessions = async () => {
+    setIsLoadingSessions(true)
+    try {
+      const response = await fetch(`${API_BASE}/curator/research/product/sessions?limit=20`)
+      const data: ListSessionsResponse = await response.json()
+      if (data.success) {
+        setPreviousSessions(data.sessions)
+      }
+    } catch (err) {
+      console.error('Failed to fetch sessions:', err)
+    } finally {
+      setIsLoadingSessions(false)
+    }
+  }
+
+  // Load a specific session
+  const loadSession = async (sessionId: string) => {
+    setIsLoadingSession(true)
+    setShowSessionsDropdown(false)
     setError(null)
 
     try {
-      const response = await fetch(`${API_BASE}/curator/extract`, {
+      const response = await fetch(`${API_BASE}/curator/research/product/sessions/${sessionId}`)
+      const data: GetSessionResponse = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load session')
+      }
+
+      const session = data.session
+
+      // Convert session data to ProductResearchResponse format
+      const researchResult: ProductResearchResponse = {
+        success: true,
+        session_id: session.id,
+        readiness_check: session.readiness_check || {
+          is_ready: true,
+          warnings: [],
+          missing_fields: [],
+          recommendation: 'Loaded from previous session',
+        },
+        chain_of_thought: session.chain_of_thought,
+        reasoning_steps: session.reasoning_steps || [],
+        extracted_fields: session.extracted_fields || {},
+        sources: session.sources_consulted || [],
+        cross_entity_suggestions: session.cross_entity_suggestions || [],
+        inheritance_analysis: session.inheritance_analysis,
+        tokens_used: session.tokens_used,
+        duration_ms: session.duration_ms || 0,
+      }
+
+      setResearchResult(researchResult)
+      setReadinessStatus(researchResult.readiness_check)
+      setSelectedProductId(session.target_product_id || null)
+      setSelectedSubproductId(session.target_subproduct_id || null)
+      setUserContext(session.user_context || '')
+      setApprovedFields(new Set())
+      setFeedbackSubmitted(false)
+
+      // Auto-expand all fields
+      const fieldKeys = Object.keys(researchResult.extracted_fields || {})
+      setExpandedFields(new Set(fieldKeys))
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load session')
+    } finally {
+      setIsLoadingSession(false)
+    }
+  }
+
+  // Format relative time
+  const formatRelativeTime = (dateStr: string): string => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
+
+  // Handle research request
+  const handleStartResearch = async () => {
+    if (!selectedProductId) return
+
+    setIsResearching(true)
+    setError(null)
+    setResearchResult(null)
+    setApprovedFields(new Set())
+    setFeedbackSubmitted(false)
+
+    try {
+      const response = await fetch(`${API_BASE}/curator/research/product`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: sessionId,
-          content: inputContent,
-          content_type: inputMode === 'url' ? 'url' : inputMode === 'file' ? 'file_content' : 'text',
-          target_types: targetTypes.length > 0 ? targetTypes : undefined,
+          product_id: selectedProductId,
+          subproduct_id: selectedSubproductId,
+          platform_focus: selectedPlatformFocus,
+          user_context: userContext.trim() || undefined,
+          research_depth: researchDepth,
+        }),
+      })
+
+      const data: ProductResearchResponse = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Research failed')
+      }
+
+      setResearchResult(data)
+      setReadinessStatus(data.readiness_check)
+      setTokensUsed(prev => prev + data.tokens_used)
+
+      // Auto-expand all fields
+      const fieldKeys = Object.keys(data.extracted_fields || {})
+      setExpandedFields(new Set(fieldKeys))
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Research failed')
+    } finally {
+      setIsResearching(false)
+    }
+  }
+
+  // Handle feedback submission
+  const handleFeedback = async (type: FeedbackType, fieldName?: string) => {
+    if (!researchResult?.session_id) return
+
+    try {
+      const response = await fetch(`${API_BASE}/curator/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          research_session_id: researchResult.session_id,
+          feedback_type: type,
+          field_name: fieldName,
+        }),
+      })
+
+      if (response.ok) {
+        setFeedbackSubmitted(true)
+      }
+    } catch (err) {
+      console.error('Failed to submit feedback:', err)
+    }
+  }
+
+  // Toggle field expansion
+  const toggleFieldExpansion = (fieldName: string) => {
+    const newExpanded = new Set(expandedFields)
+    if (newExpanded.has(fieldName)) {
+      newExpanded.delete(fieldName)
+    } else {
+      newExpanded.add(fieldName)
+    }
+    setExpandedFields(newExpanded)
+  }
+
+  // Toggle field approval
+  const toggleFieldApproval = (fieldName: string) => {
+    const newApproved = new Set(approvedFields)
+    if (newApproved.has(fieldName)) {
+      newApproved.delete(fieldName)
+    } else {
+      newApproved.add(fieldName)
+    }
+    setApprovedFields(newApproved)
+  }
+
+  // Approve all fields
+  const approveAllFields = () => {
+    if (researchResult?.extracted_fields) {
+      setApprovedFields(new Set(Object.keys(researchResult.extracted_fields)))
+    }
+  }
+
+  // Clear all approvals
+  const clearApprovals = () => {
+    setApprovedFields(new Set())
+  }
+
+  // Commit approved fields
+  const handleCommit = async () => {
+    if (!researchResult || approvedFields.size === 0 || !selectedProductId) return
+
+    setIsCommitting(true)
+    setError(null)
+
+    try {
+      // Build fields to commit
+      const fieldsToCommit: ExtractedField[] = []
+      const extractedFields = researchResult.extracted_fields
+
+      for (const fieldName of approvedFields) {
+        const value = extractedFields[fieldName as keyof ExtractedGuidanceFields]
+        if (value !== undefined) {
+          fieldsToCommit.push({
+            name: fieldName,
+            value,
+            confidence: 0.85, // Research-based confidence
+            source: 'web_research',
+          })
+        }
+      }
+
+      // Commit to the appropriate entity (product or subproduct)
+      const entityType = selectedSubproductId ? 'subproduct' : 'product'
+      const entityId = selectedSubproductId || selectedProductId
+
+      const response = await fetch(`${API_BASE}/curator/commit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{
+            entity_type: entityType,
+            entity_id: entityId,
+            fields: fieldsToCommit,
+          }],
         }),
       })
 
       const data = await response.json()
 
-      if (!data.success) {
-        throw new Error(data.error || 'Extraction failed')
-      }
-
-      // Update session state
-      setSessionId(data.session_id)
-      setTokensUsed(prev => prev + data.tokens_used)
-
-      // Add user message
-      const userMessage: ChatMessage = {
-        id: `msg_${Date.now()}`,
-        role: 'user',
-        content: inputContent.length > 200
-          ? `${inputContent.substring(0, 200)}...`
-          : inputContent,
-        timestamp: new Date().toISOString(),
-      }
-
-      // Add assistant message
-      const assistantMessage: ChatMessage = {
-        id: `msg_${Date.now() + 1}`,
-        role: 'assistant',
-        content: data.message || `Extracted ${data.extracted_items.length} items`,
-        timestamp: new Date().toISOString(),
-        metadata: {
-          extracted_items: data.extracted_items.length,
-          tokens_used: data.tokens_used,
-        },
-      }
-
-      setMessages(prev => [...prev, userMessage, assistantMessage])
-      setPendingItems(prev => [...prev, ...data.extracted_items])
-
-      // Auto-expand new items
-      const newExpandedIds = new Set(expandedItems)
-      data.extracted_items.forEach((item: ExtractedItem) => newExpandedIds.add(item.id))
-      setExpandedItems(newExpandedIds)
-
-      // Clear input
-      setInputContent('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setIsExtracting(false)
-    }
-  }
-
-  // Toggle item expansion
-  const toggleItem = (itemId: string) => {
-    const newExpanded = new Set(expandedItems)
-    if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId)
-    } else {
-      newExpanded.add(itemId)
-    }
-    setExpandedItems(newExpanded)
-  }
-
-  // Remove pending item
-  const removeItem = (itemId: string) => {
-    setPendingItems(prev => prev.filter(item => item.id !== itemId))
-  }
-
-  // Start new session
-  const startNewSession = () => {
-    setSessionId(null)
-    setMessages([])
-    setPendingItems([])
-    setApprovedItemIds(new Set())
-    setTokensUsed(0)
-    setInputContent('')
-    setError(null)
-    setCommitResult(null)
-  }
-
-  // Toggle target type filter
-  const toggleTargetType = (type: EntityType) => {
-    setTargetTypes(prev =>
-      prev.includes(type)
-        ? prev.filter(t => t !== type)
-        : [...prev, type]
-    )
-  }
-
-  // Approve an item for commit
-  const approveItem = (itemId: string) => {
-    setApprovedItemIds(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId)
-      } else {
-        newSet.add(itemId)
-      }
-      return newSet
-    })
-  }
-
-  // Commit approved items
-  const commitItems = async () => {
-    const itemsToCommit = pendingItems.filter(item => approvedItemIds.has(item.id))
-    if (itemsToCommit.length === 0) return
-
-    setIsCommitting(true)
-    setError(null)
-    setCommitResult(null)
-
-    try {
-      const response = await fetch(`${API_BASE}/curator/commit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          items: itemsToCommit.map(item => ({
-            entity_type: item.entity_type,
-            fields: item.fields,
-          })),
-        }),
-      })
-
-      const data: CommitResponse = await response.json()
-
       if (data.failed_count > 0) {
-        const failedErrors = data.results.filter(r => !r.success).map(r => r.error).join(', ')
-        setError(`Some items failed to commit: ${failedErrors}`)
+        setError(`Some fields failed to commit`)
+      } else {
+        // Clear approved fields and show success
+        setApprovedFields(new Set())
       }
-
-      setCommitResult(data)
-
-      // Remove successfully committed items from pending
-      const committedIds = new Set(
-        data.results.filter(r => r.success).map((_, idx) => itemsToCommit[idx].id)
-      )
-      setPendingItems(prev => prev.filter(item => !committedIds.has(item.id)))
-      setApprovedItemIds(prev => {
-        const newSet = new Set(prev)
-        committedIds.forEach(id => newSet.delete(id))
-        return newSet
-      })
-
-      // Add success message
-      const successMsg: ChatMessage = {
-        id: `msg_${Date.now()}`,
-        role: 'assistant',
-        content: `Successfully committed ${data.committed_count} item${data.committed_count !== 1 ? 's' : ''} to the database.${data.failed_count > 0 ? ` ${data.failed_count} item${data.failed_count !== 1 ? 's' : ''} failed.` : ''}`,
-        timestamp: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, successMsg])
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Commit failed')
@@ -226,876 +331,676 @@ export function SchemaCuratorPage() {
     }
   }
 
-  // Approve all pending items
-  const approveAll = () => {
-    setApprovedItemIds(new Set(pendingItems.map(item => item.id)))
-  }
-
-  // Clear all approvals
-  const clearApprovals = () => {
-    setApprovedItemIds(new Set())
-  }
-
-  // Handle research request (AI-powered industry seeding)
-  const handleResearch = async () => {
-    if (!inputContent.trim()) return
-
-    setIsResearching(true)
+  // Start new research session
+  const startNewSession = () => {
+    setSelectedProductId(null)
+    setSelectedSubproductId(null)
+    setSelectedPlatformFocus(null)
+    setUserContext('')
+    setResearchResult(null)
+    setReadinessStatus(null)
+    setApprovedFields(new Set())
+    setFeedbackSubmitted(false)
     setError(null)
-
-    try {
-      const response = await fetch(`${API_BASE}/curator/research`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: inputContent,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.error || 'Research failed')
-      }
-
-      // Update tokens
-      setTokensUsed(prev => prev + data.tokens_used)
-
-      // Add user message
-      const userMessage: ChatMessage = {
-        id: `msg_${Date.now()}`,
-        role: 'user',
-        content: `Research request: ${inputContent}`,
-        timestamp: new Date().toISOString(),
-      }
-
-      // Add assistant message with research summary
-      const assistantMessage: ChatMessage = {
-        id: `msg_${Date.now() + 1}`,
-        role: 'assistant',
-        content: `${data.research_summary}\n\nResearched ${data.sources_used.length} sources to create this industry profile.`,
-        timestamp: new Date().toISOString(),
-        metadata: {
-          extracted_items: data.extracted_items.length,
-          tokens_used: data.tokens_used,
-        },
-      }
-
-      setMessages(prev => [...prev, userMessage, assistantMessage])
-      setPendingItems(prev => [...prev, ...data.extracted_items])
-
-      // Auto-expand new items
-      const newExpandedIds = new Set(expandedItems)
-      data.extracted_items.forEach((item: ExtractedItem) => newExpandedIds.add(item.id))
-      setExpandedItems(newExpandedIds)
-
-      // Clear input
-      setInputContent('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Research failed')
-    } finally {
-      setIsResearching(false)
-    }
-  }
-
-  // Handle submit based on mode
-  const handleSubmit = () => {
-    if (inputMode === 'research') {
-      handleResearch()
-    } else {
-      handleExtract()
-    }
-  }
-
-  // Get entity type icon component
-  const getEntityTypeIcon = (type: EntityType, size = 18) => {
-    const iconProps = { size, strokeWidth: 1.5 }
-    switch (type) {
-      case 'platform': return <Smartphone {...iconProps} />
-      case 'industry': return <Factory {...iconProps} />
-      case 'product': return <Package {...iconProps} />
-      case 'subproduct': return <Layers {...iconProps} />
-      case 'tactic_type': return <Target {...iconProps} />
-      case 'soul_doc': return <FileText {...iconProps} />
-      default: return <FileText {...iconProps} />
-    }
-  }
-
-  // Get entity type display info
-  const getEntityTypeInfo = (type: EntityType) => {
-    return ENTITY_TYPES.find(t => t.value === type) || { value: type, label: type }
-  }
-
-  // Format confidence display
-  const formatConfidence = (confidence: number) => {
-    return `${Math.round(confidence * 100)}%`
   }
 
   // Format field value for display
-  const formatFieldValue = (name: string, value: unknown): React.ReactNode => {
+  const formatFieldValue = (value: unknown): React.ReactNode => {
     if (value === null || value === undefined) {
       return <span style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>Not set</span>
     }
 
-    // Handle complex objects
-    if (typeof value === 'object') {
-      // Benchmarks - show summary
-      if (name === 'benchmarks' && typeof value === 'object') {
-        const b = value as Record<string, unknown>
-        const cpc = b.cpc_range as { min: number; max: number; avg: number } | undefined
-        const cpa = b.cpa_range as { min: number; max: number; avg: number } | undefined
-        const ctr = b.ctr_range as { min: number; max: number; avg: number } | undefined
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {cpc && <span>CPC: ${cpc.min.toFixed(2)} - ${cpc.max.toFixed(2)} (avg ${cpc.avg.toFixed(2)})</span>}
-            {cpa && <span>CPA: ${cpa.min.toFixed(0)} - ${cpa.max.toFixed(0)} (avg ${cpa.avg.toFixed(0)})</span>}
-            {ctr && <span>CTR: {ctr.min.toFixed(1)}% - {ctr.max.toFixed(1)}% (avg {ctr.avg.toFixed(1)}%)</span>}
-            {b.notes && (
-              <details style={{ marginTop: '4px' }}>
-                <summary style={{ cursor: 'pointer', color: 'var(--color-primary)', fontSize: '12px' }}>View notes</summary>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap' }}>
-                  {String(b.notes)}
-                </p>
-              </details>
-            )}
-          </div>
-        )
-      }
-
-      // Seasonality - show summary
-      if (name === 'seasonality' && typeof value === 'object') {
-        const s = value as Record<string, unknown>
-        const peakMonths = s.peak_months as number[] | undefined
-        const slowMonths = s.slow_months as number[] | undefined
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {peakMonths && <span>Peak: {peakMonths.map(m => monthNames[m - 1]).join(', ')}</span>}
-            {slowMonths && <span>Slow: {slowMonths.map(m => monthNames[m - 1]).join(', ')}</span>}
-            {s.notes && (
-              <details style={{ marginTop: '4px' }}>
-                <summary style={{ cursor: 'pointer', color: 'var(--color-primary)', fontSize: '12px' }}>View details</summary>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap' }}>
-                  {String(s.notes)}
-                </p>
-              </details>
-            )}
-          </div>
-        )
-      }
-
-      // Insights - show list
-      if (name === 'insights' && Array.isArray(value)) {
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span>{value.length} insights</span>
-            <details>
-              <summary style={{ cursor: 'pointer', color: 'var(--color-primary)', fontSize: '12px' }}>View all</summary>
-              <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', fontSize: '12px' }}>
-                {value.map((insight: { topic: string; content: string }, i: number) => (
-                  <li key={i} style={{ marginBottom: '4px' }}>
-                    <strong>{insight.topic}</strong>
-                    <details>
-                      <summary style={{ cursor: 'pointer', color: 'var(--color-text-secondary)' }}>Details</summary>
-                      <p style={{ margin: '2px 0', color: 'var(--color-text-secondary)' }}>{insight.content}</p>
-                    </details>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </div>
-        )
-      }
-
-      // Research metadata - show summary
-      if (name === 'research_metadata' && typeof value === 'object') {
-        const m = value as Record<string, unknown>
-        const sources = m.sources as string[] | undefined
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span>{sources?.length || 0} sources researched</span>
-            {m.researched_at && (
-              <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-                {new Date(m.researched_at as string).toLocaleString()}
-              </span>
-            )}
-          </div>
-        )
-      }
-
-      // Default object handling - show JSON
+    if (Array.isArray(value)) {
       return (
-        <details>
-          <summary style={{ cursor: 'pointer', color: 'var(--color-primary)', fontSize: '12px' }}>View data</summary>
-          <pre style={{
-            margin: '4px 0 0 0',
-            fontSize: '11px',
-            backgroundColor: 'var(--color-bg)',
-            padding: '8px',
-            borderRadius: '4px',
-            overflow: 'auto',
-            maxHeight: '200px',
-          }}>
-            {JSON.stringify(value, null, 2)}
-          </pre>
-        </details>
+        <ul style={{ margin: 0, paddingLeft: '20px' }}>
+          {value.map((item, i) => (
+            <li key={i} style={{ marginBottom: '4px', fontSize: '13px', lineHeight: 1.5 }}>
+              {String(item)}
+            </li>
+          ))}
+        </ul>
       )
     }
 
-    // Long text fields - show with expandable
-    if (typeof value === 'string' && (name === 'buyer_notes' || name === 'description') && value.length > 200) {
+    if (typeof value === 'string') {
       return (
-        <details>
-          <summary style={{ cursor: 'pointer', color: 'var(--color-primary)', fontSize: '12px' }}>
-            {value.substring(0, 100)}...
-          </summary>
-          <p style={{
-            margin: '4px 0 0 0',
-            fontSize: '12px',
-            color: 'var(--color-text-secondary)',
-            whiteSpace: 'pre-wrap',
-            maxHeight: '300px',
-            overflow: 'auto',
-          }}>
-            {value}
-          </p>
-        </details>
+        <p style={{
+          margin: 0,
+          fontSize: '13px',
+          lineHeight: 1.6,
+          whiteSpace: 'pre-wrap',
+        }}>
+          {value}
+        </p>
       )
     }
 
-    // Simple values
-    return String(value)
+    return <pre style={{ margin: 0, fontSize: '12px' }}>{JSON.stringify(value, null, 2)}</pre>
   }
 
-  // Token budget percentage
-  const tokenBudgetPercent = (tokensUsed / tokensLimit) * 100
-  const tokenBudgetStatus = tokenBudgetPercent >= 100 ? 'exceeded' :
-                           tokenBudgetPercent >= 80 ? 'warning' : 'ok'
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
-      {/* Page Header */}
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '240px 1fr 420px',
+      // Use negative margins to break out of AdminLayout's padding
+      margin: '-24px -32px',
+      // Fill the available space accounting for the negative margins
+      height: 'calc(100% + 48px)',
+      width: 'calc(100% + 64px)',
+      overflow: 'hidden',
+      backgroundColor: 'var(--color-bg)',
+    }}>
+      {/* Left Panel: Entity Selector */}
+      <EntitySelector
+        selectedProductId={selectedProductId}
+        selectedSubproductId={selectedSubproductId}
+        selectedPlatformFocus={selectedPlatformFocus}
+        researchDepth={researchDepth}
+        readinessStatus={readinessStatus}
+        onProductSelect={setSelectedProductId}
+        onSubproductSelect={setSelectedSubproductId}
+        onPlatformFocusSelect={setSelectedPlatformFocus}
+        onResearchDepthChange={setResearchDepth}
+        onStartResearch={handleStartResearch}
+        isResearching={isResearching}
+        disabled={isResearching || isCommitting}
+      />
+
+      {/* Middle Panel: Research Chat / Results */}
       <div style={{
-        backgroundColor: 'var(--color-surface)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-border)',
-        padding: '20px 24px',
-        marginBottom: '16px',
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        backgroundColor: 'var(--color-surface)',
+        borderLeft: '1px solid var(--color-border)',
+        borderRight: '1px solid var(--color-border)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Bot size={24} style={{ color: 'var(--color-primary)' }} />
+        {/* Header - consistent 56px height */}
+        <div style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid var(--color-border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          minHeight: '56px',
+          boxSizing: 'border-box',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Bot size={20} style={{ color: 'var(--color-primary)' }} />
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+              Research Assistant
+            </h2>
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>
-              Schema Curator
-            </h1>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              AI-powered schema data extraction and management
-            </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Token Counter */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              fontSize: '12px',
+              color: 'var(--color-primary)',
+            }}>
+              <Sparkles size={14} />
+              {tokensUsed.toLocaleString()} tokens
+            </div>
+
+            {/* Previous Sessions Dropdown */}
+            <div ref={sessionsDropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowSessionsDropdown(!showSessionsDropdown)}
+                className="btn-secondary"
+                style={{ gap: '6px', fontSize: '13px', padding: '6px 12px' }}
+                disabled={isLoadingSession}
+              >
+                {isLoadingSession ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <History size={14} />
+                )}
+                History
+                <ChevronDown size={12} style={{
+                  transform: showSessionsDropdown ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }} />
+              </button>
+
+              {showSessionsDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '4px',
+                  width: '320px',
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  zIndex: 100,
+                }}>
+                  <div style={{
+                    padding: '12px 16px',
+                    borderBottom: '1px solid var(--color-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>Previous Sessions</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        fetchPreviousSessions()
+                      }}
+                      style={{
+                        padding: '4px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                      title="Refresh"
+                    >
+                      <RefreshCw size={14} className={isLoadingSessions ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
+
+                  {isLoadingSessions ? (
+                    <div style={{
+                      padding: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--color-text-secondary)',
+                    }}>
+                      <Loader2 size={20} className="animate-spin" />
+                    </div>
+                  ) : previousSessions.length === 0 ? (
+                    <div style={{
+                      padding: '24px',
+                      textAlign: 'center',
+                      color: 'var(--color-text-secondary)',
+                      fontSize: '13px',
+                    }}>
+                      No previous sessions
+                    </div>
+                  ) : (
+                    <div>
+                      {previousSessions.map((session) => (
+                        <button
+                          key={session.id}
+                          onClick={() => loadSession(session.id)}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: '1px solid var(--color-border)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}>
+                            <span style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: 'var(--color-text)',
+                            }}>
+                              {session.product_name || 'Unknown Product'}
+                            </span>
+                            <span style={{
+                              fontSize: '11px',
+                              color: 'var(--color-text-secondary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}>
+                              <Clock size={10} />
+                              {formatRelativeTime(session.created_at)}
+                            </span>
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '11px',
+                            color: 'var(--color-text-secondary)',
+                          }}>
+                            {session.subproduct_name && (
+                              <span style={{
+                                padding: '2px 6px',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                borderRadius: 'var(--radius-sm)',
+                                color: 'var(--color-primary)',
+                              }}>
+                                {session.subproduct_name}
+                              </span>
+                            )}
+                            <span style={{
+                              padding: '2px 6px',
+                              backgroundColor: session.status === 'completed'
+                                ? 'rgba(34, 197, 94, 0.1)'
+                                : 'rgba(234, 179, 8, 0.1)',
+                              borderRadius: 'var(--radius-sm)',
+                              color: session.status === 'completed'
+                                ? '#22c55e'
+                                : '#eab308',
+                            }}>
+                              {session.research_depth}
+                            </span>
+                            {session.tokens_used && (
+                              <span>{session.tokens_used.toLocaleString()} tokens</span>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {researchResult && (
+              <button
+                onClick={startNewSession}
+                className="btn-secondary"
+                style={{ gap: '6px', fontSize: '13px', padding: '6px 12px' }}
+              >
+                <RefreshCw size={14} />
+                New Research
+              </button>
+            )}
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Token Budget */}
+        {/* Content Area */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {!researchResult ? (
+            // Welcome / Context Input
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '40px',
+            }}>
+              <Bot size={48} style={{ color: 'var(--color-primary)', opacity: 0.5, marginBottom: '16px' }} />
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>
+                Research-First Schema Curator
+              </h3>
+              <p style={{
+                margin: '0 0 24px 0',
+                color: 'var(--color-text-secondary)',
+                textAlign: 'center',
+                maxWidth: '400px',
+              }}>
+                Select a product from the left panel, then provide any additional context
+                to guide the AI research.
+              </p>
+
+              {/* Context Input */}
+              <div style={{ width: '100%', maxWidth: '500px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                }}>
+                  Research Context (Optional)
+                </label>
+                <textarea
+                  ref={textareaRef}
+                  value={userContext}
+                  onChange={(e) => setUserContext(e.target.value)}
+                  placeholder="e.g., Focus on Google Ads best practices for lead generation campaigns..."
+                  style={{
+                    width: '100%',
+                    minHeight: '100px',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg)',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <p style={{
+                  margin: '8px 0 0 0',
+                  fontSize: '12px',
+                  color: 'var(--color-text-secondary)',
+                }}>
+                  Add specific focus areas, platforms, or use cases to narrow the research scope.
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Chain of Thought Display
+            <ChainOfThoughtDisplay
+              chainOfThought={researchResult.chain_of_thought}
+              reasoningSteps={researchResult.reasoning_steps}
+              sources={researchResult.sources}
+              onFeedback={handleFeedback}
+              feedbackSubmitted={feedbackSubmitted}
+            />
+          )}
+        </div>
+
+        {/* Error Banner */}
+        {error && (
           <div style={{
+            padding: '12px 20px',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderTop: '1px solid rgba(239, 68, 68, 0.2)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '8px 12px',
-            backgroundColor: tokenBudgetStatus === 'ok' ? 'rgba(34, 197, 94, 0.1)' :
-                            tokenBudgetStatus === 'warning' ? 'rgba(234, 179, 8, 0.1)' :
-                            'rgba(239, 68, 68, 0.1)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
+            color: 'var(--color-error)',
+            fontSize: '14px',
           }}>
-            <Sparkles size={14} />
-            <span>{tokensUsed.toLocaleString()} / {tokensLimit.toLocaleString()} tokens</span>
+            <AlertTriangle size={16} />
+            {error}
           </div>
-
-          {/* New Session Button */}
-          {sessionId && (
-            <button
-              onClick={startNewSession}
-              className="btn-secondary"
-              style={{ gap: '6px' }}
-            >
-              <RefreshCw size={16} />
-              New Session
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Main Content - 2 Column Layout */}
+      {/* Right Panel: Extracted Fields */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 400px',
-        gap: '16px',
-        flex: 1,
-        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        backgroundColor: 'var(--color-surface)',
       }}>
-        {/* Left Column: Chat + Input */}
+        {/* Header - consistent 56px height */}
         <div style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid var(--color-border)',
           display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: 'var(--color-surface)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--color-border)',
-          overflow: 'hidden',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          minHeight: '56px',
+          boxSizing: 'border-box',
         }}>
-          {/* Chat Messages */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-          }}>
-            {messages.length === 0 ? (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-text-secondary)',
-                textAlign: 'center',
-                padding: '40px',
-              }}>
-                <Bot size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                <h3 style={{ margin: '0 0 8px 0', fontWeight: 500 }}>
-                  Start Extracting Schema Data
-                </h3>
-                <p style={{ margin: 0, maxWidth: '400px', fontSize: '14px' }}>
-                  Paste text, enter a URL, or upload a file containing information about
-                  platforms, industries, products, or other schema entities.
-                </p>
-              </div>
-            ) : (
-              messages.map(message => (
-                <div
-                  key={message.id}
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    alignItems: 'flex-start',
-                    flexDirection: message.role === 'user' ? 'row-reverse' : 'row',
-                  }}
-                >
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: message.role === 'user'
-                      ? 'rgba(99, 102, 241, 0.1)'
-                      : 'rgba(34, 197, 94, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    {message.role === 'user' ? (
-                      <Type size={16} style={{ color: 'var(--color-primary)' }} />
-                    ) : (
-                      <Bot size={16} style={{ color: '#22c55e' }} />
-                    )}
-                  </div>
-                  <div style={{
-                    maxWidth: '80%',
-                    padding: '12px 16px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: message.role === 'user'
-                      ? 'rgba(99, 102, 241, 0.1)'
-                      : 'var(--color-bg)',
-                    fontSize: '14px',
-                    lineHeight: 1.5,
-                    whiteSpace: 'pre-wrap',
-                  }}>
-                    {message.content}
-                    {message.metadata?.tokens_used && (
+          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+            Extracted Fields
+          </h2>
+          {researchResult && (
+            <span style={{
+              padding: '4px 10px',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: 'var(--color-primary)',
+            }}>
+              {Object.keys(researchResult.extracted_fields || {}).length} fields
+            </span>
+          )}
+        </div>
+
+        {/* Fields List */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+          {!researchResult ? (
+            <div style={{
+              padding: '40px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              color: 'var(--color-text-secondary)',
+            }}>
+              <FileText size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+              <p style={{ margin: 0, fontSize: '14px', textAlign: 'center' }}>
+                Run research to extract guidance fields
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {Object.entries(researchResult.extracted_fields || {}).map(([fieldName, value]) => {
+                const isExpanded = expandedFields.has(fieldName)
+                const isApproved = approvedFields.has(fieldName)
+                const label = GUIDANCE_FIELD_LABELS[fieldName] || fieldName
+
+                return (
+                  <div
+                    key={fieldName}
+                    style={{
+                      backgroundColor: 'var(--color-bg)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid',
+                      borderColor: isApproved ? '#22c55e' : 'var(--color-border)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {/* Field Header */}
+                    <div
+                      style={{
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => toggleFieldExpansion(fieldName)}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown size={16} style={{ color: 'var(--color-text-secondary)' }} />
+                      ) : (
+                        <ChevronUp size={16} style={{ color: 'var(--color-text-secondary)', transform: 'rotate(180deg)' }} />
+                      )}
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: 'var(--color-text)',
+                        }}>
+                          {label}
+                        </div>
+                        {!isExpanded && Array.isArray(value) && (
+                          <div style={{
+                            fontSize: '11px',
+                            color: 'var(--color-text-secondary)',
+                          }}>
+                            {value.length} items
+                          </div>
+                        )}
+                      </div>
+
+                      {isApproved && (
+                        <span style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          color: '#22c55e',
+                        }}>
+                          <Check size={12} />
+                          Approved
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Field Content (Expanded) */}
+                    {isExpanded && (
                       <div style={{
-                        marginTop: '8px',
-                        paddingTop: '8px',
+                        padding: '12px 16px',
                         borderTop: '1px solid var(--color-border)',
-                        fontSize: '12px',
-                        color: 'var(--color-text-secondary)',
                       }}>
-                        Tokens used: {message.metadata.tokens_used.toLocaleString()}
+                        <div style={{ marginBottom: '12px' }}>
+                          {formatFieldValue(value)}
+                        </div>
+
+                        {/* Approve/Reject Buttons */}
+                        <div style={{
+                          display: 'flex',
+                          gap: '8px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid var(--color-border)',
+                        }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleFieldApproval(fieldName)
+                            }}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              padding: '8px',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid',
+                              borderColor: isApproved ? '#22c55e' : 'var(--color-border)',
+                              backgroundColor: isApproved ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+                              color: isApproved ? '#22c55e' : 'var(--color-text)',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {isApproved ? (
+                              <>
+                                <Check size={14} />
+                                Approved
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 size={14} />
+                                Approve
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-              ))
-            )}
-            <div ref={chatEndRef} />
-          </div>
+                )
+              })}
 
-          {/* Error Banner */}
-          {error && (
-            <div style={{
-              padding: '12px 20px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderTop: '1px solid rgba(239, 68, 68, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: 'var(--color-error)',
-              fontSize: '14px',
-            }}>
-              <AlertTriangle size={16} />
-              {error}
+              {/* Cross-Entity Suggestions */}
+              {researchResult.cross_entity_suggestions && researchResult.cross_entity_suggestions.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-secondary)',
+                  }}>
+                    Cross-Entity Intelligence
+                  </h4>
+                  {researchResult.cross_entity_suggestions.map((suggestion, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '12px',
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <div style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>
+                        {suggestion.target_entity_type}: {suggestion.target_entity_name}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+                        {suggestion.suggested_field}: {String(suggestion.suggested_value).substring(0, 100)}...
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
+        </div>
 
-          {/* Input Area */}
+        {/* Commit Section */}
+        {researchResult && Object.keys(researchResult.extracted_fields || {}).length > 0 && (
           <div style={{
+            padding: '16px',
             borderTop: '1px solid var(--color-border)',
-            padding: '16px 20px',
           }}>
-            {/* Input Mode Tabs */}
+            {/* Approve All / Clear */}
             <div style={{
               display: 'flex',
               gap: '8px',
               marginBottom: '12px',
             }}>
-              {[
-                { mode: 'text' as const, icon: <Type size={14} />, label: 'Text' },
-                { mode: 'url' as const, icon: <Link2 size={14} />, label: 'URL' },
-                { mode: 'file' as const, icon: <FileText size={14} />, label: 'File' },
-                { mode: 'research' as const, icon: <Search size={14} />, label: 'Research' },
-              ].map(({ mode, icon, label }) => (
-                <button
-                  key={mode}
-                  onClick={() => setInputMode(mode)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid',
-                    borderColor: inputMode === mode ? 'var(--color-primary)' : 'var(--color-border)',
-                    backgroundColor: inputMode === mode ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                    color: inputMode === mode ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {icon}
-                  {label}
-                </button>
-              ))}
-
-              {/* Target Type Filters */}
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
-                {ENTITY_TYPES.slice(0, 4).map(type => (
-                  <button
-                    key={type.value}
-                    onClick={() => toggleTargetType(type.value)}
-                    title={`Filter: ${type.label}`}
-                    style={{
-                      padding: '6px 8px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid',
-                      borderColor: targetTypes.includes(type.value) ? 'var(--color-primary)' : 'var(--color-border)',
-                      backgroundColor: targetTypes.includes(type.value) ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                      color: targetTypes.includes(type.value) ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {getEntityTypeIcon(type.value, 16)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Text/URL Input */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <textarea
-                ref={textareaRef}
-                value={inputContent}
-                onChange={(e) => setInputContent(e.target.value)}
-                placeholder={
-                  inputMode === 'url'
-                    ? 'Enter a URL to extract schema data from...'
-                    : inputMode === 'file'
-                    ? 'File upload coming soon. For now, paste the file contents here...'
-                    : inputMode === 'research'
-                    ? 'e.g., "Create an industry for Electric Services with benchmarks" or "Research jewelry industry for Northeastern Fine Jewelry"'
-                    : 'Paste or type content containing platform, industry, or product information...'
-                }
-                style={{
-                  flex: 1,
-                  minHeight: '80px',
-                  maxHeight: '200px',
-                  padding: '12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg)',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault()
-                    handleSubmit()
-                  }
-                }}
-              />
               <button
-                onClick={handleSubmit}
-                disabled={(isExtracting || isResearching) || !inputContent.trim() || tokenBudgetStatus === 'exceeded'}
-                className="btn-primary"
-                style={{
-                  alignSelf: 'flex-end',
-                  minWidth: '100px',
-                  height: '44px',
-                }}
+                onClick={approveAllFields}
+                className="btn-secondary"
+                style={{ flex: 1, fontSize: '12px', padding: '8px' }}
+                disabled={approvedFields.size === Object.keys(researchResult.extracted_fields).length}
               >
-                {isExtracting || isResearching ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : inputMode === 'research' ? (
-                  <>
-                    <Search size={18} />
-                    Research
-                  </>
-                ) : (
-                  <>
-                    <Send size={18} />
-                    Extract
-                  </>
-                )}
+                <Check size={14} />
+                Approve All
+              </button>
+              <button
+                onClick={clearApprovals}
+                className="btn-secondary"
+                style={{ flex: 1, fontSize: '12px', padding: '8px' }}
+                disabled={approvedFields.size === 0}
+              >
+                <X size={14} />
+                Clear
               </button>
             </div>
-            <p style={{
-              margin: '8px 0 0 0',
-              fontSize: '12px',
-              color: 'var(--color-text-secondary)',
-            }}>
-              Press <kbd style={{ padding: '2px 6px', backgroundColor: 'var(--color-bg)', borderRadius: '4px' }}>⌘</kbd>+<kbd style={{ padding: '2px 6px', backgroundColor: 'var(--color-bg)', borderRadius: '4px' }}>Enter</kbd> to extract
-            </p>
-          </div>
-        </div>
 
-        {/* Right Column: Review Panel */}
-        <div style={{
-          backgroundColor: 'var(--color-surface)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--color-border)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}>
-          {/* Review Header */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}>
-            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
-              Extracted Items
-            </h2>
-            <span style={{
-              padding: '4px 10px',
-              backgroundColor: pendingItems.length > 0 ? 'rgba(99, 102, 241, 0.1)' : 'var(--color-bg)',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '13px',
-              fontWeight: 500,
-              color: pendingItems.length > 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-            }}>
-              {pendingItems.length} pending
-            </span>
-          </div>
+            {/* Commit Button */}
+            <button
+              onClick={handleCommit}
+              className="btn-primary"
+              style={{ width: '100%' }}
+              disabled={approvedFields.size === 0 || isCommitting}
+            >
+              {isCommitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Committing...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} />
+                  Commit {approvedFields.size} {approvedFields.size === 1 ? 'Field' : 'Fields'}
+                </>
+              )}
+            </button>
 
-          {/* Extracted Items List */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '12px',
-          }}>
-            {pendingItems.length === 0 ? (
-              <div style={{
-                padding: '40px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
+            {approvedFields.size === 0 && (
+              <p style={{
+                margin: '8px 0 0 0',
+                fontSize: '11px',
                 color: 'var(--color-text-secondary)',
+                textAlign: 'center',
               }}>
-                <FileText size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                <p style={{ margin: 0, fontSize: '14px' }}>
-                  No items extracted yet
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {pendingItems.map(item => {
-                  const typeInfo = getEntityTypeInfo(item.entity_type)
-                  const nameField = item.fields.find(f => f.name === 'name')
-                  const isExpanded = expandedItems.has(item.id)
-
-                  return (
-                    <div
-                      key={item.id}
-                      style={{
-                        backgroundColor: 'var(--color-bg)',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--color-border)',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {/* Item Header */}
-                      <div
-                        onClick={() => toggleItem(item.id)}
-                        style={{
-                          padding: '12px 16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <span style={{ color: 'var(--color-primary)', display: 'flex' }}>{getEntityTypeIcon(item.entity_type, 20)}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}>
-                            {nameField ? String(nameField.value) : 'Unnamed'}
-                          </div>
-                          <div style={{
-                            fontSize: '12px',
-                            color: 'var(--color-text-secondary)',
-                          }}>
-                            {typeInfo.label}
-                          </div>
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                        }}>
-                          {approvedItemIds.has(item.id) && (
-                            <span style={{
-                              padding: '2px 8px',
-                              borderRadius: 'var(--radius-sm)',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                              color: '#22c55e',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}>
-                              <Check size={12} />
-                              Ready
-                            </span>
-                          )}
-                          <span style={{
-                            padding: '2px 8px',
-                            borderRadius: 'var(--radius-sm)',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            backgroundColor: getConfidenceLevel(item.overall_confidence) === 'high'
-                              ? 'rgba(34, 197, 94, 0.1)'
-                              : getConfidenceLevel(item.overall_confidence) === 'medium'
-                              ? 'rgba(234, 179, 8, 0.1)'
-                              : 'rgba(239, 68, 68, 0.1)',
-                            color: getConfidenceColor(item.overall_confidence),
-                          }}>
-                            {formatConfidence(item.overall_confidence)}
-                          </span>
-                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </div>
-                      </div>
-
-                      {/* Item Details (Expanded) */}
-                      {isExpanded && (
-                        <div style={{
-                          padding: '12px 16px',
-                          borderTop: '1px solid var(--color-border)',
-                        }}>
-                          {/* Classification Reason */}
-                          <div style={{
-                            marginBottom: '12px',
-                            padding: '8px 12px',
-                            backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                            borderRadius: 'var(--radius-sm)',
-                            fontSize: '13px',
-                            color: 'var(--color-text-secondary)',
-                          }}>
-                            {item.classification_reason}
-                          </div>
-
-                          {/* Fields */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {item.fields.map((field, idx) => (
-                              <div
-                                key={idx}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: '8px',
-                                  fontSize: '13px',
-                                }}
-                              >
-                                <span style={{
-                                  minWidth: '100px',
-                                  flexShrink: 0,
-                                  color: 'var(--color-text-secondary)',
-                                }}>
-                                  {field.name}:
-                                </span>
-                                <div style={{ flex: 1, wordBreak: 'break-word' }}>
-                                  {formatFieldValue(field.name, field.value)}
-                                </div>
-                                <span style={{
-                                  color: getConfidenceColor(field.confidence),
-                                  fontSize: '11px',
-                                  whiteSpace: 'nowrap',
-                                }}>
-                                  {formatConfidence(field.confidence)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Actions */}
-                          <div style={{
-                            marginTop: '12px',
-                            paddingTop: '12px',
-                            borderTop: '1px solid var(--color-border)',
-                            display: 'flex',
-                            gap: '8px',
-                          }}>
-                            <button
-                              onClick={() => approveItem(item.id)}
-                              className={approvedItemIds.has(item.id) ? 'btn-success' : 'btn-primary'}
-                              style={{
-                                flex: 1,
-                                fontSize: '13px',
-                                padding: '8px',
-                                backgroundColor: approvedItemIds.has(item.id) ? 'rgba(34, 197, 94, 0.15)' : undefined,
-                                borderColor: approvedItemIds.has(item.id) ? '#22c55e' : undefined,
-                                color: approvedItemIds.has(item.id) ? '#22c55e' : undefined,
-                              }}
-                            >
-                              {approvedItemIds.has(item.id) ? (
-                                <>
-                                  <Check size={14} />
-                                  Approved
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 size={14} />
-                                  Approve
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => removeItem(item.id)}
-                              className="btn-secondary"
-                              style={{ fontSize: '13px', padding: '8px' }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                Approve fields to enable commit
+              </p>
             )}
           </div>
-
-          {/* Commit Section */}
-          {pendingItems.length > 0 && (
-            <div style={{
-              padding: '16px 20px',
-              borderTop: '1px solid var(--color-border)',
-            }}>
-              {/* Approve All / Clear Actions */}
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginBottom: '12px',
-              }}>
-                <button
-                  onClick={approveAll}
-                  className="btn-secondary"
-                  style={{ flex: 1, fontSize: '13px', padding: '8px' }}
-                  disabled={approvedItemIds.size === pendingItems.length}
-                >
-                  <Check size={14} />
-                  Approve All
-                </button>
-                <button
-                  onClick={clearApprovals}
-                  className="btn-secondary"
-                  style={{ flex: 1, fontSize: '13px', padding: '8px' }}
-                  disabled={approvedItemIds.size === 0}
-                >
-                  <X size={14} />
-                  Clear
-                </button>
-              </div>
-
-              {/* Commit Button */}
-              <button
-                onClick={commitItems}
-                className="btn-primary"
-                style={{ width: '100%' }}
-                disabled={approvedItemIds.size === 0 || isCommitting}
-              >
-                {isCommitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Committing...
-                  </>
-                ) : (
-                  <>
-                    <Upload size={16} />
-                    Commit {approvedItemIds.size} {approvedItemIds.size === 1 ? 'Item' : 'Items'}
-                  </>
-                )}
-              </button>
-              {approvedItemIds.size === 0 && (
-                <p style={{
-                  margin: '8px 0 0 0',
-                  fontSize: '12px',
-                  color: 'var(--color-text-secondary)',
-                  textAlign: 'center',
-                }}>
-                  Approve items to enable commit
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )
